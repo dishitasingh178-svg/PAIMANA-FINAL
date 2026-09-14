@@ -23,6 +23,9 @@ Thumbs.db
 *.log
 
 # Python cache / test
+
+#dataset
+sushi_superClean.csv
 .pytest_cache/
 .mypy_cache/
 
