@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAIMANA AI - Add New Project</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Prevent Flash of Unstyled Content -->
+  <script>
+    if (
+      localStorage.getItem('theme') === 'dark' ||
+      (!('theme' in localStorage) &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches)
+    ) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="w-64 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200">
+
+    <div>
+
+      <div class="flex items-center gap-3 mb-10 pl-2">
+        <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+
+        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
+          PAIMANA AI
+        </span>
+      </div>
+
+      <nav class="space-y-1 text-sm font-medium">
+
+        <a href="dashboard.html"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          Overview
+        </a>
+
+        <a href="projects.html"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="folder-kanban" class="w-4 h-4"></i>
+          Projects
+        </a>
+
+        <a href="add-project.html"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          Add Project
+        </a>
+
+        <a href="risk-analytics.html"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="line-chart" class="w-4 h-4"></i>
+          Risk Analytics
+        </a>
+
+        <a href="early-warnings.html"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          Early Warnings
+        </a>
+
+        <a href="ai-assistant.html"
+           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="bot" class="w-4 h-4"></i>
+          AI Assistant
+        </a>
+
+      </nav>
+    </div>
+  </aside>
+
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-1 flex flex-col overflow-y-auto h-screen">
+
+    <header class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
+
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 dark:text-white">
+          Project Ingestion & Analysis
+        </h1>
+
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Upload new project details to generate an instant ML risk prediction.
+        </p>
+      </div>
+
+      <!-- Theme Toggle -->
+      <button id="theme-toggle"
+              class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+
+        <i id="theme-dark-icon"
+           data-lucide="moon"
+           class="w-5 h-5 hidden"></i>
+
+        <i id="theme-light-icon"
+           data-lucide="sun"
+           class="w-5 h-5 hidden"></i>
+
+      </button>
+
+    </header>
+
+
+    <div class="p-8 max-w-4xl mx-auto w-full space-y-6">
+
+      <!-- ================= PROJECT FORM ================= -->
+      <form id="projectForm"
+            class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-8 rounded-xl shadow-sm space-y-6 transition-colors duration-200">
+
+
+        <!-- ================= 1. PROJECT IDENTITY ================= -->
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#1E293B] pb-2">
+          1. Project Identity
+        </h2>
+
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <!-- Project ID -->
+          <div class="space-y-2">
+            <label
+              for="project_id"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Project ID <span class="text-orange-500">*</span>
+            </label>
+
+            <input
+              type="text"
+              id="project_id"
+              name="project_id"
+              placeholder="Enter project ID"
+              required
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+
+
+          <!-- Project Name -->
+          <div class="space-y-2">
+            <label
+              for="project_name"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Project Name
+            </label>
+
+            <input
+              type="text"
+              id="project_name"
+              name="project_name"
+              placeholder="Enter project name"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+
+
+          <!-- Implementing Agency -->
+          <div class="space-y-2">
+            <label
+              for="implementing_agency"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Implementing Agency
+            </label>
+
+            <input
+              type="text"
+              id="implementing_agency"
+              name="implementing_agency"
+              placeholder="Enter implementing agency"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+
+
+          <!-- Sector -->
+          <div class="space-y-2">
+            <label
+              for="sector"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Sector
+            </label>
+
+            <select
+              id="sector"
+              name="sector"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+              <option value="">Select Sector</option>
+              <option value="STEEL">Steel</option>
+              <option value="RAILWAYS">Railways</option>
+              <option value="POWER">Power</option>
+              <option value="ROAD TRANSPORT & HIGHWAYS">Road Transport & Highways</option>
+              <option value="PETROLEUM">Petroleum</option>
+              <option value="COAL">Coal</option>
+
+            </select>
+          </div>
+
+
+          <!-- State -->
+          <div class="space-y-2 md:col-span-2">
+
+            <label
+              for="state"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              State
+            </label>
+
+            <select
+              id="state"
+              name="state"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+              <option value="">Select State</option>
+
+              <option value="ANDHRA PRADESH">Andhra Pradesh</option>
+              <option value="ARUNACHAL PRADESH">Arunachal Pradesh</option>
+              <option value="ASSAM">Assam</option>
+              <option value="BIHAR">Bihar</option>
+              <option value="CHHATTISGARH">Chhattisgarh</option>
+              <option value="GOA">Goa</option>
+              <option value="GUJARAT">Gujarat</option>
+              <option value="HARYANA">Haryana</option>
+              <option value="HIMACHAL PRADESH">Himachal Pradesh</option>
+              <option value="JHARKHAND">Jharkhand</option>
+              <option value="KARNATAKA">Karnataka</option>
+              <option value="KERALA">Kerala</option>
+              <option value="MADHYA PRADESH">Madhya Pradesh</option>
+              <option value="MAHARASHTRA">Maharashtra</option>
+              <option value="MANIPUR">Manipur</option>
+              <option value="MEGHALAYA">Meghalaya</option>
+              <option value="MIZORAM">Mizoram</option>
+              <option value="NAGALAND">Nagaland</option>
+              <option value="ODISHA">Odisha</option>
+              <option value="PUNJAB">Punjab</option>
+              <option value="RAJASTHAN">Rajasthan</option>
+              <option value="SIKKIM">Sikkim</option>
+              <option value="TAMIL NADU">Tamil Nadu</option>
+              <option value="TELANGANA">Telangana</option>
+              <option value="TRIPURA">Tripura</option>
+              <option value="UTTAR PRADESH">Uttar Pradesh</option>
+              <option value="UTTARAKHAND">Uttarakhand</option>
+              <option value="WEST BENGAL">West Bengal</option>
+
+              <option value="ANDAMAN AND NICOBAR ISLANDS">
+                Andaman and Nicobar Islands
+              </option>
+
+              <option value="CHANDIGARH">
+                Chandigarh
+              </option>
+
+              <option value="DADRA AND NAGAR HAVELI AND DAMAN AND DIU">
+                Dadra and Nagar Haveli and Daman and Diu
+              </option>
+
+              <option value="DELHI">
+                Delhi
+              </option>
+
+              <option value="JAMMU AND KASHMIR">
+                Jammu and Kashmir
+              </option>
+
+              <option value="LADAKH">
+                Ladakh
+              </option>
+
+              <option value="LAKSHADWEEP">
+                Lakshadweep
+              </option>
+
+              <option value="PUDUCHERRY">
+                Puducherry
+              </option>
+
+              <option value="MULTIPLE STATES">
+                Multiple States
+              </option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+
+        <!-- ================= 2. TIMELINE ================= -->
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#1E293B] pb-2 mt-6">
+          2. Timeline & Schedule
+        </h2>
+
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+
+          <!-- Date of Approval -->
+          <div class="space-y-2">
+
+            <label
+              for="date_of_approval"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Date of Approval
+            </label>
+
+            <input
+              type="date"
+              id="date_of_approval"
+              name="date_of_approval"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+
+          <!-- Original Commissioning -->
+          <div class="space-y-2">
+
+            <label
+              for="original_commissioning_date"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Original Commissioning Date
+            </label>
+
+            <input
+              type="date"
+              id="original_commissioning_date"
+              name="original_commissioning_date"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+
+          <!-- Revised Commissioning -->
+          <div class="space-y-2">
+
+            <label
+              for="revised_commissioning_date"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Revised Commissioning Date
+            </label>
+
+            <input
+              type="date"
+              id="revised_commissioning_date"
+              name="revised_commissioning_date"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+
+          <!-- Anticipated Commissioning -->
+          <div class="space-y-2">
+
+            <label
+              for="anticipated_commissioning_date"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Anticipated Commissioning Date
+            </label>
+
+            <input
+              type="date"
+              id="anticipated_commissioning_date"
+              name="anticipated_commissioning_date"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+        </div>
+
+
+        <!-- ================= 3. FINANCIAL & PHYSICAL PROGRESS ================= -->
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#1E293B] pb-2 mt-6">
+          3. Financial & Physical Progress
+        </h2>
+
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+
+          <!-- Original Cost -->
+          <div class="space-y-2">
+
+            <label
+              for="original_cost_crore"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Original Cost (₹ Cr)
+            </label>
+
+            <input
+              type="number"
+              step="any"
+              id="original_cost_crore"
+              name="original_cost_crore"
+              placeholder="Optional"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+
+          <!-- Revised Cost -->
+          <div class="space-y-2">
+
+            <label
+              for="revised_cost_crore"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Revised Cost (₹ Cr)
+            </label>
+
+            <input
+              type="number"
+              step="any"
+              id="revised_cost_crore"
+              name="revised_cost_crore"
+              placeholder="Optional"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+
+          <!-- Anticipated Cost -->
+          <div class="space-y-2">
+
+            <label
+              for="anticipated_cost_crore"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Anticipated Cost (₹ Cr)
+            </label>
+
+            <input
+              type="number"
+              step="any"
+              id="anticipated_cost_crore"
+              name="anticipated_cost_crore"
+              placeholder="Optional"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+
+          <!-- Cumulative Expenditure -->
+          <div class="space-y-2">
+
+            <label
+              for="cumulative_expenditure_crore"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Cumulative Exp. (₹ Cr)
+            </label>
+
+            <input
+              type="number"
+              step="any"
+              id="cumulative_expenditure_crore"
+              name="cumulative_expenditure_crore"
+              placeholder="Optional"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+
+          <!-- Delay Original -->
+          <div class="space-y-2">
+
+            <label
+              for="delay_original_months"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Delay w.r.t. Original (months)
+            </label>
+
+            <input
+              type="number"
+              step="any"
+              id="delay_original_months"
+              name="delay_original_months"
+              placeholder="Optional"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+
+          <!-- Delay Revised -->
+          <div class="space-y-2">
+
+            <label
+              for="delay_revised_months"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Delay w.r.t. Revised (months)
+            </label>
+
+            <input
+              type="number"
+              step="any"
+              id="delay_revised_months"
+              name="delay_revised_months"
+              placeholder="Optional"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+
+          <!-- Milestones Achieved -->
+          <div class="space-y-2">
+
+            <label
+              for="milestones_achieved"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Milestones Achieved
+            </label>
+
+            <input
+              type="number"
+              step="1"
+              id="milestones_achieved"
+              name="milestones_achieved"
+              placeholder="Optional"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+
+          <!-- Milestones Total -->
+          <div class="space-y-2">
+
+            <label
+              for="milestones_total"
+              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+              Milestones Total
+            </label>
+
+            <input
+              type="number"
+              step="1"
+              id="milestones_total"
+              name="milestones_total"
+              placeholder="Optional"
+              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+
+          </div>
+
+        </div>
+
+
+        <!-- ================= SUBMIT ================= -->
+        <button
+          type="submit"
+          class="w-full bg-orange-600 hover:bg-orange-500 text-white font-semibold py-3 rounded-lg transition-colors flex justify-center items-center gap-2 mt-4">
+
+          <i data-lucide="cpu" class="w-5 h-5"></i>
+          Submit for AI Analysis
+
+        </button>
+
+      </form>
+
+
+      <!-- ================= RESULT CARD ================= -->
+      <div
+        id="resultCard"
+        class="hidden bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-xl transition-all">
+
+        <h3 class="text-emerald-600 dark:text-emerald-400 font-bold mb-2">
+          Analysis Complete
+        </h3>
+
+        <p
+          id="resultText"
+          class="text-sm text-slate-700 dark:text-emerald-100">
+          Project saved successfully. Risk score calculated.
+        </p>
+
+      </div>
+
+    </div>
+  </main>
+
+
+  <!-- ================= SCRIPTS ================= -->
+  <script src="js/theme.js"></script>
+  <script src="js/api.js"></script>
+
+  <script>
+
+    lucide.createIcons();
+
+
+    // =========================================================
+    // HELPER FUNCTIONS
+    // =========================================================
+
+    // Converts empty form fields to null instead of 0 or NaN.
+    function optionalNumber(id, parser = parseFloat) {
+
+      const value = document.getElementById(id).value.trim();
+
+      if (value === '') {
+        return null;
+      }
+
+      const parsed = parser(value);
+
+      return Number.isNaN(parsed) ? null : parsed;
+    }
+
+
+    function optionalText(id) {
+
+      const value = document.getElementById(id).value.trim();
+
+      return value === '' ? null : value;
+
+    }
+
+
+    function optionalDate(id) {
+
+      const value = document.getElementById(id).value.trim();
+
+      return value === '' ? null : value;
+
+    }
+
+
+    // =========================================================
+    // FORM SUBMISSION
+    // =========================================================
+
+    document
+      .getElementById('projectForm')
+      .addEventListener('submit', async function(e) {
+
+        e.preventDefault();
+
+
+        // -----------------------------------------------------
+        // Build frontend project object
+        // Empty optional fields become null.
+        // -----------------------------------------------------
+
+        const newProject = {
+
+          // Mandatory
+          project_id:
+            document.getElementById('project_id').value.trim(),
+
+          // Project identity
+          project_name:
+            optionalText('project_name'),
+
+          implementing_agency:
+            optionalText('implementing_agency'),
+
+          sector:
+            optionalText('sector'),
+
+          state:
+            optionalText('state'),
+
+
+          // Timeline
+          date_of_approval:
+            optionalDate('date_of_approval'),
+
+          original_commissioning_date:
+            optionalDate('original_commissioning_date'),
+
+          revised_commissioning_date:
+            optionalDate('revised_commissioning_date'),
+
+          anticipated_commissioning_date:
+            optionalDate('anticipated_commissioning_date'),
+
+
+          // Financial
+          original_cost_crore:
+            optionalNumber('original_cost_crore'),
+
+          revised_cost_crore:
+            optionalNumber('revised_cost_crore'),
+
+          anticipated_cost_crore:
+            optionalNumber('anticipated_cost_crore'),
+
+          cumulative_expenditure_crore:
+            optionalNumber('cumulative_expenditure_crore'),
+
+
+          // Delay
+          delay_original_months:
+            optionalNumber('delay_original_months'),
+
+          delay_revised_months:
+            optionalNumber('delay_revised_months'),
+
+
+          // Physical progress
+          milestones_achieved:
+            optionalNumber('milestones_achieved', parseInt),
+
+          milestones_total:
+            optionalNumber('milestones_total', parseInt)
+
+        };
+
+
+        console.log(
+          'Frontend project data:',
+          newProject
+        );
+
+
+        // -----------------------------------------------------
+        // Button state
+        // -----------------------------------------------------
+
+        const btn =
+          e.target.querySelector(
+            'button[type="submit"]'
+          );
+
+        const originalText =
+          btn.innerHTML;
+
+        btn.innerHTML =
+          `<span class="animate-pulse">Running ML Model...</span>`;
+
+        btn.disabled = true;
+
+
+        try {
+
+          // ---------------------------------------------------
+          // CURRENT API CALL
+          //
+          // This will be updated in the backend phase.
+          // ---------------------------------------------------
+
+          const createResponse = await fetch(
+            `${window.location.origin}/api/v1/projects`,
+            {
+              method: 'POST',
+
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+
+              body: JSON.stringify(newProject)
+            }
+          );
+
+
+          if (!createResponse.ok) {
+
+            const err =
+              await createResponse
+                .json()
+                .catch(() => ({}));
+
+            throw new Error(
+              err.detail ||
+              `Project creation failed (${createResponse.status})`
+            );
+
+          }
+
+
+          const created =
+            await createResponse.json();
+
+
+          // ---------------------------------------------------
+          // Prediction
+          // ---------------------------------------------------
+
+          const reportMonth =
+            newProject.date_of_approval
+              ? newProject.date_of_approval.slice(0, 7)
+              : new Date().toISOString().slice(0, 7);
+
+
+          const mlResult =
+            await window.API.runPrediction(
+              created.project_id,
+              reportMonth
+            );
+
+
+          // ---------------------------------------------------
+          // Display result
+          // ---------------------------------------------------
+
+          const resultCard =
+            document.getElementById('resultCard');
+
+          const resultText =
+            document.getElementById('resultText');
+
+
+          resultCard.classList.remove('hidden');
+
+
+          resultText.innerHTML = `
+
+            <strong>
+              ${newProject.project_name || newProject.project_id}
+            </strong>
+            analyzed successfully.
+
+            <br><br>
+
+            <strong>AI Risk Score:</strong>
+            ${Number(
+              mlResult.composite_risk_score || 0
+            ).toFixed(1)}/100
+
+            <br>
+
+            <strong>Status:</strong>
+            ${mlResult.risk_tier || 'N/A'}
+
+          `;
+
+
+          btn.innerHTML = originalText;
+
+          btn.disabled = false;
+
+          e.target.reset();
+
+
+        } catch (error) {
+
+          console.error(
+            "Error communicating with ML backend:",
+            error
+          );
+
+          btn.innerHTML = originalText;
+
+          btn.disabled = false;
+
+          alert(
+            "Failed to connect to the prediction server. Check the console."
+          );
+
+        }
+
+      });
+
+  </script>
+
+</body>
+</html>

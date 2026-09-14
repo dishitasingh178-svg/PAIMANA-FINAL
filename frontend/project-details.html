@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAIMANA AI - Project Intelligence</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+    }
+  </script>
+  
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
+
+  <!-- ================= SIDEBAR (Collapsed) ================= -->
+  <aside class="w-20 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col items-center py-6 shrink-0 transition-colors duration-200">
+    <div class="w-10 h-10 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold mb-8">
+      <i data-lucide="shield-alert" class="w-6 h-6"></i>
+    </div>
+    <nav class="space-y-4">
+      <a href="dashboard.html" class="p-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition block"><i data-lucide="layout-dashboard" class="w-5 h-5"></i></a>
+      <a href="projects.html" class="p-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition block"><i data-lucide="folder-kanban" class="w-5 h-5"></i></a>
+      <a href="early-warnings.html" class="p-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition block"><i data-lucide="bell" class="w-5 h-5"></i></a>
+    </nav>
+  </aside>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-1 flex flex-col overflow-y-auto">
+    <header class="h-16 border-b border-slate-200 dark:border-[#1E293B] px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
+      <div>
+        <a href="projects.html" class="text-xs text-orange-600 dark:text-orange-500 hover:underline flex items-center gap-1 font-semibold">
+          <i data-lucide="arrow-left" class="w-3 h-3"></i> Back to Projects
+        </a>
+      </div>
+      <button id="theme-toggle" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+        <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
+        <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
+      </button>
+    </header>
+
+    <div class="p-8 max-w-6xl mx-auto w-full space-y-6">
+      
+      <!-- Project Header & AI Badge -->
+      <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
+        <div>
+          <div class="flex items-center gap-2 text-[11px] font-bold tracking-wide uppercase text-slate-500 dark:text-slate-400 mb-2">
+            <span id="p-sector">SECTOR</span> <span class="text-slate-300 dark:text-slate-600">•</span> 
+            <span id="p-agency">AGENCY</span> <span class="text-slate-300 dark:text-slate-600">•</span> 
+            ID: <span id="p-id">00000000</span>
+          </div>
+          <h1 id="p-name" class="text-2xl font-bold text-slate-900 dark:text-white leading-tight">Loading Project...</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-1">
+            <i data-lucide="map-pin" class="w-3 h-3"></i> <span id="p-state">State</span>
+          </p>
+        </div>
+        
+        <!-- Big AI Risk Badge -->
+        <div id="risk-badge" class="flex items-center gap-4 bg-orange-500/10 border border-orange-500/30 px-6 py-3 rounded-xl shrink-0">
+          <div class="text-right">
+            <span class="block text-[10px] uppercase font-bold tracking-wide" id="risk-label-text" style="color: inherit;">AI Failure Risk</span>
+            <span id="p-riskscore" class="text-3xl font-black" style="color: inherit;">-- / 100</span>
+          </div>
+          <i data-lucide="alert-triangle" id="risk-icon" class="w-8 h-8" style="color: inherit;"></i>
+        </div>
+      </div>
+
+      <!-- KPI Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Original Cost</p>
+          <p id="p-orig-cost" class="text-xl font-bold text-slate-900 dark:text-white mt-1">₹-- Cr</p>
+        </div>
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Anticipated Cost</p>
+          <p id="p-anti-cost" class="text-xl font-bold text-orange-600 dark:text-orange-400 mt-1">₹-- Cr</p>
+        </div>
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Cost Escalation</p>
+          <p id="p-cost-escalation" class="text-xl font-bold text-red-600 dark:text-red-500 mt-1">--%</p>
+        </div>
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Expected Delay</p>
+          <p id="p-delay" class="text-xl font-bold text-red-600 dark:text-red-500 mt-1">-- Months</p>
+        </div>
+      </div>
+
+      <!-- Main Two Columns -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Progress Bars -->
+        <div class="lg:col-span-2 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200 space-y-6">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-[#1E293B] pb-3">Project Progress Metrics</h2>
+          
+          <!-- Physical -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600 dark:text-slate-400">Physical Progress (Milestones)</span>
+              <span id="p-phys-text" class="font-bold text-slate-900 dark:text-white">--%</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div id="p-phys-bar" class="bg-emerald-500 h-full w-0 transition-all duration-1000"></div>
+            </div>
+            <p id="p-milestone-text" class="text-[10px] text-slate-500 text-right">0 / 0 Achieved</p>
+          </div>
+
+          <!-- Financial -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600 dark:text-slate-400">Financial Progress (Expenditure vs Anticipated)</span>
+              <span id="p-fin-text" class="font-bold text-slate-900 dark:text-white">--%</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div id="p-fin-bar" class="bg-blue-500 h-full w-0 transition-all duration-1000"></div>
+            </div>
+            <p id="p-expenditure-text" class="text-[10px] text-slate-500 text-right">₹0 / ₹0 Cr Spent</p>
+          </div>
+          
+          <!-- Timeline Dates -->
+          <div class="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100 dark:border-[#1E293B]">
+            <div>
+              <p class="text-[10px] text-slate-500 uppercase font-semibold">Approval Date</p>
+              <p id="p-date-approve" class="text-xs font-medium text-slate-900 dark:text-white mt-1">--</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-slate-500 uppercase font-semibold">Org. Commissioning</p>
+              <p id="p-date-org" class="text-xs font-medium text-slate-900 dark:text-white mt-1">--</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-orange-600 dark:text-orange-400 uppercase font-semibold">Anti. Commissioning</p>
+              <p id="p-date-anti" class="text-xs font-bold text-orange-600 dark:text-orange-400 mt-1">--</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: AI Drivers (SHAP Simulation) -->
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-[#1E293B] pb-3 mb-4">ML Risk Drivers (Attribution)</h2>
+          <p class="text-[10px] text-slate-500 mb-4 leading-relaxed">The Random Forest model identified the following historical variables as the primary drivers for this project's risk score.</p>
+          
+          <div class="space-y-4 text-xs">
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span class="text-slate-700 dark:text-slate-300 font-medium">Cost Growth %</span>
+                <span class="text-red-600 dark:text-red-400 font-bold">High Impact</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-red-500 h-full w-[75%]"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span class="text-slate-700 dark:text-slate-300 font-medium">Schedule Delay (Months)</span>
+                <span class="text-orange-600 dark:text-orange-400 font-bold">Medium Impact</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-orange-500 h-full w-[45%]"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span class="text-slate-700 dark:text-slate-300 font-medium">Lagging Physical Progress</span>
+                <span class="text-amber-500 dark:text-amber-400 font-bold">Low Impact</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-amber-500 h-full w-[20%]"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="js/theme.js"></script>
+  <script>
+    lucide.createIcons();
+
+// 1. Extract the Project ID from URL query parameters (e.g. project-details.html?id=220100181)
+const urlParams = new URLSearchParams(window.location.search);
+const projectId = urlParams.get('id');
+
+// 2. Fetch live data from backend endpoint
+async function loadProjectData() {
+  if (!projectId) {
+    window.location.href = "projects.html";
+    return;
+  }
+
+  try {
+    // Relative URL avoids CORS / origin mismatch issues
+    const response = await fetch(`/api/v1/projects/${encodeURIComponent(projectId)}`);
+    
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => ({}));
+      throw new Error(errorPayload.detail || `Server returned HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Populate Header & Metadata
+    document.getElementById('p-name').innerText = data.name;
+    document.getElementById('p-agency').innerText = data.agency;
+    document.getElementById('p-sector').innerText = data.sector;
+    document.getElementById('p-id').innerText = data.id;
+    document.getElementById('p-state').innerText = data.state;
+
+    // Populate Dates
+    document.getElementById('p-date-approve').innerText = data.approval_date || "--";
+    document.getElementById('p-date-org').innerText = data.original_comm || "--";
+    document.getElementById('p-date-anti').innerText = data.anti_comm || "--";
+
+    // Populate Costs and Escalation
+    document.getElementById('p-orig-cost').innerText = `₹${Number(data.original_cost).toLocaleString()} Cr`;
+    document.getElementById('p-anti-cost').innerText = `₹${Number(data.anticipated_cost).toLocaleString()} Cr`;
+    
+    const isCostEscalated = data.cost_escalation_pct > 0;
+    const costEscalationEl = document.getElementById('p-cost-escalation');
+    costEscalationEl.innerText = `${isCostEscalated ? '+' : ''}${data.cost_escalation_pct}%`;
+    costEscalationEl.className = `text-xl font-bold mt-1 ${
+      isCostEscalated ? 'text-red-600 dark:text-red-500' : 'text-emerald-600 dark:text-emerald-500'
+    }`;
+
+    document.getElementById('p-delay').innerText = `${data.delay_months} Months`;
+
+    // Calculate Progress
+    const totalMilestones = data.milestones_total > 0 ? data.milestones_total : 100;
+    const physPct = Math.min(100, Math.round((data.milestones_achieved / totalMilestones) * 100));
+    
+    const anticipated = data.anticipated_cost > 0 ? data.anticipated_cost : data.original_cost;
+    const finPct = anticipated > 0 ? Math.min(100, Math.round((data.expenditure / anticipated) * 100)) : 0;
+
+    document.getElementById('p-phys-text').innerText = `${physPct}%`;
+    document.getElementById('p-phys-bar').style.width = `${physPct}%`;
+    document.getElementById('p-milestone-text').innerText = `${data.milestones_achieved} / ${totalMilestones} Achieved`;
+
+    document.getElementById('p-fin-text').innerText = `${finPct}%`;
+    document.getElementById('p-fin-bar').style.width = `${finPct}%`;
+    document.getElementById('p-expenditure-text').innerText = `₹${Number(data.expenditure).toLocaleString()} / ₹${Number(anticipated).toLocaleString()} Cr Spent`;
+
+    // Render Risk Badge
+    const riskBadge = document.getElementById('risk-badge');
+    const riskScoreEl = document.getElementById('p-riskscore');
+    const riskLabelEl = document.getElementById('risk-label-text');
+    
+    const score = Number(data.risk_score) || 0;
+    const label = (data.risk_label || 'LOW').toUpperCase();
+
+    riskScoreEl.innerText = `${score.toFixed(1)} / 100`;
+    riskLabelEl.innerText = `${label} RISK`;
+
+    if (label.includes("CRITICAL")) {
+      riskBadge.className = "flex items-center gap-4 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-500 px-6 py-3 rounded-xl shrink-0";
+    } else if (label.includes("ELEVATED") || label.includes("HIGH")) {
+      riskBadge.className = "flex items-center gap-4 bg-orange-500/10 border border-orange-500/30 text-orange-600 dark:text-orange-500 px-6 py-3 rounded-xl shrink-0";
+    } else if (label.includes("WATCH") || label.includes("MEDIUM")) {
+      riskBadge.className = "flex items-center gap-4 bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 dark:text-yellow-500 px-6 py-3 rounded-xl shrink-0";
+    } else {
+      riskBadge.className = "flex items-center gap-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-500 px-6 py-3 rounded-xl shrink-0";
+    }
+
+  } catch (error) {
+    console.error("Failed to load project details:", error);
+    document.getElementById('p-name').innerText = `Error: ${error.message}`;
+    alert(`Could not load project details: ${error.message}`);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadProjectData);
+
+      </script>
+</body>
+</html>

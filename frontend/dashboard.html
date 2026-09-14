@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAIMANA AI - Executive Dashboard</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } }
+      }
+    }
+  </script>
+  
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
+  <!-- LEAFLET CDN ASSETS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+  <!-- CHART.JS & ICONS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/css/custom.css">
+</head>
+
+<body class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200">
+    <div>
+      <div class="flex items-center gap-3 mb-10 pl-2">
+        <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">PAIMANA AI</span>
+      </div>
+
+      <nav class="space-y-1 text-sm font-medium">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+        </a>
+        <a href="projects.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
+        </a>
+        <a href="add-project.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Project
+        </a>
+        <a href="risk-analytics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="line-chart" class="w-4 h-4"></i> Risk Analytics
+        </a>
+        <a href="early-warnings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="bell" class="w-4 h-4"></i> Early Warnings
+        </a>
+        <a href="ai-assistant.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="bot" class="w-4 h-4"></i> AI Assistant
+        </a>
+      </nav>
+    </div>
+
+    <div class="pt-4 border-t border-slate-200 dark:border-[#1E293B] flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-semibold text-slate-700 dark:text-white">PL</div>
+      <div class="text-xs">
+        <p class="font-medium text-slate-900 dark:text-white">Parth Lamba</p>
+        <p class="text-slate-500">Administrator</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="flex-1 flex flex-col h-screen overflow-y-auto">
+    <header class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 dark:text-white">Good morning, Administrator.</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Here's what's happening with India's infrastructure projects.</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <button id="theme-toggle" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
+          <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="p-8 space-y-6">
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Projects</p>
+          <div class="flex items-end gap-3 mt-2">
+            <span id="kpi-total" class="text-2xl font-bold text-slate-900 dark:text-white">--</span>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">High Risk Projects</p>
+          <div class="flex items-end gap-3 mt-2">
+            <span id="kpi-high-risk" class="text-2xl font-bold text-orange-500 dark:text-orange-400">--</span>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Delayed Projects</p>
+          <div class="flex items-end gap-3 mt-2">
+            <span id="kpi-delayed" class="text-2xl font-bold text-red-600 dark:text-red-500">--</span>
+          </div>
+        </div>
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Revised Project Cost</p>
+          <div class="flex items-end gap-3 mt-2">
+            <span id="kpi-cost" class="text-2xl font-bold text-slate-900 dark:text-white">--</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Interactive Map Panel -->
+        <div class="lg:col-span-2 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl flex flex-col shadow-sm transition-colors duration-200">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Projects Across India (Ongoing High Risk)</h2>
+          </div>
+          <div id="map" style="height: 400px; min-height: 400px; width: 100%; border-radius: 8px;" class="z-10 bg-slate-900"></div>
+        </div>
+
+        <!-- Right Column: Doughnut Chart + Alerts -->
+        <div class="space-y-6">
+          <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Risk Distribution</h2>
+            <div class="relative h-48 flex justify-center items-center">
+              <canvas id="riskChart"></canvas>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-4 text-[11px] text-slate-600 dark:text-slate-300">
+              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Low</div>
+              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Medium</div>
+              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-orange-500"></span> High</div>
+              <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span> Critical</div>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Recent Alerts</h2>
+            <div class="space-y-4" id="recent-alerts-container">
+              <p class="text-xs text-slate-400">Loading alerts...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+<script>
+    lucide.createIcons();
+
+    // 1. Chart Initialization
+    let riskChart = null;
+    try {
+      const chartCanvas = document.getElementById('riskChart');
+      if (chartCanvas) {
+        const ctx = chartCanvas.getContext('2d');
+        riskChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Low', 'Watch', 'Elevated', 'Critical'],
+            datasets: [{
+              data: [0, 0, 0, 0],
+              backgroundColor: ['#10b981', '#3b82f6', '#f97316', '#ef4444'],
+              borderWidth: 2,
+              borderColor: '#121826'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("Chart initialization fallback:", e);
+    }
+
+    // 2. Leaflet Map Initialization
+    let map = null;
+    let markerLayerGroup = null;
+
+    function initMap() {
+      const mapElement = document.getElementById('map');
+      if (!mapElement || typeof L === 'undefined') return;
+
+      map = L.map('map', { attributionControl: false, zoomControl: true }).setView([22.5937, 78.9629], 4.5);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+        maxZoom: 18 
+      }).addTo(map);
+
+      markerLayerGroup = L.layerGroup().addTo(map);
+
+      setTimeout(() => { 
+        if (map) map.invalidateSize(); 
+      }, 300);
+    }
+
+    // 3. Robust Data Fetchers
+    async function loadKPIs() {
+      try {
+        const res = await fetch('/api/v1/dashboard/summary');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const stats = await res.json();
+        
+        document.getElementById('kpi-total').innerText = Number(stats.total_projects || 0).toLocaleString();
+        document.getElementById('kpi-high-risk').innerText = Number(stats.high_risk_count || 0).toLocaleString();
+        document.getElementById('kpi-delayed').innerText = Number(stats.delayed_count || 0).toLocaleString();
+        document.getElementById('kpi-cost').innerText = `₹${stats.revised_cost_lakh_cr || "0.00"}L Cr`;
+      } catch (err) {
+        console.warn("Using default KPIs:", err);
+        document.getElementById('kpi-total').innerText = "0";
+        document.getElementById('kpi-high-risk').innerText = "0";
+        document.getElementById('kpi-delayed').innerText = "0";
+        document.getElementById('kpi-cost').innerText = "₹0.00L Cr";
+      }
+    }
+
+    async function loadRiskDistributionChart() {
+      try {
+        const res = await fetch('/api/v1/dashboard/risk-distribution');
+        if (!res.ok) throw new Error("Chart API offline");
+        const data = await res.json();
+        if (riskChart) {
+          riskChart.data.datasets[0].data = [
+            data.low || 0, 
+            data.watch || 0, 
+            data.elevated || 0, 
+            data.critical || 0
+          ];
+          riskChart.update();
+        }
+      } catch (err) {
+        console.warn("Chart data fallback:", err);
+      }
+    }
+
+    async function loadOngoingHighRiskProjects() {
+      if (!map || !markerLayerGroup) return;
+
+      try {
+        const res = await fetch('/api/v1/dashboard/ongoing-high-risk');
+        let projects = [];
+        if (res.ok) {
+          projects = await res.json();
+        }
+
+        // No fabricated markers: an empty result means no stored high-risk predictions yet.
+
+        markerLayerGroup.clearLayers();
+
+        projects.forEach(p => {
+          const lat = parseFloat(p.lat);
+          const lng = parseFloat(p.lng);
+          if (isNaN(lat) || isNaN(lng)) return;
+
+          const score = Number(p.risk_score) || 75;
+          const status = (p.status || 'ELEVATED').toUpperCase();
+          const isCritical = status.includes("CRIT") || score >= 75;
+          const color = isCritical ? "#ef4444" : "#f97316";
+
+          const marker = L.circleMarker([lat, lng], {
+            radius: isCritical ? 9 : 7,
+            fillColor: color,
+            color: '#ffffff',
+            weight: 2,
+            fillOpacity: 0.95,
+            opacity: 1.0,
+            pane: 'markerPane'
+          });
+
+          marker.bindPopup(`
+            <div style="font-family: 'Inter', sans-serif; min-width: 190px; padding: 4px;">
+              <span style="font-size: 10px; font-weight: bold; color: ${color}; text-transform: uppercase;">
+                ${status} RISK
+              </span>
+              <h4 style="margin: 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">${p.project_name}</h4>
+              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Sector:</strong> ${p.sector}</p>
+              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Risk Score:</strong> ${score.toFixed(1)}/100</p>
+              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Delay:</strong> ${p.delay_months || 0} Months</p>
+              <div style="margin-top: 6px;">
+                <a href="project-details.html?id=${p.project_id}" style="font-size: 11px; color: #ea580c; font-weight: 600; text-decoration: underline;">
+                  View Project Details →
+                </a>
+              </div>
+            </div>
+          `);
+
+          markerLayerGroup.addLayer(marker);
+        });
+
+        map.invalidateSize();
+      } catch (err) {
+        console.error("Map render failed:", err);
+      }
+    }
+
+    async function loadRecentAlerts() {
+      const container = document.getElementById('recent-alerts-container');
+      if (!container) return;
+
+      try {
+        const res = await fetch('/api/v1/dashboard/alerts');
+        let alerts = [];
+        if (res.ok) alerts = await res.json();
+
+        if (!alerts || alerts.length === 0) {
+          container.innerHTML = '<p class="text-xs text-slate-400">No active alerts.</p>';
+          return;
+        }
+
+        container.innerHTML = alerts.slice(0, 4).map(a => `
+          <div class="flex gap-3 items-start border-b border-slate-100 dark:border-[#1E293B] pb-3 last:border-0">
+            <span class="w-2 h-2 mt-1.5 rounded-full ${(a.severity || '').toUpperCase() === 'CRITICAL' ? 'bg-red-500' : 'bg-orange-500'} shrink-0"></span>
+            <div>
+              <p class="text-xs font-semibold text-slate-900 dark:text-white">${a.project_name}</p>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${a.message}</p>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.warn("Alerts loading error:", err);
+      }
+    }
+
+    // 4. Theme Toggle
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const darkIcon = document.getElementById('theme-dark-icon');
+    const lightIcon = document.getElementById('theme-light-icon');
+
+    function syncThemeIcons() {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (darkIcon && lightIcon) {
+        darkIcon.classList.toggle('hidden', isDark);
+        lightIcon.classList.toggle('hidden', !isDark);
+      }
+    }
+    syncThemeIcons();
+
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        syncThemeIcons();
+        if (riskChart) {
+          riskChart.data.datasets[0].borderColor = isDark ? '#121826' : '#ffffff';
+          riskChart.update();
+        }
+      });
+    }
+
+    // 5. Initializer Pipeline
+    document.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      loadKPIs();
+      loadRiskDistributionChart();
+      loadOngoingHighRiskProjects();
+      loadRecentAlerts();
+    });
+  </script>
+ 
+</body>
+</html>

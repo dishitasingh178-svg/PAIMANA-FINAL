@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAIMANA AI - Risk Analytics</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+    }
+  </script>
+  
+  <!-- Prevent Flash of Unstyled Content -->
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="w-64 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200">
+    <div>
+      <div class="flex items-center gap-3 mb-10 pl-2">
+        <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">PAIMANA AI</span>
+      </div>
+
+      <nav class="space-y-1 text-sm font-medium">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+        </a>
+        <a href="projects.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
+        </a>
+        <a href="add-project.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Project
+        </a>
+        <a href="risk-analytics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+          <i data-lucide="line-chart" class="w-4 h-4"></i> Risk Analytics
+        </a>
+        <a href="early-warnings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="bell" class="w-4 h-4"></i> Early Warnings
+        </a>
+        <a href="ai-assistant.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="bot" class="w-4 h-4"></i> AI Assistant
+        </a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-1 flex flex-col overflow-y-auto h-screen">
+    
+    <header class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 dark:text-white">Portfolio Risk Analytics</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Deep insights into AI-predicted project risks across sectors.</p>
+      </div>
+      
+      <div class="flex items-center gap-4">
+        <button id="theme-toggle" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition ml-2">
+          <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
+          <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="p-8 space-y-6">
+      
+      <!-- Top Row: Sector Bar Chart & Top Drivers -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Bar Chart: Risk by Sector -->
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Risk Distribution by Sector</h2>
+          <div class="relative h-64">
+            <canvas id="sectorChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Horizontal Bar: ML Escalation Drivers -->
+        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200 flex flex-col justify-center">
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-6">Top AI Cost Escalation Drivers</h2>
+          
+          <div class="space-y-5 text-xs">
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span class="text-slate-700 dark:text-slate-300 font-medium">Prolonged Schedule Delay</span>
+                <span class="text-slate-900 dark:text-white font-bold">72% correlation</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-red-500 h-full w-[72%] rounded-full"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span class="text-slate-700 dark:text-slate-300 font-medium">Low Physical Milestone Completion</span>
+                <span class="text-slate-900 dark:text-white font-bold">58% correlation</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-orange-500 h-full w-[58%] rounded-full"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span class="text-slate-700 dark:text-slate-300 font-medium">High Cumulative Expenditure Variance</span>
+                <span class="text-slate-900 dark:text-white font-bold">46% correlation</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-amber-500 h-full w-[46%] rounded-full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Historical Risk Trend Line Chart -->
+      <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Historical Risk Trend Over Time (AI Analyzed)</h2>
+        <div class="relative h-72">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/theme.js"></script>
+  
+  <script>
+    lucide.createIcons();
+
+    // ================= CHART SETUP & DYNAMIC FETCH =================
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#64748B'; 
+    const getGridColor = () => document.documentElement.classList.contains('dark') ? '#1E293B' : '#f1f5f9';
+    const getTextColor = () => document.documentElement.classList.contains('dark') ? '#94A3B8' : '#475569';
+
+    // 1. Initialize Sector Chart
+    const ctxSector = document.getElementById('sectorChart').getContext('2d');
+    const sectorChart = new Chart(ctxSector, {
+      type: 'bar',
+      data: {
+        labels: [], 
+        datasets: [
+          { label: 'Critical Risk', data: [], backgroundColor: '#ef4444', borderRadius: 4 },
+          { label: 'High Risk', data: [], backgroundColor: '#f97316', borderRadius: 4 },
+          { label: 'Medium Risk', data: [], backgroundColor: '#3b82f6', borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { color: getTextColor() } },
+          y: { stacked: true, border: { display: false }, grid: { color: getGridColor() }, ticks: { color: getTextColor() } }
+        },
+        plugins: { legend: { position: 'top', labels: { boxWidth: 10, usePointStyle: true, color: getTextColor() } } }
+      }
+    });
+
+    // 2. Fetch Live Sector Risk Analytics from Database
+  async function loadDynamicSectorAnalytics() {
+    try {
+      const response = await fetch('/api/v1/dashboard/sector-breakdown');
+      if (!response.ok) throw new Error("Analytics API offline");
+
+      const data = await response.json();
+
+      sectorChart.data.labels = data.labels;
+      sectorChart.data.datasets[0].data = data.critical;
+      sectorChart.data.datasets[1].data = data.high;
+      sectorChart.data.datasets[2].data = data.medium;
+      sectorChart.update();
+    } catch (err) {
+      console.warn("Using fallback data for Sector Analytics:", err);
+      sectorChart.data.labels = ['Railways', 'Roads', 'Power', 'Petroleum', 'Steel', 'Coal'];
+      sectorChart.data.datasets[0].data = [4, 2, 3, 1, 2, 0];
+      sectorChart.data.datasets[1].data = [8, 5, 4, 3, 2, 1];
+      sectorChart.data.datasets[2].data = [12, 10, 8, 5, 3, 2];
+      sectorChart.update();
+    }
+  }
+    // 3. Initialize Trend Line Chart
+    const ctxTrend = document.getElementById('trendChart').getContext('2d');
+    const trendChart = new Chart(ctxTrend, {
+      type: 'line',
+      data: {
+        labels: ['2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024'],
+        datasets: [
+          {
+            label: 'Cost Escalation (Lakh Cr)',
+            data: [2.1, 2.4, 2.9, 3.2, 3.8, 4.5, 5.1, 5.0, 5.4],
+            borderColor: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.1)',
+            borderWidth: 2, fill: true, tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          x: { grid: { display: false }, ticks: { color: getTextColor() } },
+          y: { border: { display: false }, grid: { color: getGridColor() }, ticks: { color: getTextColor() } }
+        },
+        plugins: { legend: { position: 'top', labels: { boxWidth: 20, color: getTextColor() } } }
+      }
+    });
+
+    // Update Chart colors on theme change triggered by assets/js/theme.js
+    window.addEventListener('themeChanged', () => {
+      const gridColor = getGridColor();
+      const textColor = getTextColor();
+      
+      sectorChart.options.scales.x.ticks.color = textColor;
+      sectorChart.options.scales.y.ticks.color = textColor;
+      sectorChart.options.scales.y.grid.color = gridColor;
+      sectorChart.options.plugins.legend.labels.color = textColor;
+      sectorChart.update();
+
+      trendChart.options.scales.x.ticks.color = textColor;
+      trendChart.options.scales.y.ticks.color = textColor;
+      trendChart.options.scales.y.grid.color = gridColor;
+      trendChart.options.plugins.legend.labels.color = textColor;
+      trendChart.update();
+    });
+
+    // Load dynamic data on startup
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDynamicSectorAnalytics();
+    });
+  </script>
+</body>
+</html>

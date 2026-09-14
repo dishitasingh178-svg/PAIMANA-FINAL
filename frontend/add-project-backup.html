@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAIMANA AI - Add New Project</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+    }
+  </script>
+  
+  <!-- Prevent Flash of Unstyled Content -->
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="w-64 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200">
+    <div>
+      <div class="flex items-center gap-3 mb-10 pl-2">
+        <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">PAIMANA AI</span>
+      </div>
+
+      <nav class="space-y-1 text-sm font-medium">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+        </a>
+        <a href="projects.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
+        </a>
+        <a href="add-project.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Project
+        </a>
+        <a href="risk-analytics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="line-chart" class="w-4 h-4"></i> Risk Analytics
+        </a>
+        <a href="early-warnings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="bell" class="w-4 h-4"></i> Early Warnings
+        </a>
+        <a href="ai-assistant.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="bot" class="w-4 h-4"></i> AI Assistant
+        </a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-1 flex flex-col overflow-y-auto h-screen">
+    <header class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900 dark:text-white">Project Ingestion & Analysis</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Upload new project details to generate an instant ML risk prediction.</p>
+      </div>
+      <!-- Theme Toggle Button -->
+      <button id="theme-toggle" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+        <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
+        <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
+      </button>
+    </header>
+
+    <div class="p-8 max-w-4xl mx-auto w-full space-y-6">
+      
+      <!-- Upload Form -->
+      <form id="projectForm" class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-8 rounded-xl shadow-sm space-y-6 transition-colors duration-200">
+        
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#1E293B] pb-2">1. Project Identity</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Project Name</label>
+            <input type="text" id="project_name" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Implementing Agency</label>
+            <input type="text" id="implementing_agency" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Sector</label>
+            <select id="sector" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+              <option value="STEEL">Steel</option>
+              <option value="RAILWAYS">Railways</option>
+              <option value="POWER">Power</option>
+              <option value="ROAD TRANSPORT & HIGHWAYS">Road Transport & Highways</option>
+              <option value="PETROLEUM">Petroleum</option>
+              <option value="COAL">Coal</option>
+            </select>
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">State</label>
+            <select id="state" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+              <option value="ANDHRA PRADESH">Andhra Pradesh</option>
+              <option value="MAHARASHTRA">Maharashtra</option>
+              <option value="UTTAR PRADESH">Uttar Pradesh</option>
+              <option value="MULTIPLE STATES">Multiple States</option>
+            </select>
+          </div>
+        </div>
+
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#1E293B] pb-2 mt-6">2. Timeline & Schedule</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Date of Approval</label>
+            <input type="date" id="date_of_approval" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Original Commissioning Date</label>
+            <input type="date" id="original_commissioning_date" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Anticipated Commissioning</label>
+            <input type="date" id="anticipated_commissioning_date" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+        </div>
+
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#1E293B] pb-2 mt-6">3. Financial & Physical Progress</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Original Cost (₹ Cr)</label>
+            <input type="number" step="0.01" id="original_cost_crore" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Cumulative Exp. (₹ Cr)</label>
+            <input type="number" step="0.01" id="cumulative_expenditure_crore" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Milestones Achieved</label>
+            <input type="number" id="milestones_achieved" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Milestones Total</label>
+            <input type="number" id="milestones_total" required class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-semibold py-3 rounded-lg transition-colors flex justify-center items-center gap-2 mt-4">
+          <i data-lucide="cpu" class="w-5 h-5"></i> Submit for AI Analysis
+        </button>
+      </form>
+
+      <!-- ML Prediction Result Card (Hidden by default) -->
+      <div id="resultCard" class="hidden bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-xl transition-all">
+        <h3 class="text-emerald-600 dark:text-emerald-400 font-bold mb-2">Analysis Complete</h3>
+        <p id="resultText" class="text-sm text-slate-700 dark:text-emerald-100">Project saved successfully. Risk score calculated.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="js/theme.js"></script>
+  <script src="js/api.js"></script>
+  
+  <script>
+    lucide.createIcons();
+
+    // ================= FORM SUBMISSION & ML PREDICTION =================
+    document.getElementById('projectForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const newProject = {
+        project_name: document.getElementById('project_name').value,
+        implementing_agency: document.getElementById('implementing_agency').value,
+        sector: document.getElementById('sector').value,
+        state: document.getElementById('state').value,
+        date_of_approval: document.getElementById('date_of_approval').value,
+        original_commissioning_date: document.getElementById('original_commissioning_date').value,
+        anticipated_commissioning_date: document.getElementById('anticipated_commissioning_date').value,
+        original_cost_crore: parseFloat(document.getElementById('original_cost_crore').value),
+        cumulative_expenditure_crore: parseFloat(document.getElementById('cumulative_expenditure_crore').value),
+        milestones_achieved: parseInt(document.getElementById('milestones_achieved').value),
+        milestones_total: parseInt(document.getElementById('milestones_total').value)
+      };
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="animate-pulse">Running ML Model...</span>`;
+
+      try {
+        const createResponse = await fetch(`${window.location.origin}/api/v1/projects`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(newProject)
+        });
+        if (!createResponse.ok) {
+          const err = await createResponse.json().catch(() => ({}));
+          throw new Error(err.detail || `Project creation failed (${createResponse.status})`);
+        }
+        const created = await createResponse.json();
+        const mlResult = await window.API.runPrediction(created.project_id, newProject.date_of_approval.slice(0, 7)); 
+
+        const resultCard = document.getElementById('resultCard');
+        const resultText = document.getElementById('resultText');
+        
+        resultCard.classList.remove('hidden');
+        
+        resultText.innerHTML = `
+          <strong>${newProject.project_name}</strong> analyzed successfully.<br><br>
+          <strong>AI Risk Score:</strong> ${Number(mlResult.composite_risk_score || 0).toFixed(1)}/100<br>
+          <strong>Status:</strong> ${mlResult.risk_tier}
+        `;
+        
+        btn.innerHTML = originalText;
+        e.target.reset(); 
+
+      } catch (error) {
+        console.error("Error communicating with ML backend:", error);
+        btn.innerHTML = originalText;
+        alert("Failed to connect to the prediction server. Check the console.");
+      }
+    });
+  </script>
+</body>
+</html>

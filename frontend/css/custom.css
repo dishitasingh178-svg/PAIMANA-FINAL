@@ -1,0 +1,9 @@
+/* Smooth scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+/* Makes the map look cool and dark in dark mode */
+.dark .leaflet-tile-pane { 
+    filter: brightness(0.65) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3); 
+}
