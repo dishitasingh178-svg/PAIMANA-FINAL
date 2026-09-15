@@ -1,9 +1,266 @@
 /* Smooth scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+
 
 /* Makes the map look cool and dark in dark mode */
-.dark .leaflet-tile-pane { 
-    filter: brightness(0.65) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3); 
+
+.dark .leaflet-tile-pane {
+    filter: brightness(0.65) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3);
 }
+
+
+/* =========================================================
+   PAIMANA MOBILE RESPONSIVE DESIGN
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    html,
+    body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    body {
+        min-width: 0 !important;
+    }
+
+    /* Main sidebar */
+
+    body>aside {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+
+        flex-direction: column !important;
+        flex-shrink: 0 !important;
+
+        padding: 12px !important;
+
+        border-right: none !important;
+        border-bottom: 1px solid #1e293b;
+    }
+
+    /* Sidebar navigation */
+
+    body>aside nav {
+        display: flex !important;
+        gap: 6px !important;
+
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        padding-bottom: 4px;
+
+        scrollbar-width: none;
+    }
+
+    body>aside nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    body>aside nav a {
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+
+        padding: 9px 12px !important;
+        font-size: 12px !important;
+    }
+
+    /* Hide bottom administrator section */
+
+    body>aside>div:last-child {
+        display: none !important;
+    }
+
+    /* Main content */
+
+    body>main {
+        width: 100% !important;
+        min-width: 0 !important;
+
+        height: auto !important;
+        min-height: 0 !important;
+
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+    }
+
+    /* Header */
+
+    body>main>header {
+        height: auto !important;
+        min-height: 64px !important;
+
+        padding: 12px 16px !important;
+
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    body>main>header h1 {
+        font-size: 16px !important;
+        line-height: 1.3 !important;
+    }
+
+    body>main>header p {
+        font-size: 10px !important;
+        line-height: 1.4 !important;
+    }
+
+    /* Page content */
+
+    body>main>div {
+        width: 100% !important;
+        max-width: 100% !important;
+
+        padding: 16px !important;
+
+        box-sizing: border-box !important;
+    }
+
+    /* Cards */
+
+    .rounded-xl,
+    .rounded-2xl {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Tables */
+
+    table {
+        min-width: 650px;
+    }
+
+    .overflow-x-auto {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Images */
+
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* Charts */
+
+    canvas {
+        max-width: 100% !important;
+    }
+
+    /* Map */
+
+    #map,
+    .leaflet-container {
+        width: 100% !important;
+        max-width: 100% !important;
+
+        min-height: 280px !important;
+        height: 300px !important;
+    }
+
+    /* Inputs */
+
+    input,
+    select,
+    textarea,
+    button {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Typography */
+
+    h1 {
+        font-size: 1.5rem !important;
+    }
+
+    h2 {
+        font-size: 1.25rem !important;
+    }
+
+    h3 {
+        font-size: 1.05rem !important;
+    }
+
+    /* Prevent long text from expanding the page */
+
+    p,
+    span,
+    td,
+    th {
+        overflow-wrap: break-word;
+    }
+}
+
+
+/* =========================================================
+   EXTRA SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    body>aside {
+        padding: 10px !important;
+    }
+
+    body>aside nav a {
+        padding: 8px 10px !important;
+        font-size: 11px !important;
+    }
+
+    body>main>header {
+        padding: 10px 12px !important;
+    }
+
+    body>main>header h1 {
+        font-size: 14px !important;
+    }
+
+    body>main>header p {
+        display: none !important;
+    }
+
+    body>main>div {
+        padding: 12px !important;
+    }
+
+    .text-3xl {
+        font-size: 1.5rem !important;
+    }
+
+    .text-2xl {
+        font-size: 1.25rem !important;
+    }
+
+    .text-xl {
+        font-size: 1.1rem !important;
+    }
+
+    #map,
+    .leaflet-container {
+        height: 260px !important;
+        min-height: 260px !important;
+    }
+}cd~/Desktop/"paimana deploy" /Paimana
