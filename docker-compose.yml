@@ -1,0 +1,54 @@
+services:
+  paimana-api:
+    build: .
+    container_name: paimana-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - paimana
+    depends_on:
+      paimana-db:
+        condition: service_healthy
+
+
+  paimana-nginx:
+    image: nginx:alpine
+    container_name: paimana-nginx
+    restart: unless-stopped
+    depends_on:
+      - paimana-api
+    ports:
+      - "8443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt/live/15.252.70.129:/etc/letsencrypt/live/15.252.70.129:ro
+      - /etc/letsencrypt/archive/15.252.70.129:/etc/letsencrypt/archive/15.252.70.129:ro
+    networks:
+      - paimana
+
+  paimana-db:
+    image: postgres:16
+    container_name: paimana-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: infrastructure_db
+      POSTGRES_USER: paimana
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - paimana_postgres_data:/var/lib/postgresql/data
+    networks:
+      - paimana
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paimana -d infrastructure_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+networks:
+  paimana:
+    driver: bridge
+
+
+volumes:
+  paimana_postgres_data:
