@@ -1,0 +1,40 @@
+name: Deploy PAIMANA
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ vars.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            cd ~/paimana
+
+            echo "Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "Rebuilding PAIMANA API..."
+            docker compose build paimana-api
+
+            echo "Updating PAIMANA API..."
+            docker compose up -d paimana-api
+
+            echo "Checking containers..."
+            docker compose ps
+
+            echo "Checking API health..."
+            curl -k https://127.0.0.1:8443/health
+
+            echo "Deployment completed successfully."
