@@ -1,25 +1,37 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PAIMANA AI - Intelligence Assistant</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
-    }
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    };
   </script>
-  
+
   <!-- Prevent Flash of Unstyled Content -->
   <script>
-    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (
+      localStorage.getItem('theme') === 'dark' ||
+      (!('theme' in localStorage) &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches)
+    ) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -30,187 +42,597 @@
   <link rel="stylesheet" href="css/custom.css">
 </head>
 
-<body class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200 overflow-hidden">
+<body
+  class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200 overflow-hidden">
 
   <!-- ================= SIDEBAR ================= -->
-  <aside class="w-64 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200">
+  <aside
+    class="w-64 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200">
     <div>
+
       <div class="flex items-center gap-3 mb-10 pl-2">
         <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
           <i data-lucide="shield-alert" class="w-5 h-5"></i>
         </div>
-        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">PAIMANA AI</span>
+
+        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
+          PAIMANA AI
+        </span>
       </div>
 
       <nav class="space-y-1 text-sm font-medium">
-        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+
+        <a href="dashboard.html"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          Overview
         </a>
-        <a href="projects.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
+
+        <a href="projects.html"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="folder-kanban" class="w-4 h-4"></i>
+          Projects
         </a>
-        <a href="add-project.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Project
+
+        <a href="add-project.html"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          Add Project
         </a>
-        <a href="risk-analytics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="line-chart" class="w-4 h-4"></i> Risk Analytics
+
+        <a href="risk-analytics.html"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="line-chart" class="w-4 h-4"></i>
+          Risk Analytics
         </a>
-        <a href="early-warnings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="bell" class="w-4 h-4"></i> Early Warnings
+
+        <a href="early-warnings.html"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-800/50 transition">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          Early Warnings
         </a>
-        <!-- Active State for AI Assistant -->
-        <a href="ai-assistant.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
-          <i data-lucide="bot" class="w-4 h-4"></i> AI Assistant
+
+        <!-- Active State -->
+        <a href="ai-assistant.html"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+          <i data-lucide="bot" class="w-4 h-4"></i>
+          AI Assistant
         </a>
+
       </nav>
     </div>
   </aside>
 
+
   <!-- ================= MAIN CONTENT ================= -->
   <main class="flex-1 flex flex-col h-screen">
-    
-    <header class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-8 flex items-center justify-between bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 shrink-0 transition-colors duration-200">
+
+    <!-- Header -->
+    <header
+      class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-8 flex items-center justify-between bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 shrink-0 transition-colors duration-200">
+
       <div>
-        <h1 class="text-xl font-bold text-slate-900 dark:text-white">PAIMANA Intelligence</h1>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Ask natural language questions about the 10-year project database.</p>
+        <h1 class="text-xl font-bold text-slate-900 dark:text-white">
+          PAIMANA Intelligence
+        </h1>
+
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Ask natural language questions about India's infrastructure projects.
+        </p>
       </div>
+
       <div class="flex items-center gap-3">
-        <span class="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-          <i data-lucide="database" class="w-3 h-3"></i> SQL Agent Active
+
+        <span
+          class="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+          <i data-lucide="database" class="w-3 h-3"></i>
+          PAIMANA DATA CONNECTED
         </span>
-        <button id="theme-toggle" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+
+        <button id="clear-chat" title="Clear conversation"
+          class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+        </button>
+
+        <button id="theme-toggle"
+          class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
           <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
           <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
         </button>
+
       </div>
     </header>
 
-    <!-- Chat Viewport -->
+
+    <!-- ================= CHAT VIEWPORT ================= -->
     <div id="chat-viewport" class="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
-      
-      <!-- Welcome Message & Suggested Queries -->
-      <div class="text-center py-10 max-w-2xl mx-auto space-y-4">
-        <div class="w-16 h-16 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center mx-auto mb-6">
+
+      <!-- Welcome Screen -->
+      <div id="welcome-screen" class="text-center py-10 max-w-2xl mx-auto space-y-4">
+
+        <div
+          class="w-16 h-16 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center mx-auto mb-6">
           <i data-lucide="bot" class="w-8 h-8"></i>
         </div>
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Ask anything about India's infrastructure portfolio</h2>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+          Ask anything about India's infrastructure portfolio
+        </h2>
+
         <p class="text-sm text-slate-500 dark:text-slate-400">
-          I am connected to the PAIMANA database. I can write SQL queries to aggregate data, find specific project bottlenecks, or summarize risk across the 17 central ministries.
+          I’m connected to the PAIMANA database. I can answer questions about projects,
+          predictions, delays, alerts, risk trends, sectors, states and portfolio-level risk.
         </p>
-        
+
         <div class="flex flex-wrap justify-center gap-3 pt-6">
-          <button onclick="fillQuery(this.innerText)" class="px-4 py-2 rounded-full border border-slate-200 dark:border-[#1E293B] bg-white dark:bg-[#121826] text-xs font-medium hover:border-orange-500 dark:hover:border-orange-500 transition-colors shadow-sm text-slate-700 dark:text-slate-300">
+
+          <button onclick="fillQuery(this.innerText)"
+            class="px-4 py-2 rounded-full border border-slate-200 dark:border-[#1E293B] bg-white dark:bg-[#121826] text-xs font-medium hover:border-orange-500 transition-colors shadow-sm text-slate-700 dark:text-slate-300">
             Show me all Railway projects with critical risk
           </button>
-          <button onclick="fillQuery(this.innerText)" class="px-4 py-2 rounded-full border border-slate-200 dark:border-[#1E293B] bg-white dark:bg-[#121826] text-xs font-medium hover:border-orange-500 dark:hover:border-orange-500 transition-colors shadow-sm text-slate-700 dark:text-slate-300">
-            Summarize delays for project ID 120100075
+
+          <button onclick="fillQuery(this.innerText)"
+            class="px-4 py-2 rounded-full border border-slate-200 dark:border-[#1E293B] bg-white dark:bg-[#121826] text-xs font-medium hover:border-orange-500 transition-colors shadow-sm text-slate-700 dark:text-slate-300">
+            Tell me about project 120100067
           </button>
-          <button onclick="fillQuery(this.innerText)" class="px-4 py-2 rounded-full border border-slate-200 dark:border-[#1E293B] bg-white dark:bg-[#121826] text-xs font-medium hover:border-orange-500 dark:hover:border-orange-500 transition-colors shadow-sm text-slate-700 dark:text-slate-300">
-            Compare cost overruns between Roads and Power sectors
+
+          <button onclick="fillQuery(this.innerText)"
+            class="px-4 py-2 rounded-full border border-slate-200 dark:border-[#1E293B] bg-white dark:bg-[#121826] text-xs font-medium hover:border-orange-500 transition-colors shadow-sm text-slate-700 dark:text-slate-300">
+            Give me a portfolio risk summary
           </button>
+
         </div>
       </div>
 
     </div>
 
-    <!-- Input Area -->
-    <div class="p-6 bg-slate-50/90 dark:bg-[#0A0E17]/90 backdrop-blur border-t border-slate-200 dark:border-[#1E293B] shrink-0">
+
+    <!-- ================= INPUT AREA ================= -->
+    <div
+      class="p-6 bg-slate-50/90 dark:bg-[#0A0E17]/90 backdrop-blur border-t border-slate-200 dark:border-[#1E293B] shrink-0">
+
       <div class="max-w-4xl mx-auto relative flex items-center">
-        <input id="chat-input" type="text" placeholder="Type your query here..." class="w-full bg-white dark:bg-[#121826] border border-slate-300 dark:border-[#1E293B] rounded-xl pl-5 pr-14 py-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors shadow-sm" onkeypress="handleEnter(event)">
-        <button onclick="sendMessage()" class="absolute right-3 p-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors">
+
+        <input id="chat-input" type="text" autocomplete="off"
+          placeholder="Ask about a project, risk, delay, cost or portfolio..."
+          class="w-full bg-white dark:bg-[#121826] border border-slate-300 dark:border-[#1E293B] rounded-xl pl-5 pr-14 py-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors shadow-sm">
+
+        <button id="send-button" onclick="sendMessage()"
+          class="absolute right-3 p-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+
           <i data-lucide="send" class="w-4 h-4"></i>
+
         </button>
+
       </div>
-      <p class="text-center text-[10px] text-slate-500 mt-3">PAIMANA AI can make mistakes. Verify critical financial data against official MoSPI reports.</p>
+
+      <p class="text-center text-[10px] text-slate-500 mt-3">
+        PAIMANA AI can make mistakes. Verify critical financial data against official MoSPI reports.
+      </p>
+
     </div>
 
   </main>
 
+
+  <!-- Existing shared scripts -->
   <script src="js/theme.js"></script>
   <script src="js/api.js"></script>
+
+  <!-- ================= CHATBOT LOGIC ================= -->
   <script>
+
     lucide.createIcons();
 
     const inputField = document.getElementById('chat-input');
     const chatViewport = document.getElementById('chat-viewport');
+    const sendButton = document.getElementById('send-button');
+    const clearChatButton = document.getElementById('clear-chat');
+    const welcomeScreen = document.getElementById('welcome-screen');
+
+
+    /*
+     * IMPORTANT:
+     *
+     * Local development:
+     *   frontend = localhost:5500
+     *   backend  = 127.0.0.1:8000
+     *
+     * Production:
+     *   frontend and backend are behind the same Nginx origin.
+     *
+     * Therefore we only use the explicit backend URL locally.
+     * Production continues using the existing same-origin API path.
+     */
+    const PAIMANA_ASSISTANT_API_BASE_URL =
+      (window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1')
+        ? 'http://127.0.0.1:8000'
+        : window.location.origin;
+
+    const ASSISTANT_ENDPOINT =
+      `${PAIMANA_ASSISTANT_API_BASE_URL}/api/v1/assistant`;
+
+
+    /*
+     * Conversation history is kept only in browser memory.
+     *
+     * It is NOT stored in PostgreSQL.
+     * It does NOT change the backend schema.
+     */
+    let conversationHistory = [];
+
+    let isSending = false;
+
+
+    // --------------------------------------------------
+    // Suggested query
+    // --------------------------------------------------
 
     function fillQuery(text) {
       inputField.value = text;
       inputField.focus();
     }
 
-    function handleEnter(e) {
-      if (e.key === 'Enter') {
+
+    // --------------------------------------------------
+    // Enter key
+    // --------------------------------------------------
+
+    inputField.addEventListener('keydown', function (event) {
+
+      if (event.key === 'Enter') {
+        event.preventDefault();
         sendMessage();
       }
+
+    });
+
+
+    // --------------------------------------------------
+    // Clear conversation
+    // --------------------------------------------------
+
+    clearChatButton.addEventListener('click', function () {
+
+      conversationHistory = [];
+
+      chatViewport.innerHTML = '';
+
+      chatViewport.appendChild(createWelcomeScreen());
+
+      lucide.createIcons();
+
+    });
+
+
+    function createWelcomeScreen() {
+
+      const wrapper = document.createElement('div');
+
+      wrapper.id = 'welcome-screen';
+
+      wrapper.className =
+        'text-center py-10 max-w-2xl mx-auto space-y-4';
+
+      wrapper.innerHTML = `
+        <div class="w-16 h-16 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center mx-auto mb-6">
+          <i data-lucide="bot" class="w-8 h-8"></i>
+        </div>
+
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+          Ask anything about India's infrastructure portfolio
+        </h2>
+
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          I’m connected to the PAIMANA database. I can answer questions about projects,
+          predictions, delays, alerts, risk trends, sectors, states and portfolio-level risk.
+        </p>
+      `;
+
+      return wrapper;
     }
+
+
+    // --------------------------------------------------
+    // Send message
+    // --------------------------------------------------
 
     async function sendMessage() {
-      const query = inputField.value.trim();
-      if (!query) return;
 
-      // 1. Append User Message
-      appendMessage('user', query);
+      const query = inputField.value.trim();
+
+      if (!query || isSending) {
+        return;
+      }
+
+      isSending = true;
+
+      sendButton.disabled = true;
+
+      inputField.disabled = true;
+
+
+      // Hide welcome screen after first message
+
+      if (welcomeScreen) {
+        welcomeScreen.style.display = 'none';
+      }
+
+
+      // Show user message
+
+      appendMessage('user', escapeHtml(query));
+
       inputField.value = '';
 
-      // 2. Append "Typing" indicator
+
+      // Add typing indicator
+
       const typingId = 'typing-' + Date.now();
-      appendMessage('bot', '<div class="flex gap-1 items-center"><span class="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"></span><span class="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></span><span class="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" style="animation-delay: 0.4s"></span></div>', typingId);
+
+      appendMessage(
+        'bot',
+        `
+          <div class="flex gap-1 items-center">
+            <span class="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"></span>
+            <span class="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"
+                  style="animation-delay:0.2s"></span>
+            <span class="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"
+                  style="animation-delay:0.4s"></span>
+          </div>
+        `,
+        typingId
+      );
+
 
       try {
-         // 3. Call your teammate's LangChain/LLM API
-         // Make sure this URL and the JSON body match what their backend expects!
-         const response = await fetch(`${window.location.origin}/api/v1/assistant`, {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ query: query, voice: false })
-         });
-         
-         if (!response.ok) throw new Error("Backend API failed");
-         
-         const data = await response.json();
-         
-         // 4. Remove typing indicator
-         document.getElementById(typingId).remove();
 
-         // 5. Append the real AI response
-         // IMPORTANT: Check with your teammate if their API returns `data.reply`, `data.answer`, etc.
-         appendMessage('bot', data.answer_text || "No answer returned."); 
+        /*
+         * Send the previous conversation to the backend.
+         * This allows questions such as:
+         *
+         * "Tell me about project 120100067"
+         * "What about its cost risk?"
+         */
+
+        const response = await fetch(ASSISTANT_ENDPOINT, {
+
+          method: 'POST',
+
+          headers: {
+            'Content-Type': 'application/json'
+          },
+
+          body: JSON.stringify({
+
+            query: query,
+
+            voice: false,
+
+            conversation_history: conversationHistory
+
+          })
+
+        });
+
+
+        if (!response.ok) {
+
+          let errorMessage = `Backend returned HTTP ${response.status}`;
+
+          try {
+
+            const errorData = await response.json();
+
+            if (errorData.detail) {
+              errorMessage = errorData.detail;
+            }
+
+          } catch (_) {
+            // Ignore JSON parsing failure
+          }
+
+          throw new Error(errorMessage);
+
+        }
+
+
+        const data = await response.json();
+
+
+        // Remove typing indicator
+
+        const typingElement = document.getElementById(typingId);
+
+        if (typingElement) {
+          typingElement.remove();
+        }
+
+
+        const answer =
+          data.answer_text ||
+          'No answer was returned by PAIMANA AI.';
+
+
+        // Add assistant response to browser conversation
+
+        conversationHistory.push({
+          role: 'user',
+          content: query
+        });
+
+        conversationHistory.push({
+          role: 'assistant',
+          content: answer
+        });
+
+
+        // Display response
+
+        appendMessage(
+          'bot',
+          formatAnswer(answer)
+        );
+
 
       } catch (error) {
-         console.error("Chat API Error:", error);
-         document.getElementById(typingId).remove();
-         appendMessage('bot', '<span class="text-red-500">Error connecting to the AI brain. Make sure the backend server is running.</span>');
+
+        console.error('Chat API Error:', error);
+
+
+        const typingElement = document.getElementById(typingId);
+
+        if (typingElement) {
+          typingElement.remove();
+        }
+
+
+        appendMessage(
+          'bot',
+          `
+            <div class="text-red-500">
+              <div class="font-semibold mb-1">
+                Unable to connect to PAIMANA AI.
+              </div>
+
+              <div class="text-xs opacity-80">
+                ${escapeHtml(error.message || 'Unknown error')}
+              </div>
+            </div>
+          `
+        );
+
+      } finally {
+
+        isSending = false;
+
+        sendButton.disabled = false;
+
+        inputField.disabled = false;
+
+        inputField.focus();
+
       }
+
     }
+
+
+    // --------------------------------------------------
+    // Append message
+    // --------------------------------------------------
+
     function appendMessage(sender, content, id = null) {
+
       const wrapperDiv = document.createElement('div');
-      wrapperDiv.className = `flex gap-4 ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-      if (id) wrapperDiv.id = id;
+
+      wrapperDiv.className =
+        `flex gap-4 ${sender === 'user'
+          ? 'justify-end'
+          : 'justify-start'
+        }`;
+
+      if (id) {
+        wrapperDiv.id = id;
+      }
+
 
       if (sender === 'user') {
+
         wrapperDiv.innerHTML = `
           <div class="bg-orange-600 text-white px-5 py-3 rounded-2xl rounded-tr-sm max-w-2xl text-sm shadow-sm">
             ${content}
           </div>
         `;
+
       } else {
+
         wrapperDiv.innerHTML = `
           <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center shrink-0 mt-1">
             <i data-lucide="bot" class="w-5 h-5"></i>
           </div>
+
           <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] text-slate-800 dark:text-slate-200 px-5 py-4 rounded-2xl rounded-tl-sm max-w-2xl text-sm shadow-sm leading-relaxed">
             ${content}
           </div>
         `;
+
       }
 
+
       chatViewport.appendChild(wrapperDiv);
+
       lucide.createIcons();
-      
-      // Auto-scroll to bottom
-      chatViewport.scrollTo({ top: chatViewport.scrollHeight, behavior: 'smooth' });
+
+
+      chatViewport.scrollTo({
+        top: chatViewport.scrollHeight,
+        behavior: 'smooth'
+      });
+
     }
+
+
+    // --------------------------------------------------
+    // Basic Markdown formatter
+    // --------------------------------------------------
+
+    function formatAnswer(text) {
+
+      let safe = escapeHtml(text);
+
+
+      // Bold: **text**
+
+      safe = safe.replace(
+        /\*\*(.*?)\*\*/g,
+        '<strong>$1</strong>'
+      );
+
+
+      // Bullet points
+
+      safe = safe.replace(
+        /^\s*\*\s+/gm,
+        '• '
+      );
+
+
+      // Numbered lines
+
+      safe = safe.replace(
+        /^(\d+)\.\s+/gm,
+        '<strong>$1.</strong> '
+      );
+
+
+      // New lines
+
+      safe = safe.replace(/\n/g, '<br>');
+
+
+      return safe;
+
+    }
+
+
+    // --------------------------------------------------
+    // Prevent HTML injection
+    // --------------------------------------------------
+
+    function escapeHtml(value) {
+
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    }
+
   </script>
+
 </body>
+
 </html>
