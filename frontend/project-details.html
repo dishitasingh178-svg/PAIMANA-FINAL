@@ -26,6 +26,8 @@
   </script>
 
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
   <link rel="stylesheet" href="css/custom.css">
 </head>
 
@@ -45,7 +47,7 @@
 
   <!-- ================= MAIN CONTENT ================= -->
   <main class="flex-1 flex flex-col overflow-y-auto">
-    <header class="h-16 border-b border-slate-200 dark:border-[#1E293B] px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
+    <header class="h-16 border-b border-slate-200 dark:border-[#1E293B] px-4 md:px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
       <div>
         <a href="projects.html" class="text-xs text-orange-600 dark:text-orange-500 hover:underline flex items-center gap-1 font-semibold">
           <i data-lucide="arrow-left" class="w-3 h-3"></i> Back to Projects
@@ -57,7 +59,7 @@
       </button>
     </header>
 
-    <div class="p-8 max-w-6xl mx-auto w-full space-y-6">
+    <div class="p-4 md:p-8 max-w-6xl mx-auto w-full space-y-6">
       
       <!-- Project Header & AI Badge -->
       <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
@@ -98,8 +100,9 @@
           <p id="p-cost-escalation" class="text-xl font-bold text-red-600 dark:text-red-500 mt-1">--%</p>
         </div>
         <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
-          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Expected Delay</p>
+          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Current Delay</p>
           <p id="p-delay" class="text-xl font-bold text-red-600 dark:text-red-500 mt-1">-- Months</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">vs. original schedule, as of today</p>
         </div>
       </div>
 
@@ -192,6 +195,8 @@
   </main>
 
   <script src="js/theme.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/animations.js"></script>
   <script>
     lucide.createIcons();
 
@@ -235,12 +240,17 @@ async function loadProjectData() {
     
     const isCostEscalated = data.cost_escalation_pct > 0;
     const costEscalationEl = document.getElementById('p-cost-escalation');
-    costEscalationEl.innerText = `${isCostEscalated ? '+' : ''}${data.cost_escalation_pct}%`;
+    PaimanaFX.countUp(costEscalationEl, Number(data.cost_escalation_pct) || 0, {
+      decimals: 1,
+      format: (v) => `${v > 0 ? '+' : ''}${v}%`
+    });
     costEscalationEl.className = `text-xl font-bold mt-1 ${
       isCostEscalated ? 'text-red-600 dark:text-red-500' : 'text-emerald-600 dark:text-emerald-500'
     }`;
 
-    document.getElementById('p-delay').innerText = `${data.delay_months} Months`;
+    PaimanaFX.countUp(document.getElementById('p-delay'), Number(data.delay_months) || 0, {
+      format: (v) => `${v} Months`
+    });
 
     // Calculate Progress
     const totalMilestones = data.milestones_total > 0 ? data.milestones_total : 100;
@@ -265,7 +275,7 @@ async function loadProjectData() {
     const score = Number(data.risk_score) || 0;
     const label = (data.risk_label || 'LOW').toUpperCase();
 
-    riskScoreEl.innerText = `${score.toFixed(1)} / 100`;
+    PaimanaFX.countUp(riskScoreEl, score, { decimals: 1, format: (v) => `${v.toFixed(1)} / 100` });
     riskLabelEl.innerText = `${label} RISK`;
 
     if (label.includes("CRITICAL")) {
