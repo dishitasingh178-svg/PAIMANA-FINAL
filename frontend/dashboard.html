@@ -164,6 +164,17 @@
       border: 1px solid rgba(148, 163, 184, .12);
     }
 
+
+    @media (max-width: 560px) {
+      .risk-legend {
+        grid-template-columns: 1fr 1fr;
+        column-gap: .5rem;
+      }
+      .donut-wrap {
+        width: min(100%, 205px);
+      }
+    }
+
     @media (max-width: 1023px) {
       .dashboard-grid {
         background-size: 34px 34px;
@@ -350,8 +361,8 @@
     /* Claude-style SVG risk donut */
     .donut-wrap {
       position: relative;
-      width: min(100%, 260px);
-      margin: .25rem auto 0;
+      width: min(100%, 220px);
+      margin: .35rem auto .15rem;
     }
 
     .donut {
@@ -415,9 +426,11 @@
 
     .risk-legend {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: .4rem;
-      margin-top: 1.4rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1rem;
+      row-gap: .65rem;
+      margin: .9rem .15rem 0;
+      padding-top: .25rem;
     }
 
     .risk-legend-button {
@@ -425,7 +438,8 @@
       align-items: center;
       gap: .65rem;
       width: 100%;
-      padding: .55rem .65rem;
+      min-width: 0;
+      padding: .5rem .35rem;
       border: 1px solid transparent;
       border-radius: 12px;
       background: transparent;
@@ -461,13 +475,14 @@
     }
 
     .risk-legend-name {
-      font-size: .82rem;
-      font-weight: 600;
+      font-size: .9rem;
+      font-weight: 500;
+      white-space: nowrap;
     }
 
     .risk-legend-value {
       color: #94a3b8;
-      font-size: .72rem;
+      font-size: .7rem;
       font-variant-numeric: tabular-nums;
     }
 
@@ -831,8 +846,8 @@
 
     const riskCategories = [
       { key: 'low', label: 'Low', color: '#10b981' },
-      { key: 'watch', label: 'Watch', color: '#3b82f6' },
-      { key: 'elevated', label: 'Elevated', color: '#f97316' },
+      { key: 'watch', label: 'Medium', color: '#3b82f6' },
+      { key: 'elevated', label: 'High', color: '#f97316' },
       { key: 'critical', label: 'Critical', color: '#ef4444' }
     ];
 
@@ -868,8 +883,9 @@
         if (value <= 0) return;
 
         const percentage = (value / total) * 100;
-        const gap = Math.min(0.55, percentage * 0.08);
-        const segmentLength = Math.max(percentage - gap, 0.25);
+        // Keep segments contiguous. The previous artificial gap created
+        // a dark divider through the blue segment at its boundary.
+        const segmentLength = Math.max(percentage, 0.25);
 
         const circle = document.createElementNS(NS, 'circle');
         circle.setAttribute('cx', '100');
