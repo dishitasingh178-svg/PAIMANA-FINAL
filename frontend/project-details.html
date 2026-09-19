@@ -30,369 +30,6 @@
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
   <link rel="stylesheet" href="css/custom.css">
-
-<style id="claude-visual-layer">
-  /* =========================================================
-     PAIMANA / CLAUDE VISUAL LAYER
-     Visual-only additions. No API/data/navigation logic changed.
-     ========================================================= */
-
-  :root {
-    --paimana-signal: #38BDF8;
-    --paimana-orange-glow: rgba(249, 115, 22, 0.16);
-    --paimana-grid: rgba(100, 116, 139, 0.055);
-  }
-
-  /* Ambient control-room backdrop + moving radar */
-  main {
-    position: relative;
-    isolation: isolate;
-    overflow-y: auto;
-  }
-
-  main::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background-image:
-      radial-gradient(circle at 50% 0%, var(--paimana-orange-glow), transparent 50%),
-      linear-gradient(var(--paimana-grid) 1px, transparent 1px),
-      linear-gradient(90deg, var(--paimana-grid) 1px, transparent 1px);
-    background-size: 100% 100%, 42px 42px, 42px 42px;
-    -webkit-mask-image: radial-gradient(ellipse 82% 52% at 50% 0%, black 20%, transparent 90%);
-    mask-image: radial-gradient(ellipse 82% 52% at 50% 0%, black 20%, transparent 90%);
-    opacity: 0.9;
-  }
-
-  /* Large Claude-style radar sweep */
-  main::after {
-    content: "";
-    position: absolute;
-    top: -15%;
-    left: 50%;
-    width: 900px;
-    height: 900px;
-    margin-left: -450px;
-    z-index: 0;
-    pointer-events: none;
-    border-radius: 50%;
-    background:
-      radial-gradient(circle,
-        transparent 0 27%,
-        rgba(249,115,22,0.055) 27.15% 27.35%,
-        transparent 27.55% 46%,
-        rgba(249,115,22,0.045) 46.15% 46.35%,
-        transparent 46.55% 66%,
-        rgba(249,115,22,0.035) 66.15% 66.35%,
-        transparent 66.55%),
-      conic-gradient(
-        from 0deg,
-        transparent 0deg,
-        rgba(249,115,22,0.30) 7deg,
-        rgba(249,115,22,0.09) 17deg,
-        transparent 42deg,
-        transparent 360deg
-      );
-    animation: paimana-radar-sweep 9s linear infinite;
-    opacity: 0.72;
-  }
-
-  @keyframes paimana-radar-sweep {
-    to { transform: rotate(360deg); }
-  }
-
-  /* Keep actual UI above the decorative radar */
-  main > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  /* Claude-style logo pulse */
-  aside > div:first-child {
-    position: relative;
-  }
-
-  aside > div:first-child::after {
-    content: "";
-    position: absolute;
-    inset: -6px;
-    border-radius: 12px;
-    background: rgba(249,115,22,0.22);
-    filter: blur(10px);
-    opacity: 0.5;
-    z-index: -1;
-    animation: paimana-soft-pulse 3.5s ease-in-out infinite;
-    pointer-events: none;
-  }
-
-  @keyframes paimana-soft-pulse {
-    0%, 100% { opacity: 0.3; transform: scale(0.94); }
-    50% { opacity: 0.7; transform: scale(1.05); }
-  }
-
-  /* Navigation micro-interaction */
-  aside nav a {
-    position: relative;
-    transition:
-      transform 0.2s ease,
-      background-color 0.2s ease,
-      color 0.2s ease;
-  }
-
-  aside nav a:hover {
-    transform: translateY(-1px) scale(1.045);
-  }
-
-  aside nav a:active {
-    transform: scale(0.94);
-  }
-
-  aside nav a::after {
-    content: "";
-    position: absolute;
-    left: -3px;
-    top: 50%;
-    transform: translateY(-50%) scaleY(0);
-    width: 3px;
-    height: 58%;
-    border-radius: 0 3px 3px 0;
-    background: var(--paimana-signal);
-    transition: transform 0.2s ease;
-  }
-
-  aside nav a:hover::after {
-    transform: translateY(-50%) scaleY(1);
-  }
-
-  /* Header/button interaction */
-  #theme-toggle,
-  #risk-breakdown-toggle {
-    transition:
-      transform 0.18s ease,
-      background-color 0.18s ease,
-      color 0.18s ease;
-  }
-
-  #theme-toggle:hover,
-  #risk-breakdown-toggle:hover {
-    transform: translateY(-1px);
-  }
-
-  #theme-toggle:active,
-  #risk-breakdown-toggle:active {
-    transform: scale(0.9);
-  }
-
-  /* Back link gets Claude-style directional motion */
-  header a {
-    transition: transform 0.2s ease, color 0.2s ease;
-  }
-
-  header a:hover {
-    transform: translateX(-2px);
-  }
-
-  header a i {
-    transition: transform 0.2s ease;
-  }
-
-  header a:hover i {
-    transform: translateX(-2px);
-  }
-
-  /* Main panels enter softly without touching their content */
-  .paimana-panel-enter {
-    opacity: 0;
-    transform: translateY(10px);
-    animation: paimana-panel-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-
-  @keyframes paimana-panel-in {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Cards receive the same subtle Claude hover treatment */
-  main .bg-white.dark\:bg-\[\#121826\] {
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      border-color 0.2s ease,
-      background-color 0.2s ease;
-  }
-
-  main .bg-white.dark\:bg-\[\#121826\]:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 26px -14px rgba(0,0,0,0.4);
-  }
-
-  /* Top signal line on cards */
-  main .bg-white.dark\:bg-\[\#121826\]::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    border-radius: 999px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--paimana-signal),
-      transparent
-    );
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    pointer-events: none;
-  }
-
-  main .bg-white.dark\:bg-\[\#121826\]:hover::before {
-    opacity: 0.9;
-  }
-
-  /* Risk badge pulse */
-  #risk-badge {
-    position: relative;
-    animation: paimana-risk-pulse 3s ease-in-out infinite;
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      color 0.3s ease,
-      box-shadow 0.3s ease;
-  }
-
-  @keyframes paimana-risk-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 currentColor; }
-    50% { box-shadow: 0 0 24px -8px currentColor; }
-  }
-
-  /* Risk breakdown dropdown */
-  #risk-breakdown.dropdown-open {
-    animation: paimana-dropdown-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    transform-origin: top right;
-  }
-
-  @keyframes paimana-dropdown-in {
-    from {
-      opacity: 0;
-      transform: scale(0.96) translateY(-6px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
-  }
-
-  #risk-breakdown-toggle i {
-    transition: transform 0.25s ease;
-  }
-
-  /* Progress shimmer, purely visual */
-  main .bg-emerald-500,
-  main .bg-blue-500,
-  main .bg-red-500,
-  main .bg-orange-500,
-  main .bg-purple-500,
-  main .bg-amber-500 {
-    position: relative;
-  }
-
-  #p-phys-bar,
-  #p-fin-bar,
-  #model-cost-bar,
-  #model-schedule-bar,
-  #model-cox-bar {
-    overflow: hidden;
-  }
-
-  #p-phys-bar::after,
-  #p-fin-bar::after,
-  #model-cost-bar::after,
-  #model-schedule-bar::after,
-  #model-cox-bar::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255,255,255,0.32),
-      transparent
-    );
-    transform: translateX(-100%);
-    animation: paimana-shimmer 2.2s ease-in-out infinite;
-  }
-
-  @keyframes paimana-shimmer {
-    to { transform: translateX(100%); }
-  }
-
-  /* Driver bars animate in, but their existing values remain untouched */
-  main .bg-red-500.h-full.w-\[75\%\],
-  main .bg-orange-500.h-full.w-\[45\%\],
-  main .bg-amber-500.h-full.w-\[20\%\] {
-    transform-origin: left center;
-    animation: paimana-driver-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  main .bg-orange-500.h-full.w-\[45\%\] {
-    animation-delay: 0.12s;
-  }
-
-  main .bg-amber-500.h-full.w-\[20\%\] {
-    animation-delay: 0.24s;
-  }
-
-  @keyframes paimana-driver-in {
-    from {
-      transform: scaleX(0);
-      opacity: 0.5;
-    }
-    to {
-      transform: scaleX(1);
-      opacity: 1;
-    }
-  }
-
-  /* Light-mode radar stays subtle and readable */
-  :not(.dark) main::before {
-    opacity: 0.75;
-  }
-
-  :not(.dark) main::after {
-    opacity: 0.38;
-  }
-
-  /* Dark-mode radar gets the stronger control-room atmosphere */
-  .dark main::before {
-    opacity: 1;
-  }
-
-  .dark main::after {
-    opacity: 0.72;
-  }
-
-  /* Accessibility */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.001ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.001ms !important;
-      scroll-behavior: auto !important;
-    }
-
-    main::after {
-      display: none;
-    }
-  }
-</style>
-
 </head>
 
 <body
@@ -438,7 +75,7 @@
 
       <!-- Project Header & AI Badge -->
       <div
-        class="relative z-50 flex flex-col md:flex-row md:items-start justify-between gap-6 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
+        class="relative flex flex-col md:flex-row md:items-start justify-between gap-6 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
         <div>
           <div
             class="flex items-center gap-2 text-[11px] font-bold tracking-wide uppercase text-slate-500 dark:text-slate-400 mb-2">
@@ -454,13 +91,165 @@
         </div>
 
         <!-- Big AI Risk Badge -->
-        <div id="risk-badge" class="flex items-center gap-4 bg-orange-500/10 border border-orange-500/30 px-6 py-3 rounded-xl shrink-0">
-          <div class="text-right">
-            <span class="block text-[10px] uppercase font-bold tracking-wide" id="risk-label-text" style="color: inherit;">AI Failure Risk</span>
-            <span id="p-riskscore" class="text-3xl font-black" style="color: inherit;">-- / 100</span>
+        <div class="relative shrink-0 z-40">
+          <div id="risk-badge"
+            class="flex items-center gap-4 bg-orange-500/10 border border-orange-500/30 px-6 py-3 rounded-xl">
+
+            <div class="text-right">
+              <span class="block text-[10px] uppercase font-bold tracking-wide" id="risk-label-text"
+                style="color: inherit;">
+                AI Failure Risk
+              </span>
+
+              <span id="p-riskscore" class="text-3xl font-black" style="color: inherit;">
+                -- / 100
+              </span>
+            </div>
+
+            <!-- Expand / Collapse Button -->
+            <button id="risk-breakdown-toggle" type="button" class="w-9 h-9 rounded-lg flex items-center justify-center
+             hover:bg-black/10 dark:hover:bg-white/10
+             transition" title="View model breakdown" aria-expanded="false" aria-controls="risk-breakdown">
+              <i data-lucide="chevron-down" id="risk-breakdown-icon" class="w-6 h-6"></i>
+            </button>
+
+            <i data-lucide="alert-triangle" id="risk-icon" class="w-8 h-8" style="color: inherit;"></i>
           </div>
-          <i data-lucide="alert-triangle" id="risk-icon" class="w-8 h-8" style="color: inherit;"></i>
+
+          <!-- Model Breakdown Dropdown -->
+          <div id="risk-breakdown" class="hidden absolute right-0 top-full mt-3 w-80
+           bg-white dark:bg-[#121826]
+           border border-slate-200 dark:border-[#1E293B]
+           rounded-xl shadow-xl z-30 p-5">
+
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white">
+                  Model Risk Breakdown
+                </h3>
+                <p class="text-[10px] text-slate-500 mt-1">
+                  Contribution to overall project risk
+                </p>
+              </div>
+            </div>
+
+            <!-- Cost Model -->
+            <div class="mb-4">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Cost Risk
+                </span>
+                <span id="model-cost-risk" class="text-sm font-bold text-red-500">
+                  --
+                </span>
+              </div>
+
+              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
+                <span>XGBoost</span>
+                <span>Weight: 40%</span>
+              </div>
+
+              <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div id="model-cost-bar" class="h-full bg-red-500 transition-all duration-500" style="width: 0%"></div>
+              </div>
+
+              <div class="text-[10px] text-slate-500 mt-1">
+                Contribution:
+                <span id="model-cost-contribution" class="font-semibold">
+                  -- pts
+                </span>
+              </div>
+            </div>
+
+            <!-- Schedule Model -->
+            <div class="mb-4">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Schedule Risk
+                </span>
+                <span id="model-schedule-risk" class="text-sm font-bold text-orange-500">
+                  --
+                </span>
+              </div>
+
+              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
+                <span>XGBoost</span>
+                <span>Weight: 40%</span>
+              </div>
+
+              <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div id="model-schedule-bar" class="h-full bg-orange-500 transition-all duration-500" style="width: 0%">
+                </div>
+              </div>
+
+              <div class="text-[10px] text-slate-500 mt-1">
+                Contribution:
+                <span id="model-schedule-contribution" class="font-semibold">
+                  -- pts
+                </span>
+              </div>
+            </div>
+
+            <!-- Cox Model -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Lifecycle Risk
+                </span>
+                <span id="model-cox-risk" class="text-sm font-bold text-purple-500">
+                  --
+                </span>
+              </div>
+
+              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
+                <span>Cox Proportional Hazards</span>
+                <span>Weight: 20%</span>
+              </div>
+
+              <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div id="model-cox-bar" class="h-full bg-purple-500 transition-all duration-500" style="width: 0%">
+                </div>
+              </div>
+
+              <div class="text-[10px] text-slate-500 mt-1">
+                Contribution:
+                <span id="model-cox-contribution" class="font-semibold">
+                  -- pts
+                </span>
+              </div>
+            </div>
+
+            <!-- Overall AI Risk + Run AI -->
+            <div class="mt-5 pt-4 border-t border-slate-100 dark:border-[#1E293B]">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Overall AI Risk
+                </span>
+                <span id="dropdown-overall-risk" class="text-sm font-black text-orange-500">
+                  -- / 100
+                </span>
+              </div>
+
+              <p class="text-[10px] text-slate-500 leading-relaxed">
+                Overall Risk =
+                <strong>40% Cost</strong> +
+                <strong>40% Schedule</strong> +
+                <strong>20% Lifecycle</strong>
+              </p>
+
+              <button id="run-ai-prediction" type="button" class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
+                bg-slate-900 text-white dark:bg-white dark:text-slate-900
+                hover:opacity-90 transition disabled:opacity-50">
+                <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+                <span id="run-ai-text">Run AI Analysis</span>
+              </button>
+
+              <p id="ai-prediction-status" class="text-[10px] text-center text-slate-500 mt-2 hidden"></p>
+            </div>
+
+          </div>
         </div>
+
       </div>
 
       <!-- KPI Grid -->
@@ -594,6 +383,112 @@
     const urlParams = new URLSearchParams(window.location.search);
     const projectId = urlParams.get('id');
 
+    // Run the existing PAIMANA ML pipeline and refresh the dropdown with live results.
+    async function runAIPrediction() {
+      const button = document.getElementById('run-ai-prediction');
+      const buttonText = document.getElementById('run-ai-text');
+      const status = document.getElementById('ai-prediction-status');
+
+      if (!projectId || !button) return;
+
+      button.disabled = true;
+      buttonText.innerText = 'Running AI...';
+      status.classList.remove('hidden');
+      status.innerText = 'Running Cost, Schedule and Lifecycle models...';
+
+      try {
+        const response = await fetch('/api/v1/predictions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_id: projectId })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.detail || `Server returned HTTP ${response.status}`);
+        }
+
+        const costRisk = Number(result.cost_risk_probability) || 0;
+        const scheduleRisk = Number(result.schedule_risk_probability) || 0;
+        const coxRisk = Number(result.cox_risk_probability) || 0;
+
+        const compositeScore = Number(
+          result.composite_risk_score ?? result.risk_score
+        ) || 0;
+
+        const riskTier = (
+          result.risk_tier ??
+          result.risk_label ??
+          'LOW'
+        ).toUpperCase();
+
+        const costPct = costRisk * 100;
+        const schedulePct = scheduleRisk * 100;
+        const coxPct = coxRisk * 100;
+
+        const costContribution = costPct * 0.40;
+        const scheduleContribution = schedulePct * 0.40;
+        const coxContribution = coxPct * 0.20;
+
+        document.getElementById('model-cost-risk').innerText =
+          `${costPct.toFixed(1)}%`;
+
+        document.getElementById('model-schedule-risk').innerText =
+          `${schedulePct.toFixed(1)}%`;
+
+        document.getElementById('model-cox-risk').innerText =
+          `${coxPct.toFixed(1)}%`;
+
+        document.getElementById('model-cost-contribution').innerText =
+          `${costContribution.toFixed(1)} pts`;
+
+        document.getElementById('model-schedule-contribution').innerText =
+          `${scheduleContribution.toFixed(1)} pts`;
+
+        document.getElementById('model-cox-contribution').innerText =
+          `${coxContribution.toFixed(1)} pts`;
+
+        document.getElementById('model-cost-bar').style.width =
+          `${Math.min(100, costPct)}%`;
+
+        document.getElementById('model-schedule-bar').style.width =
+          `${Math.min(100, schedulePct)}%`;
+
+        document.getElementById('model-cox-bar').style.width =
+          `${Math.min(100, coxPct)}%`;
+
+        const riskScoreEl = document.getElementById('p-riskscore');
+
+        PaimanaFX.countUp(riskScoreEl, compositeScore, {
+          decimals: 1,
+          format: (v) => `${v.toFixed(1)} / 100`
+        });
+
+        document.getElementById('dropdown-overall-risk').innerText =
+          `${compositeScore.toFixed(1)} / 100`;
+
+        document.getElementById('risk-label-text').innerText =
+          `${riskTier} RISK`;
+
+        status.innerText =
+          `AI analysis complete • ${riskTier}`;
+
+        buttonText.innerText = 'Run AI Analysis';
+
+      } catch (error) {
+        console.error('AI prediction failed:', error);
+        status.innerText = `AI analysis failed: ${error.message}`;
+        buttonText.innerText = 'Retry AI Analysis';
+      } finally {
+        button.disabled = false;
+
+        if (window.lucide) {
+          lucide.createIcons();
+        }
+      }
+    }
+
     // 2. Fetch live data from backend endpoint
     async function loadProjectData() {
       if (!projectId) {
@@ -664,8 +559,52 @@
         const score = Number(data.risk_score) || 0;
         const label = (data.risk_label || 'LOW').toUpperCase();
 
-    PaimanaFX.countUp(riskScoreEl, score, { decimals: 1, format: (v) => `${v.toFixed(1)} / 100` });
-    riskLabelEl.innerText = `${label} RISK`;
+        PaimanaFX.countUp(riskScoreEl, score, { decimals: 1, format: (v) => `${v.toFixed(1)} / 100` });
+        riskLabelEl.innerText = `${label} RISK`;
+        // Populate individual ML model outputs
+        const costRisk = Number(data.cost_risk_probability) || 0;
+        const scheduleRisk = Number(data.schedule_risk_probability) || 0;
+        const coxRisk = Number(data.cox_risk_probability) || 0;
+
+        // Convert model probabilities/signals to percentages
+        const costRiskPct = costRisk * 100;
+        const scheduleRiskPct = scheduleRisk * 100;
+        const coxRiskPct = coxRisk * 100;
+
+        // Calculate each model's contribution to the final 100-point score
+        const costContribution = costRiskPct * 0.40;
+        const scheduleContribution = scheduleRiskPct * 0.40;
+        const coxContribution = coxRiskPct * 0.20;
+
+        // Display model values
+        document.getElementById('model-cost-risk').innerText =
+          `${costRiskPct.toFixed(1)}%`;
+
+        document.getElementById('model-schedule-risk').innerText =
+          `${scheduleRiskPct.toFixed(1)}%`;
+
+        document.getElementById('model-cox-risk').innerText =
+          `${coxRiskPct.toFixed(1)}%`;
+
+        // Display contribution to overall score
+        document.getElementById('model-cost-contribution').innerText =
+          `${costContribution.toFixed(1)} pts`;
+
+        document.getElementById('model-schedule-contribution').innerText =
+          `${scheduleContribution.toFixed(1)} pts`;
+
+        document.getElementById('model-cox-contribution').innerText =
+          `${coxContribution.toFixed(1)} pts`;
+
+        // Update progress bars
+        document.getElementById('model-cost-bar').style.width =
+          `${Math.min(100, costRiskPct)}%`;
+
+        document.getElementById('model-schedule-bar').style.width =
+          `${Math.min(100, scheduleRiskPct)}%`;
+
+        document.getElementById('model-cox-bar').style.width =
+          `${Math.min(100, coxRiskPct)}%`;
 
         if (label.includes("CRITICAL")) {
           riskBadge.className = "flex items-center gap-4 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-500 px-6 py-3 rounded-xl shrink-0";
@@ -684,9 +623,44 @@
       }
     }
 
-document.addEventListener('DOMContentLoaded', loadProjectData);
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProjectData();
 
-      </script>
+      // Run the existing AI/ML prediction pipeline from the dropdown.
+      const runAIBtn = document.getElementById('run-ai-prediction');
+
+      if (runAIBtn) {
+        runAIBtn.addEventListener('click', runAIPrediction);
+      }
+
+      // Risk model breakdown toggle
+      const riskBreakdownToggle = document.getElementById('risk-breakdown-toggle');
+      const riskBreakdown = document.getElementById('risk-breakdown');
+      const riskBreakdownIcon = document.getElementById('risk-breakdown-icon');
+
+      if (riskBreakdownToggle && riskBreakdown && riskBreakdownIcon) {
+        riskBreakdownToggle.addEventListener('click', () => {
+          const isHidden = riskBreakdown.classList.contains('hidden');
+
+          riskBreakdown.classList.toggle('hidden');
+
+          riskBreakdownToggle.setAttribute(
+            'aria-expanded',
+            String(isHidden)
+          );
+
+          riskBreakdownIcon.setAttribute(
+            'data-lucide',
+            isHidden ? 'chevron-up' : 'chevron-down'
+          );
+
+          if (window.lucide) {
+            lucide.createIcons();
+          }
+        });
+      }
+    });
+  </script>
 </body>
 
 </html>
