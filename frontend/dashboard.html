@@ -36,6 +36,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
   <!-- CHART.JS & ICONS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
@@ -207,23 +208,74 @@
       const chartCanvas = document.getElementById('riskChart');
       if (chartCanvas) {
         const ctx = chartCanvas.getContext('2d');
-        riskChart = new Chart(ctx, {
+       riskChart = new Chart(ctx, {
           type: 'doughnut',
+
           data: {
             labels: ['Low', 'Watch', 'Elevated', 'Critical'],
+
             datasets: [{
               data: [0, 0, 0, 0],
-              backgroundColor: ['#10b981', '#3b82f6', '#f97316', '#ef4444'],
+
+              backgroundColor: [
+                '#10b981',
+                '#3b82f6',
+                '#f97316',
+                '#ef4444'
+              ],
+
               borderWidth: 2,
               borderColor: '#121826'
             }]
           },
+
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '75%',
-            plugins: { legend: { display: false } }
-          }
+
+            cutout: '68%',
+
+            plugins: {
+
+              legend: {
+                display: false
+              },
+
+              datalabels: {
+                color: '#ffffff',
+
+                font: {
+                  size: 12,
+                  weight: '700'
+                },
+
+                formatter: (value) => {
+                  return value > 0 ? value : '';
+                }
+              },
+
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const value = context.raw || 0;
+                    const total = context.dataset.data.reduce(
+                      (sum, current) => sum + current,
+                      0
+                    );
+
+                    const percentage =
+                      total > 0
+                        ? ((value / total) * 100).toFixed(1)
+                        : 0;
+
+                    return ` ${context.label}: ${value} projects (${percentage}%)`;
+                  }
+                }
+              }
+            }
+          },
+
+          plugins: [ChartDataLabels]
         });
       }
     } catch (e) {
