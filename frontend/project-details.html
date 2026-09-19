@@ -454,147 +454,13 @@
         </div>
 
         <!-- Big AI Risk Badge -->
-        <div class="relative shrink-0 z-40">
-          <div id="risk-badge"
-            class="flex items-center gap-4 bg-orange-500/10 border border-orange-500/30 px-6 py-3 rounded-xl">
-
-            <div class="text-right">
-              <span class="block text-[10px] uppercase font-bold tracking-wide" id="risk-label-text"
-                style="color: inherit;">
-                AI Failure Risk
-              </span>
-
-              <span id="p-riskscore" class="text-3xl font-black" style="color: inherit;">
-                -- / 100
-              </span>
-            </div>
-
-            <!-- Expand / Collapse Button -->
-            <button id="risk-breakdown-toggle" type="button" class="w-9 h-9 rounded-lg flex items-center justify-center
-             hover:bg-black/10 dark:hover:bg-white/10
-             transition" title="View model breakdown" aria-expanded="false" aria-controls="risk-breakdown">
-              <i data-lucide="chevron-down" id="risk-breakdown-icon" class="w-6 h-6"></i>
-            </button>
-
-            <i data-lucide="alert-triangle" id="risk-icon" class="w-8 h-8" style="color: inherit;"></i>
+        <div id="risk-badge" class="flex items-center gap-4 bg-orange-500/10 border border-orange-500/30 px-6 py-3 rounded-xl shrink-0">
+          <div class="text-right">
+            <span class="block text-[10px] uppercase font-bold tracking-wide" id="risk-label-text" style="color: inherit;">AI Failure Risk</span>
+            <span id="p-riskscore" class="text-3xl font-black" style="color: inherit;">-- / 100</span>
           </div>
-
-          <!-- Model Breakdown Dropdown -->
-          <div id="risk-breakdown" class="hidden absolute right-0 top-full mt-3 w-80
-           bg-white dark:bg-[#121826]
-           border border-slate-200 dark:border-[#1E293B]
-           rounded-xl shadow-xl z-[60] p-5">
-
-            <div class="flex items-center justify-between mb-4">
-              <div>
-                <h3 class="text-sm font-bold text-slate-900 dark:text-white">
-                  Model Risk Breakdown
-                </h3>
-                <p class="text-[10px] text-slate-500 mt-1">
-                  Contribution to overall project risk
-                </p>
-              </div>
-            </div>
-
-            <!-- Cost Model -->
-            <div class="mb-4">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Cost Risk
-                </span>
-                <span id="model-cost-risk" class="text-sm font-bold text-red-500">
-                  --
-                </span>
-              </div>
-
-              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
-                <span>XGBoost</span>
-                <span>Weight: 40%</span>
-              </div>
-
-              <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div id="model-cost-bar" class="h-full bg-red-500 transition-all duration-500" style="width: 0%"></div>
-              </div>
-
-              <div class="text-[10px] text-slate-500 mt-1">
-                Contribution:
-                <span id="model-cost-contribution" class="font-semibold">
-                  -- pts
-                </span>
-              </div>
-            </div>
-
-            <!-- Schedule Model -->
-            <div class="mb-4">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Schedule Risk
-                </span>
-                <span id="model-schedule-risk" class="text-sm font-bold text-orange-500">
-                  --
-                </span>
-              </div>
-
-              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
-                <span>XGBoost</span>
-                <span>Weight: 40%</span>
-              </div>
-
-              <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div id="model-schedule-bar" class="h-full bg-orange-500 transition-all duration-500" style="width: 0%">
-                </div>
-              </div>
-
-              <div class="text-[10px] text-slate-500 mt-1">
-                Contribution:
-                <span id="model-schedule-contribution" class="font-semibold">
-                  -- pts
-                </span>
-              </div>
-            </div>
-
-            <!-- Cox Model -->
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Lifecycle Risk
-                </span>
-                <span id="model-cox-risk" class="text-sm font-bold text-purple-500">
-                  --
-                </span>
-              </div>
-
-              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
-                <span>Cox Proportional Hazards</span>
-                <span>Weight: 20%</span>
-              </div>
-
-              <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div id="model-cox-bar" class="h-full bg-purple-500 transition-all duration-500" style="width: 0%">
-                </div>
-              </div>
-
-              <div class="text-[10px] text-slate-500 mt-1">
-                Contribution:
-                <span id="model-cox-contribution" class="font-semibold">
-                  -- pts
-                </span>
-              </div>
-            </div>
-
-            <!-- Formula -->
-            <div class="mt-5 pt-4 border-t border-slate-100 dark:border-[#1E293B]">
-              <p class="text-[10px] text-slate-500 leading-relaxed">
-                Overall Risk =
-                <strong>40% Cost</strong> +
-                <strong>40% Schedule</strong> +
-                <strong>20% Lifecycle</strong>
-              </p>
-            </div>
-
-          </div>
+          <i data-lucide="alert-triangle" id="risk-icon" class="w-8 h-8" style="color: inherit;"></i>
         </div>
-
       </div>
 
       <!-- KPI Grid -->
@@ -798,52 +664,8 @@
         const score = Number(data.risk_score) || 0;
         const label = (data.risk_label || 'LOW').toUpperCase();
 
-        PaimanaFX.countUp(riskScoreEl, score, { decimals: 1, format: (v) => `${v.toFixed(1)} / 100` });
-        riskLabelEl.innerText = `${label} RISK`;
-        // Populate individual ML model outputs
-        const costRisk = Number(data.cost_risk_probability) || 0;
-        const scheduleRisk = Number(data.schedule_risk_probability) || 0;
-        const coxRisk = Number(data.cox_risk_probability) || 0;
-
-        // Convert model probabilities/signals to percentages
-        const costRiskPct = costRisk * 100;
-        const scheduleRiskPct = scheduleRisk * 100;
-        const coxRiskPct = coxRisk * 100;
-
-        // Calculate each model's contribution to the final 100-point score
-        const costContribution = costRiskPct * 0.40;
-        const scheduleContribution = scheduleRiskPct * 0.40;
-        const coxContribution = coxRiskPct * 0.20;
-
-        // Display model values
-        document.getElementById('model-cost-risk').innerText =
-          `${costRiskPct.toFixed(1)}%`;
-
-        document.getElementById('model-schedule-risk').innerText =
-          `${scheduleRiskPct.toFixed(1)}%`;
-
-        document.getElementById('model-cox-risk').innerText =
-          `${coxRiskPct.toFixed(1)}%`;
-
-        // Display contribution to overall score
-        document.getElementById('model-cost-contribution').innerText =
-          `${costContribution.toFixed(1)} pts`;
-
-        document.getElementById('model-schedule-contribution').innerText =
-          `${scheduleContribution.toFixed(1)} pts`;
-
-        document.getElementById('model-cox-contribution').innerText =
-          `${coxContribution.toFixed(1)} pts`;
-
-        // Update progress bars
-        document.getElementById('model-cost-bar').style.width =
-          `${Math.min(100, costRiskPct)}%`;
-
-        document.getElementById('model-schedule-bar').style.width =
-          `${Math.min(100, scheduleRiskPct)}%`;
-
-        document.getElementById('model-cox-bar').style.width =
-          `${Math.min(100, coxRiskPct)}%`;
+    PaimanaFX.countUp(riskScoreEl, score, { decimals: 1, format: (v) => `${v.toFixed(1)} / 100` });
+    riskLabelEl.innerText = `${label} RISK`;
 
         if (label.includes("CRITICAL")) {
           riskBadge.className = "flex items-center gap-4 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-500 px-6 py-3 rounded-xl shrink-0";
@@ -862,56 +684,9 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadProjectData();
+document.addEventListener('DOMContentLoaded', loadProjectData);
 
-      // Risk model breakdown toggle
-      const riskBreakdownToggle = document.getElementById('risk-breakdown-toggle');
-      const riskBreakdown = document.getElementById('risk-breakdown');
-      const riskBreakdownIcon = document.getElementById('risk-breakdown-icon');
-
-      if (riskBreakdownToggle && riskBreakdown && riskBreakdownIcon) {
-        riskBreakdownToggle.addEventListener('click', () => {
-          const isHidden = riskBreakdown.classList.contains('hidden');
-
-          riskBreakdown.classList.toggle('hidden');
-
-          riskBreakdownToggle.setAttribute(
-            'aria-expanded',
-            String(isHidden)
-          );
-
-          riskBreakdownIcon.setAttribute(
-            'data-lucide',
-            isHidden ? 'chevron-up' : 'chevron-down'
-          );
-
-          if (window.lucide) {
-            lucide.createIcons();
-          }
-        });
-      }
-    });
-  </script>
-
-<script id="claude-visual-init">
-  /*
-   * Visual-only initializer.
-   * Does not fetch data, change URLs, touch API calls, or alter navigation.
-   */
-  document.addEventListener('DOMContentLoaded', () => {
-    const panels = [
-      document.querySelector('main > div > div.relative.flex'),
-      ...document.querySelectorAll('main > div > .grid > div')
-    ].filter(Boolean);
-
-    panels.forEach((panel, index) => {
-      panel.classList.add('paimana-panel-enter');
-      panel.style.animationDelay = `${index * 0.06}s`;
-    });
-  });
-</script>
-
+      </script>
 </body>
 
 </html>
