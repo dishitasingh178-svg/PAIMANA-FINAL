@@ -1,17 +1,64 @@
 from datetime import date
+import os
+import re
+import tempfile
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Session
 
 from database import get_db
 from api.models.models import Project, ProjectUpdate, Prediction
+from api.services.pdf_extractor import extract_pdf
+from api.services.project_ingestion import ingest_project_record, ingest_project_records
+from api.services.prediction_service import generate_predictions_for_pairs
+
 from api.ml.feature_engineering import build_feature_snapshot
 import ml_package.predictor as predictor
 
 router = APIRouter(prefix="/api/v1/projects", tags=["Projects"])
+
+
+PDF_MAX_BYTES = 25 * 1024 * 1024
+PDF_MAX_PAGES = 250
+PDF_PARSE_TIMEOUT_SECONDS = 60
+_pdf_upload_lock = __import__("threading").Lock()
+_pdf_last_upload_at = 0.0
+
+
+def _validate_pdf_signature(path):
+    with open(path, "rb") as handle:
+        return handle.read(5) == b"%PDF-"
+
+
+def _extract_pdf_with_timeout(path):
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(extract_pdf, path)
+    try:
+        return future.result(timeout=PDF_PARSE_TIMEOUT_SECONDS)
+    except FutureTimeoutError:
+        future.cancel()
+        raise
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
+
+
+def _format_extraction_errors(errors):
+    formatted = []
+    for error in errors or []:
+        text = str(error)
+        match = re.match(r"page\s+(\d+),\s*serial\s+(\d+):\s*(.*)", text, re.I)
+        if match:
+            formatted.append({
+                "page": int(match.group(1)),
+                "reason": f"Serial {match.group(2)}: {match.group(3)}",
+            })
+        else:
+            formatted.append({"page": None, "reason": text})
+    return formatted
 
 
 class ProjectListItem(BaseModel):
@@ -134,6 +181,103 @@ def _risk_from_prediction(pred: Optional[Prediction]):
         float(pred.composite_risk_score or 0.0),
         str(pred.risk_tier or "UNASSESSED")
     )
+
+
+@router.post("/upload-pdf")
+def upload_project_pdf(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    global _pdf_last_upload_at
+
+    import time
+    now = time.monotonic()
+    with _pdf_upload_lock:
+        if now - _pdf_last_upload_at < 2.0:
+            raise HTTPException(status_code=429, detail="Please wait before uploading another PDF.")
+        _pdf_last_upload_at = now
+
+    temp_path = None
+    try:
+        if file.content_type not in {None, "application/pdf", "application/octet-stream"}:
+            raise HTTPException(status_code=415, detail="Only PDF files are accepted.")
+
+        fd, temp_path = tempfile.mkstemp(prefix="paimana_pdf_", suffix=".pdf")
+        os.close(fd)
+
+        total = 0
+        with open(temp_path, "wb") as out:
+            while True:
+                chunk = file.file.read(1024 * 1024)
+                if not chunk:
+                    break
+                total += len(chunk)
+                if total > PDF_MAX_BYTES:
+                    raise HTTPException(413, detail="PDF exceeds the 25 MB upload limit.")
+                out.write(chunk)
+
+        if total == 0:
+            raise HTTPException(400, detail="The uploaded PDF is empty.")
+
+        if not _validate_pdf_signature(temp_path):
+            raise HTTPException(status_code=415, detail="The uploaded file is not a valid PDF document.")
+
+        import fitz
+        try:
+            doc = fitz.open(temp_path)
+            page_count = doc.page_count
+            doc.close()
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"The PDF could not be opened: {exc}")
+
+        if page_count == 0:
+            raise HTTPException(status_code=400, detail="The uploaded PDF contains no pages.")
+        if page_count > PDF_MAX_PAGES:
+            raise HTTPException(status_code=413, detail=f"PDF exceeds the {PDF_MAX_PAGES}-page limit.")
+
+        try:
+            records, pages, extraction_errors = _extract_pdf_with_timeout(temp_path)
+        except FutureTimeoutError:
+            raise HTTPException(status_code=408, detail="PDF parsing timed out.")
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"PDF extraction failed: {exc}")
+
+        if not records and not extraction_errors:
+            raise HTTPException(status_code=422, detail="No project records were extracted from the PDF.")
+
+        result = ingest_project_records(db, records)
+        result["errors"] = _format_extraction_errors(extraction_errors) + result["errors"]
+
+        try:
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Database ingestion failed: {exc}")
+
+        affected_pairs = result.pop("affected_pairs")
+        if affected_pairs:
+            background_tasks.add_task(generate_predictions_for_pairs, affected_pairs)
+
+        return {
+            "success": True,
+            "projects_found": result["projects_found"],
+            "projects_created": result["projects_created"],
+            "projects_updated": result["projects_updated"],
+            "updates_created": result["updates_created"],
+            "updates_updated": result["updates_updated"],
+            "errors": result["errors"],
+        }
+    finally:
+        try:
+            file.file.close()
+        except Exception:
+            pass
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
 
 
 @router.get("", response_model=List[ProjectListItem])
@@ -468,132 +612,30 @@ def create_project(
     data: ProjectCreateRequest,
     db: Session = Depends(get_db),
 ):
-    # ---------------------------------------------------------
-    # 1. Clean and validate Project ID
-    # ---------------------------------------------------------
-
     project_id = data.project_id.strip()
-
     if not project_id:
-        raise HTTPException(
-            status_code=422,
-            detail="Project ID cannot be empty."
-        )
+        raise HTTPException(status_code=422, detail="Project ID cannot be empty.")
 
-    # ---------------------------------------------------------
-    # 2. Check whether Project ID already exists
-    # ---------------------------------------------------------
+    record = data.model_dump()
+    record["project_id"] = project_id
 
-    existing = (
-        db.query(Project)
-        .filter(
-            func.trim(cast(Project.project_id, String))
-            == project_id
-        )
-        .first()
-    )
-
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                f"Project ID '{project_id}' "
-                "already exists."
-            ),
-        )
-
-    # ---------------------------------------------------------
-    # 3. Create the main Project record
-    # ---------------------------------------------------------
-
-    project = Project(
-        project_id=project_id,
-        project_name=data.project_name,
-        implementing_agency=data.implementing_agency,
-        sector=data.sector,
-        state=data.state,
-        date_of_approval=data.date_of_approval,
-        original_cost_crore=data.original_cost_crore,
-        original_commissioning_date=(
-            data.original_commissioning_date
-        ),
-    )
-
-    db.add(project)
-    db.flush()
-
-    # ---------------------------------------------------------
-    # 4. Determine report month
-    # ---------------------------------------------------------
-
-    if data.date_of_approval:
-        report_month = (
-            data.date_of_approval.strftime("%Y-%m")
-        )
-    else:
-        report_month = date.today().strftime("%Y-%m")
-
-    # ---------------------------------------------------------
-    # 5. Create the first ProjectUpdate record
-    # ---------------------------------------------------------
-
-    update = ProjectUpdate(
-        project_id=project_id,
-        report_month=report_month,
-        serial_no=1,
-
-        revised_cost_crore=(
-            data.revised_cost_crore
-        ),
-
-        anticipated_cost_crore=(
-            data.anticipated_cost_crore
-        ),
-
-        cumulative_expenditure_crore=(
-            data.cumulative_expenditure_crore
-        ),
-
-        revised_commissioning_date=(
-            data.revised_commissioning_date
-        ),
-
-        anticipated_commissioning_date=(
-            data.anticipated_commissioning_date
-        ),
-
-        delay_original_months=(
-            data.delay_original_months
-        ),
-
-        delay_revised_months=(
-            data.delay_revised_months
-        ),
-
-        milestones_achieved=(
-            data.milestones_achieved
-        ),
-
-        milestones_total=(
-            data.milestones_total
-        ),
-    )
-
-    db.add(update)
-
-    # ---------------------------------------------------------
-    # 6. Commit both Project + ProjectUpdate
-    # ---------------------------------------------------------
-
-    db.commit()
-
-    # ---------------------------------------------------------
-    # 7. Return information needed by frontend
-    # ---------------------------------------------------------
+    try:
+        outcome = ingest_project_record(db, record)
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=422, detail=str(exc))
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Project ingestion failed: {exc}")
 
     return {
-        "project_id": project_id,
-        "project_name": project.project_name,
-        "report_month": report_month,
-        "message": "Project created successfully",
+        "project_id": outcome["project_id"],
+        "project_name": data.project_name,
+        "report_month": outcome["report_month"],
+        "message": (
+            "Project created successfully"
+            if outcome["project_created"]
+            else "Project updated successfully"
+        ),
     }

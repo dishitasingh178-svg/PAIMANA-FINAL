@@ -18,6 +18,26 @@ const API = {
   getAlerts: () => fetchAPI("/dashboard/alerts"),
   getProjects: (search = "") => fetchAPI(`/projects${search ? `?q=${encodeURIComponent(search)}` : ""}`),
   getProjectById: (id) => fetchAPI(`/projects/${encodeURIComponent(id)}`),
+  uploadProjectPDF: async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_BASE_URL}/projects/upload-pdf`, {
+      method: "POST",
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail ||
+        errorData.message ||
+        `HTTP Error ${response.status}`
+      );
+    }
+
+    return response.json();
+  },
   runPrediction: (projectId, reportMonth = null) => fetchAPI("/predictions", {
     method: "POST",
     body: JSON.stringify({ project_id: projectId, ...(reportMonth ? { report_month: reportMonth } : {}) })
