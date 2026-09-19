@@ -30,6 +30,369 @@
   <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
   <link rel="stylesheet" href="css/custom.css">
+
+<style id="claude-visual-layer">
+  /* =========================================================
+     PAIMANA / CLAUDE VISUAL LAYER
+     Visual-only additions. No API/data/navigation logic changed.
+     ========================================================= */
+
+  :root {
+    --paimana-signal: #38BDF8;
+    --paimana-orange-glow: rgba(249, 115, 22, 0.16);
+    --paimana-grid: rgba(100, 116, 139, 0.055);
+  }
+
+  /* Ambient control-room backdrop + moving radar */
+  main {
+    position: relative;
+    isolation: isolate;
+    overflow-y: auto;
+  }
+
+  main::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 50% 0%, var(--paimana-orange-glow), transparent 50%),
+      linear-gradient(var(--paimana-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--paimana-grid) 1px, transparent 1px);
+    background-size: 100% 100%, 42px 42px, 42px 42px;
+    -webkit-mask-image: radial-gradient(ellipse 82% 52% at 50% 0%, black 20%, transparent 90%);
+    mask-image: radial-gradient(ellipse 82% 52% at 50% 0%, black 20%, transparent 90%);
+    opacity: 0.9;
+  }
+
+  /* Large Claude-style radar sweep */
+  main::after {
+    content: "";
+    position: absolute;
+    top: -15%;
+    left: 50%;
+    width: 900px;
+    height: 900px;
+    margin-left: -450px;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle,
+        transparent 0 27%,
+        rgba(249,115,22,0.055) 27.15% 27.35%,
+        transparent 27.55% 46%,
+        rgba(249,115,22,0.045) 46.15% 46.35%,
+        transparent 46.55% 66%,
+        rgba(249,115,22,0.035) 66.15% 66.35%,
+        transparent 66.55%),
+      conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(249,115,22,0.30) 7deg,
+        rgba(249,115,22,0.09) 17deg,
+        transparent 42deg,
+        transparent 360deg
+      );
+    animation: paimana-radar-sweep 9s linear infinite;
+    opacity: 0.72;
+  }
+
+  @keyframes paimana-radar-sweep {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Keep actual UI above the decorative radar */
+  main > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Claude-style logo pulse */
+  aside > div:first-child {
+    position: relative;
+  }
+
+  aside > div:first-child::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 12px;
+    background: rgba(249,115,22,0.22);
+    filter: blur(10px);
+    opacity: 0.5;
+    z-index: -1;
+    animation: paimana-soft-pulse 3.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes paimana-soft-pulse {
+    0%, 100% { opacity: 0.3; transform: scale(0.94); }
+    50% { opacity: 0.7; transform: scale(1.05); }
+  }
+
+  /* Navigation micro-interaction */
+  aside nav a {
+    position: relative;
+    transition:
+      transform 0.2s ease,
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  aside nav a:hover {
+    transform: translateY(-1px) scale(1.045);
+  }
+
+  aside nav a:active {
+    transform: scale(0.94);
+  }
+
+  aside nav a::after {
+    content: "";
+    position: absolute;
+    left: -3px;
+    top: 50%;
+    transform: translateY(-50%) scaleY(0);
+    width: 3px;
+    height: 58%;
+    border-radius: 0 3px 3px 0;
+    background: var(--paimana-signal);
+    transition: transform 0.2s ease;
+  }
+
+  aside nav a:hover::after {
+    transform: translateY(-50%) scaleY(1);
+  }
+
+  /* Header/button interaction */
+  #theme-toggle,
+  #risk-breakdown-toggle {
+    transition:
+      transform 0.18s ease,
+      background-color 0.18s ease,
+      color 0.18s ease;
+  }
+
+  #theme-toggle:hover,
+  #risk-breakdown-toggle:hover {
+    transform: translateY(-1px);
+  }
+
+  #theme-toggle:active,
+  #risk-breakdown-toggle:active {
+    transform: scale(0.9);
+  }
+
+  /* Back link gets Claude-style directional motion */
+  header a {
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  header a:hover {
+    transform: translateX(-2px);
+  }
+
+  header a i {
+    transition: transform 0.2s ease;
+  }
+
+  header a:hover i {
+    transform: translateX(-2px);
+  }
+
+  /* Main panels enter softly without touching their content */
+  .paimana-panel-enter {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: paimana-panel-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes paimana-panel-in {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Cards receive the same subtle Claude hover treatment */
+  main .bg-white.dark\:bg-\[\#121826\] {
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+  main .bg-white.dark\:bg-\[\#121826\]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px -14px rgba(0,0,0,0.4);
+  }
+
+  /* Top signal line on cards */
+  main .bg-white.dark\:bg-\[\#121826\]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--paimana-signal),
+      transparent
+    );
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+
+  main .bg-white.dark\:bg-\[\#121826\]:hover::before {
+    opacity: 0.9;
+  }
+
+  /* Risk badge pulse */
+  #risk-badge {
+    position: relative;
+    animation: paimana-risk-pulse 3s ease-in-out infinite;
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      color 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  @keyframes paimana-risk-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+    50% { box-shadow: 0 0 24px -8px currentColor; }
+  }
+
+  /* Risk breakdown dropdown */
+  #risk-breakdown.dropdown-open {
+    animation: paimana-dropdown-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: top right;
+  }
+
+  @keyframes paimana-dropdown-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  #risk-breakdown-toggle i {
+    transition: transform 0.25s ease;
+  }
+
+  /* Progress shimmer, purely visual */
+  main .bg-emerald-500,
+  main .bg-blue-500,
+  main .bg-red-500,
+  main .bg-orange-500,
+  main .bg-purple-500,
+  main .bg-amber-500 {
+    position: relative;
+  }
+
+  #p-phys-bar,
+  #p-fin-bar,
+  #model-cost-bar,
+  #model-schedule-bar,
+  #model-cox-bar {
+    overflow: hidden;
+  }
+
+  #p-phys-bar::after,
+  #p-fin-bar::after,
+  #model-cost-bar::after,
+  #model-schedule-bar::after,
+  #model-cox-bar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,0.32),
+      transparent
+    );
+    transform: translateX(-100%);
+    animation: paimana-shimmer 2.2s ease-in-out infinite;
+  }
+
+  @keyframes paimana-shimmer {
+    to { transform: translateX(100%); }
+  }
+
+  /* Driver bars animate in, but their existing values remain untouched */
+  main .bg-red-500.h-full.w-\[75\%\],
+  main .bg-orange-500.h-full.w-\[45\%\],
+  main .bg-amber-500.h-full.w-\[20\%\] {
+    transform-origin: left center;
+    animation: paimana-driver-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  main .bg-orange-500.h-full.w-\[45\%\] {
+    animation-delay: 0.12s;
+  }
+
+  main .bg-amber-500.h-full.w-\[20\%\] {
+    animation-delay: 0.24s;
+  }
+
+  @keyframes paimana-driver-in {
+    from {
+      transform: scaleX(0);
+      opacity: 0.5;
+    }
+    to {
+      transform: scaleX(1);
+      opacity: 1;
+    }
+  }
+
+  /* Light-mode radar stays subtle and readable */
+  :not(.dark) main::before {
+    opacity: 0.75;
+  }
+
+  :not(.dark) main::after {
+    opacity: 0.38;
+  }
+
+  /* Dark-mode radar gets the stronger control-room atmosphere */
+  .dark main::before {
+    opacity: 1;
+  }
+
+  .dark main::after {
+    opacity: 0.72;
+  }
+
+  /* Accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    main::after {
+      display: none;
+    }
+  }
+</style>
+
 </head>
 
 <body
@@ -530,6 +893,25 @@
       }
     });
   </script>
+
+<script id="claude-visual-init">
+  /*
+   * Visual-only initializer.
+   * Does not fetch data, change URLs, touch API calls, or alter navigation.
+   */
+  document.addEventListener('DOMContentLoaded', () => {
+    const panels = [
+      document.querySelector('main > div > div.relative.flex'),
+      ...document.querySelectorAll('main > div > .grid > div')
+    ].filter(Boolean);
+
+    panels.forEach((panel, index) => {
+      panel.classList.add('paimana-panel-enter');
+      panel.style.animationDelay = `${index * 0.06}s`;
+    });
+  });
+</script>
+
 </body>
 
 </html>
