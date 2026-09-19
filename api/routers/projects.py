@@ -42,8 +42,15 @@ class ProjectDetailResponse(BaseModel):
     milestones_achieved: int
     milestones_total: int
     cost_escalation_pct: float
+
+    # Overall risk
     risk_score: float
     risk_label: str
+
+    # Individual ML model outputs
+    cost_risk_probability: float
+    schedule_risk_probability: float
+    cox_risk_probability: float
 
 
 class ProjectCreateRequest(BaseModel):
@@ -366,6 +373,27 @@ def get_single_project(
         ),
         risk_score=score,
         risk_label=tier,
+
+        cost_risk_probability=(
+            float(prediction.cost_risk_probability)
+            if prediction
+            and prediction.cost_risk_probability is not None
+            else 0.0
+        ),
+
+        schedule_risk_probability=(
+            float(prediction.schedule_risk_probability)
+            if prediction
+            and prediction.schedule_risk_probability is not None
+            else 0.0
+        ),
+
+        cox_risk_probability=(
+            float(prediction.cox_risk_probability)
+            if prediction
+            and prediction.cox_risk_probability is not None
+            else 0.0
+        ),
     )
 
 
