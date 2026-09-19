@@ -5,7 +5,9 @@ from sqlalchemy import String, cast, func
 from sqlalchemy.orm import Session
 
 from database import get_db
-from api.models.models import Project, Prediction, Alert
+from api.models.models import Project, ProjectUpdate, Prediction
+from api.ml.feature_engineering import build_feature_snapshot
+import ml_package.predictor as predictor
 from api.ml.feature_engineering import build_feature_snapshot
 from api.schemas.prediction import PredictionRequest, PredictionResponse
 import ml_package.predictor as predictor

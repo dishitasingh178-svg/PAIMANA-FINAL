@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 
 from database import get_db
 from api.models.models import Project, ProjectUpdate, Prediction
-
+from api.ml.feature_engineering import build_feature_snapshot
+import ml_package.predictor as predictor
 
 router = APIRouter(prefix="/api/v1/projects", tags=["Projects"])
 
@@ -229,7 +230,63 @@ def get_all_projects(
         )
 
     return result
+@router.get("/{project_id}/explanation")
+def get_project_explanation(
+    project_id: str,
+    db: Session = Depends(get_db)
+):
+    clean_id = str(project_id).strip()
 
+    project = (
+        db.query(Project)
+        .filter(
+            func.trim(cast(Project.project_id, String))
+            == clean_id
+        )
+        .first()
+    )
+
+    if not project:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Project '{clean_id}' not found in database."
+        )
+
+    update = _latest_update(db, clean_id)
+
+    if not update:
+        raise HTTPException(
+            status_code=404,
+            detail="No project update found for this project."
+        )
+
+    target_month = str(update.report_month)[:7]
+
+    try:
+        features_df = build_feature_snapshot(
+            project_id=clean_id,
+            target_report_month=target_month,
+            db=db
+        )
+
+        explanation = predictor.get_shap_explanation(
+            features_df,
+            top_n=5
+        )
+
+        return explanation
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc)
+        )
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"SHAP explanation failed: {exc}"
+        )
 
 @router.get(
     "/{project_id}",

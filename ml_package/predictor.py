@@ -267,3 +267,98 @@ def predict_project_row(project_row):
             )
         )
     }
+
+def get_shap_explanation(project_row, top_n=5):
+    """
+    Return top SHAP contributors for the cost and schedule XGBoost models.
+    """
+
+    import shap
+
+    # Convert input to DataFrame
+    if isinstance(project_row, pd.Series):
+        row = project_row.to_frame().T.copy()
+    elif isinstance(project_row, dict):
+        row = pd.DataFrame([project_row])
+    elif isinstance(project_row, pd.DataFrame):
+        row = project_row.copy()
+    else:
+        raise TypeError(
+            "project_row must be a dict, Series, or DataFrame"
+        )
+
+    # Make sure all 47 features exist
+    missing_features = [
+        col for col in feature_columns
+        if col not in row.columns
+    ]
+
+    if missing_features:
+        raise ValueError(
+            f"Missing required features: {missing_features}"
+        )
+
+    xgb_row = row[feature_columns].copy()
+
+    def explain_model(pipeline, model_name):
+
+        # Get preprocessing and XGBoost model
+        preprocessor = pipeline.named_steps["preprocessor"]
+        model = pipeline.named_steps["model"]
+
+        # Transform exactly the same way as prediction
+        transformed = preprocessor.transform(xgb_row)
+
+        # Get transformed feature names
+        feature_names = preprocessor.get_feature_names_out()
+
+        # SHAP explainer
+        explainer = shap.TreeExplainer(model)
+
+        shap_values = explainer.shap_values(transformed)
+
+        # Binary XGBoost normally returns one vector
+        if isinstance(shap_values, list):
+            values = shap_values[1][0]
+        else:
+            values = shap_values[0]
+
+        results = []
+
+        for name, value in zip(feature_names, values):
+
+            # Remove sklearn transformer prefixes
+            clean_name = name.replace("num__", "")
+            clean_name = clean_name.replace("cat__", "")
+
+            results.append({
+                "feature": clean_name,
+                "shap_value": float(value),
+                "direction": (
+                    "increases_risk"
+                    if value > 0
+                    else "decreases_risk"
+                )
+            })
+
+        # Highest absolute SHAP values first
+        results.sort(
+            key=lambda x: abs(x["shap_value"]),
+            reverse=True
+        )
+
+        return {
+            "model": model_name,
+            "drivers": results[:top_n]
+        }
+
+    return {
+        "cost": explain_model(
+            cost_final_model,
+            "Cost XGBoost"
+        ),
+        "schedule": explain_model(
+            schedule_final_model,
+            "Schedule XGBoost"
+        )
+    }
