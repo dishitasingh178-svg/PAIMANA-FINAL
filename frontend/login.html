@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PAIMANA AI - Login</title>
-  
+  <title>PAIMANA AI - Admin Login</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -23,21 +24,24 @@
   <link rel="stylesheet" href="css/custom.css">
 </head>
 
-<body class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
+<body
+  class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
 
   <!-- Left Side: Branding & Vision -->
-  <div class="hidden lg:flex flex-1 flex-col justify-center px-24 relative overflow-hidden bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] transition-colors duration-200">
+  <div
+    class="hidden lg:flex flex-1 flex-col justify-center px-24 relative overflow-hidden bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] transition-colors duration-200">
     <!-- Decorative glow -->
     <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
-    
+
     <div class="relative z-10 space-y-6">
       <div class="flex items-center gap-3 mb-8">
-        <div class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold shadow-lg shadow-orange-500/20">
+        <div
+          class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold shadow-lg shadow-orange-500/20">
           <i data-lucide="shield-alert" class="w-6 h-6"></i>
         </div>
         <span class="text-2xl font-bold text-slate-900 dark:text-white tracking-wide">PAIMANA AI</span>
       </div>
-      
+
       <h1 class="text-4xl font-bold text-slate-900 dark:text-white leading-tight">
         Building a stronger India <br> through smarter decisions.
       </h1>
@@ -49,54 +53,52 @@
 
   <!-- Right Side: Login Form -->
   <div class="flex-1 flex flex-col justify-center items-center px-4 sm:px-8 relative">
-    
+
     <!-- Theme Toggle (Top Right) -->
-    <button id="theme-toggle" class="absolute top-8 right-8 p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+    <button id="theme-toggle"
+      class="absolute top-8 right-8 p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
       <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
       <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
     </button>
 
     <div id="login-card" class="w-full max-w-md space-y-8">
       <div class="text-center">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Welcome Back</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Sign in to access the platform</p>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Admin Login</h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Sign in to access project management</p>
       </div>
 
       <form id="loginForm" class="space-y-5">
-        <div class="space-y-2">
-          <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Sign in as</label>
-          <div class="grid grid-cols-2 gap-2 bg-slate-100 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg p-1">
-            <button type="button" id="role-admin-btn" class="role-tab-btn px-3 py-2 rounded-md text-xs font-semibold transition-colors bg-orange-500 text-white shadow-sm">
-              Administrator
-            </button>
-            <button type="button" id="role-user-btn" class="role-tab-btn px-3 py-2 rounded-md text-xs font-semibold transition-colors text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-              Project User
-            </button>
-          </div>
-        
-          </p>
-        </div>
 
         <div class="space-y-2">
           <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Email Address</label>
-          <input id="email-input" type="email" value="admin@gov.in" required class="w-full bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          <input id="email-input" type="email" value="admin@gov.in" required
+            class="w-full bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
         </div>
-        
+
         <div class="space-y-2">
           <div class="flex justify-between">
             <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Password</label>
             <a href="#" class="text-xs text-orange-600 dark:text-orange-500 hover:underline">Forgot password?</a>
           </div>
-          <input type="password" value="••••••••" required class="w-full bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
+          <input type="password" value="••••••••" required
+            class="w-full bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
         </div>
 
-        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg transition-colors flex justify-center items-center mt-6">
+        <button type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg transition-colors flex justify-center items-center mt-6">
           Sign In
         </button>
-        
-        <button type="button" class="w-full bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] hover:bg-slate-50 dark:hover:bg-[#1E293B]/50 text-slate-900 dark:text-white font-semibold py-3 rounded-lg transition-colors flex justify-center items-center gap-2">
+
+        <button type="button"
+          class="w-full bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] hover:bg-slate-50 dark:hover:bg-[#1E293B]/50 text-slate-900 dark:text-white font-semibold py-3 rounded-lg transition-colors flex justify-center items-center gap-2">
           <i data-lucide="fingerprint" class="w-4 h-4"></i> Sign in with SSO
         </button>
+
+        <div class="mt-4 text-center">
+          <a href="dashboard.html"
+            class="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white transition">← Return to public
+            dashboard</a>
+        </div>
       </form>
     </div>
   </div>
@@ -105,34 +107,14 @@
   <script>
     lucide.createIcons();
 
-    let selectedRole = 'admin';
-    const adminBtn = document.getElementById('role-admin-btn');
-    const userBtn = document.getElementById('role-user-btn');
-    const emailInput = document.getElementById('email-input');
-    const roleHint = document.getElementById('role-hint');
-
-    const ACTIVE_TAB = 'role-tab-btn px-3 py-2 rounded-md text-xs font-semibold transition-colors bg-orange-500 text-white shadow-sm';
-    const INACTIVE_TAB = 'role-tab-btn px-3 py-2 rounded-md text-xs font-semibold transition-colors text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
-
-    function setActiveRole(role) {
-      selectedRole = role;
-      const admin = role === 'admin';
-
-      adminBtn.className = admin ? ACTIVE_TAB : INACTIVE_TAB;
-      userBtn.className = admin ? INACTIVE_TAB : ACTIVE_TAB;
-
-      if (emailInput) emailInput.value = admin ? 'admin@gov.in' : 'user@gov.in';
-      
-    }
-
-    adminBtn.addEventListener('click', () => setActiveRole('admin'));
-    userBtn.addEventListener('click', () => setActiveRole('user'));
-
+    // Since this is now strictly an admin login, we removed the toggle buttons
+    // and just assign the admin role unconditionally upon form submission.
     document.getElementById('loginForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      localStorage.setItem('paimana_role', selectedRole);
+      localStorage.setItem('paimana_role', 'admin');
       window.location.href = 'dashboard.html';
     });
   </script>
 </body>
+
 </html>

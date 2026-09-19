@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PAIMANA AI - Executive Dashboard</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -18,7 +19,7 @@
       }
     }
   </script>
-  
+
   <script>
     if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
@@ -28,8 +29,10 @@
   </script>
 
   <!-- LEAFLET CDN ASSETS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
   <!-- CHART.JS & ICONS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -39,13 +42,15 @@
   <link rel="stylesheet" href="/css/custom.css">
 </head>
 
-<body class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
+<body
+  class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
 
   <!-- Mobile sidebar backdrop -->
   <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden"></div>
 
   <!-- SIDEBAR -->
-  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200 overflow-y-auto">
+  <aside id="sidebar"
+    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200 overflow-y-auto">
     <div>
       <div class="flex items-center gap-3 mb-10 pl-2">
         <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
@@ -55,29 +60,37 @@
       </div>
 
       <nav class="space-y-1 text-sm font-medium">
-        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+        <a href="dashboard.html"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
           <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
         </a>
-        <a href="projects.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+        <a href="projects.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
           <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
         </a>
-        <a href="add-project.html" data-role="admin" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+        <a href="add-project.html" id="admin-add-project" style="display: none;" data-role="admin" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
           <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Project
         </a>
-        <a href="risk-analytics.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+        <a href="risk-analytics.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
           <i data-lucide="line-chart" class="w-4 h-4"></i> Risk Analytics
         </a>
-        <a href="early-warnings.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+        <a href="early-warnings.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
           <i data-lucide="bell" class="w-4 h-4"></i> Early Warnings
         </a>
-        <a href="ai-assistant.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+        <a href="ai-assistant.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
           <i data-lucide="bot" class="w-4 h-4"></i> AI Assistant
         </a>
       </nav>
     </div>
 
     <div class="pt-4 border-t border-slate-200 dark:border-[#1E293B] flex items-center gap-3">
-      <div class="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-semibold text-slate-700 dark:text-white">PL</div>
+      <div
+        class="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-semibold text-slate-700 dark:text-white">
+        PL</div>
       <div class="text-xs">
         <p class="font-medium text-slate-900 dark:text-white">Parth Lamba</p>
         <p class="text-slate-500" data-role-label>Administrator</p>
@@ -87,18 +100,23 @@
 
   <!-- MAIN CONTENT -->
   <main class="flex-1 flex flex-col h-screen overflow-y-auto min-w-0">
-    <header class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-4 md:px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
+    <header
+      class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-4 md:px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
       <div class="flex items-center gap-3 min-w-0">
-        <button id="sidebar-toggle" class="lg:hidden shrink-0 p-2 -ml-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+        <button id="sidebar-toggle"
+          class="lg:hidden shrink-0 p-2 -ml-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
         <div class="min-w-0">
-          <h1 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white truncate" data-role-greeting>Good morning, Administrator.</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden sm:block">Here's what's happening with India's infrastructure projects.</p>
+          <h1 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white truncate" data-role-greeting>Good
+            morning, Administrator.</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden sm:block">Here's what's happening with
+            India's infrastructure projects.</p>
         </div>
       </div>
       <div class="flex items-center gap-4 shrink-0">
-        <button id="theme-toggle" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+        <button id="theme-toggle"
+          class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
           <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
           <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
         </button>
@@ -108,25 +126,29 @@
     <div class="p-4 md:p-8 space-y-6">
       <!-- KPI Cards -->
       <div id="kpi-grid" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
           <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Total Projects</p>
           <div class="flex items-end gap-3 mt-2">
             <span id="kpi-total" class="text-2xl font-bold text-slate-900 dark:text-white">--</span>
           </div>
         </div>
-        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
           <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">High Risk Projects</p>
           <div class="flex items-end gap-3 mt-2">
             <span id="kpi-high-risk" class="text-2xl font-bold text-orange-500 dark:text-orange-400">--</span>
           </div>
         </div>
-        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
           <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Delayed Projects</p>
           <div class="flex items-end gap-3 mt-2">
             <span id="kpi-delayed" class="text-2xl font-bold text-red-600 dark:text-red-500">--</span>
           </div>
         </div>
-        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
           <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Revised Project Cost</p>
           <div class="flex items-end gap-3 mt-2">
             <span id="kpi-cost" class="text-2xl font-bold text-slate-900 dark:text-white">--</span>
@@ -136,16 +158,20 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Interactive Map Panel -->
-        <div class="lg:col-span-2 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl flex flex-col shadow-sm transition-colors duration-200">
+        <div
+          class="lg:col-span-2 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl flex flex-col shadow-sm transition-colors duration-200">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Projects Across India (Ongoing High Risk)</h2>
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Projects Across India (Ongoing High Risk)
+            </h2>
           </div>
-          <div id="map" style="height: 400px; min-height: 400px; width: 100%; border-radius: 8px;" class="z-10 bg-slate-900"></div>
+          <div id="map" style="height: 400px; min-height: 400px; width: 100%; border-radius: 8px;"
+            class="z-10 bg-slate-900"></div>
         </div>
 
         <!-- Right Column: Doughnut Chart + Alerts -->
         <div class="space-y-6">
-          <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <div
+            class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
             <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Risk Distribution</h2>
             <div class="relative h-48 flex justify-center items-center">
               <canvas id="riskChart"></canvas>
@@ -158,7 +184,8 @@
             </div>
           </div>
 
-          <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <div
+            class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
             <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Recent Alerts</h2>
             <div class="space-y-4" id="recent-alerts-container">
               <p class="text-xs text-slate-400">Loading alerts...</p>
@@ -169,9 +196,9 @@
     </div>
   </main>
 
-<script src="js/auth.js"></script>
-<script src="js/animations.js"></script>
-<script>
+  <script src="js/auth.js"></script>
+  <script src="js/animations.js"></script>
+  <script>
     lucide.createIcons();
 
     // 1. Chart Initialization
@@ -213,14 +240,14 @@
 
       map = L.map('map', { attributionControl: false, zoomControl: true }).setView([22.5937, 78.9629], 4.5);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-        maxZoom: 18 
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18
       }).addTo(map);
 
       markerLayerGroup = L.layerGroup().addTo(map);
 
-      setTimeout(() => { 
-        if (map) map.invalidateSize(); 
+      setTimeout(() => {
+        if (map) map.invalidateSize();
       }, 300);
     }
 
@@ -230,7 +257,7 @@
         const res = await fetch('/api/v1/dashboard/summary');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const stats = await res.json();
-        
+
         PaimanaFX.countUp(document.getElementById('kpi-total'), stats.total_projects || 0);
         PaimanaFX.countUp(document.getElementById('kpi-high-risk'), stats.high_risk_count || 0);
         PaimanaFX.countUp(document.getElementById('kpi-delayed'), stats.delayed_count || 0);
@@ -254,9 +281,9 @@
         const data = await res.json();
         if (riskChart) {
           riskChart.data.datasets[0].data = [
-            data.low || 0, 
-            data.watch || 0, 
-            data.elevated || 0, 
+            data.low || 0,
+            data.watch || 0,
+            data.elevated || 0,
             data.critical || 0
           ];
           riskChart.update();
@@ -389,6 +416,7 @@
       loadRecentAlerts();
     });
   </script>
- 
+
 </body>
+
 </html>

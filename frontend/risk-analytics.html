@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PAIMANA AI - Risk Analytics</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -16,7 +17,7 @@
       theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
     }
   </script>
-  
+
   <!-- Prevent Flash of Unstyled Content -->
   <script>
     if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -33,13 +34,15 @@
   <link rel="stylesheet" href="css/custom.css">
 </head>
 
-<body class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
+<body
+  class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
 
   <!-- Mobile sidebar backdrop -->
   <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden"></div>
 
   <!-- ================= SIDEBAR ================= -->
-  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200 overflow-y-auto">
+  <aside id="sidebar"
+    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200 overflow-y-auto">
     <div>
       <div class="flex items-center gap-3 mb-10 pl-2">
         <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
@@ -49,22 +52,28 @@
       </div>
 
       <nav class="space-y-1 text-sm font-medium">
-        <a href="dashboard.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+        <a href="dashboard.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
           <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
         </a>
-        <a href="projects.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+        <a href="projects.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
           <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
         </a>
-        <a href="add-project.html" data-role="admin" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+        <a href="add-project.html" data-role="admin" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
           <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Project
         </a>
-        <a href="risk-analytics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+        <a href="risk-analytics.html"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
           <i data-lucide="line-chart" class="w-4 h-4"></i> Risk Analytics
         </a>
-        <a href="early-warnings.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+        <a href="early-warnings.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
           <i data-lucide="bell" class="w-4 h-4"></i> Early Warnings
         </a>
-        <a href="ai-assistant.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+        <a href="ai-assistant.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
           <i data-lucide="bot" class="w-4 h-4"></i> AI Assistant
         </a>
       </nav>
@@ -73,20 +82,24 @@
 
   <!-- ================= MAIN CONTENT ================= -->
   <main class="flex-1 flex flex-col overflow-y-auto h-screen min-w-0">
-    
-    <header class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-4 md:px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
+
+    <header
+      class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-4 md:px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
       <div class="flex items-center gap-3 min-w-0">
-        <button id="sidebar-toggle" class="lg:hidden shrink-0 p-2 -ml-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+        <button id="sidebar-toggle"
+          class="lg:hidden shrink-0 p-2 -ml-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
         <div class="min-w-0">
           <h1 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white truncate">Portfolio Risk Analytics</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden sm:block">Deep insights into AI-predicted project risks across sectors.</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden sm:block">Deep insights into AI-predicted
+            project risks across sectors.</p>
         </div>
       </div>
-      
+
       <div class="flex items-center gap-4 shrink-0">
-        <button id="theme-toggle" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition ml-2">
+        <button id="theme-toggle"
+          class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition ml-2">
           <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
           <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
         </button>
@@ -94,12 +107,13 @@
     </header>
 
     <div class="p-4 md:p-8 space-y-6">
-      
+
       <!-- Top Row: Sector Bar Chart & Top Drivers -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         <!-- Bar Chart: Risk by Sector -->
-        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
           <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Risk Distribution by Sector</h2>
           <div class="relative h-64">
             <canvas id="sectorChart"></canvas>
@@ -107,9 +121,10 @@
         </div>
 
         <!-- Horizontal Bar: ML Escalation Drivers -->
-        <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200 flex flex-col justify-center">
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200 flex flex-col justify-center">
           <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-6">Top AI Cost Escalation Drivers</h2>
-          
+
           <div class="space-y-5 text-xs">
             <div>
               <div class="flex justify-between mb-1.5">
@@ -143,8 +158,10 @@
       </div>
 
       <!-- Bottom Row: Historical Risk Trend Line Chart -->
-      <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
-        <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Historical Risk Trend Over Time (AI Analyzed)</h2>
+      <div
+        class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
+        <h2 class="text-sm font-semibold text-slate-900 dark:text-white mb-4">Historical Risk Trend Over Time (AI
+          Analyzed)</h2>
         <div class="relative h-72">
           <canvas id="trendChart"></canvas>
         </div>
@@ -156,13 +173,13 @@
   <script src="js/theme.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/animations.js"></script>
-  
+
   <script>
     lucide.createIcons();
 
     // ================= CHART SETUP & DYNAMIC FETCH =================
     Chart.defaults.font.family = "'Inter', sans-serif";
-    Chart.defaults.color = '#64748B'; 
+    Chart.defaults.color = '#64748B';
     const getGridColor = () => document.documentElement.classList.contains('dark') ? '#1E293B' : '#f1f5f9';
     const getTextColor = () => document.documentElement.classList.contains('dark') ? '#94A3B8' : '#475569';
 
@@ -171,7 +188,7 @@
     const sectorChart = new Chart(ctxSector, {
       type: 'bar',
       data: {
-        labels: [], 
+        labels: [],
         datasets: [
           { label: 'Critical Risk', data: [], backgroundColor: '#ef4444', borderRadius: 4 },
           { label: 'High Risk', data: [], backgroundColor: '#f97316', borderRadius: 4 },
@@ -190,27 +207,27 @@
     });
 
     // 2. Fetch Live Sector Risk Analytics from Database
-  async function loadDynamicSectorAnalytics() {
-    try {
-      const response = await fetch('/api/v1/dashboard/sector-breakdown');
-      if (!response.ok) throw new Error("Analytics API offline");
+    async function loadDynamicSectorAnalytics() {
+      try {
+        const response = await fetch('/api/v1/dashboard/sector-breakdown');
+        if (!response.ok) throw new Error("Analytics API offline");
 
-      const data = await response.json();
+        const data = await response.json();
 
-      sectorChart.data.labels = data.labels;
-      sectorChart.data.datasets[0].data = data.critical;
-      sectorChart.data.datasets[1].data = data.high;
-      sectorChart.data.datasets[2].data = data.medium;
-      sectorChart.update();
-    } catch (err) {
-      console.warn("Using fallback data for Sector Analytics:", err);
-      sectorChart.data.labels = ['Railways', 'Roads', 'Power', 'Petroleum', 'Steel', 'Coal'];
-      sectorChart.data.datasets[0].data = [4, 2, 3, 1, 2, 0];
-      sectorChart.data.datasets[1].data = [8, 5, 4, 3, 2, 1];
-      sectorChart.data.datasets[2].data = [12, 10, 8, 5, 3, 2];
-      sectorChart.update();
+        sectorChart.data.labels = data.labels;
+        sectorChart.data.datasets[0].data = data.critical;
+        sectorChart.data.datasets[1].data = data.high;
+        sectorChart.data.datasets[2].data = data.medium;
+        sectorChart.update();
+      } catch (err) {
+        console.warn("Using fallback data for Sector Analytics:", err);
+        sectorChart.data.labels = ['Railways', 'Roads', 'Power', 'Petroleum', 'Steel', 'Coal'];
+        sectorChart.data.datasets[0].data = [4, 2, 3, 1, 2, 0];
+        sectorChart.data.datasets[1].data = [8, 5, 4, 3, 2, 1];
+        sectorChart.data.datasets[2].data = [12, 10, 8, 5, 3, 2];
+        sectorChart.update();
+      }
     }
-  }
     // 3. Initialize Trend Line Chart
     const ctxTrend = document.getElementById('trendChart').getContext('2d');
     const trendChart = new Chart(ctxTrend, {
@@ -240,7 +257,7 @@
     window.addEventListener('themeChanged', () => {
       const gridColor = getGridColor();
       const textColor = getTextColor();
-      
+
       sectorChart.options.scales.x.ticks.color = textColor;
       sectorChart.options.scales.y.ticks.color = textColor;
       sectorChart.options.scales.y.grid.color = gridColor;
@@ -260,4 +277,5 @@
     });
   </script>
 </body>
+
 </html>
