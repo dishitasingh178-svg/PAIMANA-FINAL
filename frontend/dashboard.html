@@ -169,6 +169,468 @@
         background-size: 34px 34px;
       }
     }
+
+    /* =========================================================
+       PAIMANA MOTION LAYER
+       Visual animation only. No project/KPI/business data here.
+       ========================================================= */
+    :root {
+      --motion-ease: cubic-bezier(.22, 1, .36, 1);
+      --motion-fast: 180ms;
+      --motion-normal: 420ms;
+      --motion-slow: 760ms;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      transition: background-color .35s ease, color .35s ease;
+    }
+
+    .dashboard-grid {
+      position: relative;
+      isolation: isolate;
+    }
+
+    .dashboard-grid::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(249, 115, 22, .045), transparent 24%),
+        radial-gradient(circle at 88% 72%, rgba(59, 130, 246, .045), transparent 28%);
+      animation: ambient-drift 12s ease-in-out infinite alternate;
+    }
+
+    .hero-glow {
+      animation: hero-breathe 8s ease-in-out infinite alternate;
+    }
+
+    .glass {
+      position: relative;
+      overflow: hidden;
+      animation: panel-reveal .8s var(--motion-ease) both;
+    }
+
+    .glass::after {
+      content: "";
+      position: absolute;
+      inset: -60% -20%;
+      pointer-events: none;
+      background: linear-gradient(110deg,
+          transparent 35%,
+          rgba(255, 255, 255, .045) 48%,
+          transparent 61%);
+      transform: translateX(-55%);
+      animation: glass-sweep 8s ease-in-out infinite;
+    }
+
+    .node {
+      animation: node-float 4s ease-in-out infinite, node-pulse 2.8s ease-in-out infinite;
+    }
+
+    .node:nth-of-type(2) {
+      animation-delay: -.9s, -.4s;
+    }
+
+    .node:nth-of-type(3) {
+      animation-delay: -1.7s, -.9s;
+    }
+
+    .node:nth-of-type(4) {
+      animation-delay: -2.4s, -1.5s;
+    }
+
+    .connection {
+      overflow: hidden;
+      animation: connection-breathe 3.8s ease-in-out infinite;
+    }
+
+    .connection::after {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 -35%;
+      width: 35%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent);
+      animation: connection-flow 4.2s linear infinite;
+    }
+
+    .metric-card,
+    .section-card {
+      will-change: transform, opacity;
+    }
+
+    .metric-card {
+      --mx: 50%;
+      --my: 50%;
+      animation: reveal-up .65s var(--motion-ease) both;
+      transition:
+        transform .28s var(--motion-ease),
+        border-color .28s ease,
+        background .28s ease,
+        box-shadow .28s ease;
+    }
+
+    .metric-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(180px circle at var(--mx) var(--my),
+          rgba(255, 255, 255, .075),
+          transparent 62%);
+      opacity: 0;
+      transition: opacity .25s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-7px) scale(1.012);
+      box-shadow: 0 22px 55px rgba(0, 0, 0, .24);
+    }
+
+    .metric-card:hover::after {
+      opacity: 1;
+    }
+
+    .metric-card:nth-child(1) {
+      animation-delay: .10s;
+    }
+
+    .metric-card:nth-child(2) {
+      animation-delay: .18s;
+    }
+
+    .metric-card:nth-child(3) {
+      animation-delay: .26s;
+    }
+
+    .metric-card:nth-child(4) {
+      animation-delay: .34s;
+    }
+
+    .section-card {
+      animation: reveal-up .7s var(--motion-ease) both;
+      transition:
+        transform .28s var(--motion-ease),
+        border-color .28s ease,
+        box-shadow .28s ease;
+    }
+
+    .section-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(148, 163, 184, .24);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .22);
+    }
+
+    #kpi-grid+.grid .section-card:nth-child(1) {
+      animation-delay: .42s;
+    }
+
+    #kpi-grid+.grid .section-card:nth-child(2) {
+      animation-delay: .52s;
+    }
+
+    #kpi-grid+.grid .section-card:nth-child(2) .section-card {
+      animation-delay: .62s;
+    }
+
+    #map {
+      animation: map-reveal .9s var(--motion-ease) both;
+      transform-origin: center;
+    }
+
+    #riskChart {
+      animation: chart-reveal 1s var(--motion-ease) both;
+    }
+
+    #recent-alerts-container>* {
+      animation: alert-reveal .48s var(--motion-ease) both;
+    }
+
+    .sidebar-nav-link-motion {
+      animation: nav-reveal .45s var(--motion-ease) both;
+    }
+
+    [data-hover-lift] {
+      transition:
+        transform .2s var(--motion-ease),
+        background-color .2s ease,
+        color .2s ease;
+    }
+
+    [data-hover-lift]:hover {
+      transform: translateX(4px);
+    }
+
+    #theme-toggle {
+      transition: transform .25s var(--motion-ease), background-color .2s ease, color .2s ease;
+    }
+
+    #theme-toggle:hover {
+      transform: rotate(12deg) scale(1.08);
+    }
+
+    #sidebar {
+      transition:
+        transform .38s var(--motion-ease),
+        box-shadow .38s ease;
+    }
+
+    #sidebar-overlay {
+      transition: opacity .3s ease;
+    }
+
+    [data-role-greeting] {
+      animation: text-reveal .7s var(--motion-ease) .12s both;
+    }
+
+    .metric-value {
+      transition: transform .22s var(--motion-ease), opacity .22s ease;
+    }
+
+    .metric-value.value-updating {
+      transform: translateY(-3px);
+      opacity: .65;
+    }
+
+    .leaflet-container {
+      font-family: Inter, sans-serif;
+    }
+
+    .leaflet-control-zoom a {
+      transition: transform .18s ease, background-color .18s ease;
+    }
+
+    .leaflet-control-zoom a:hover {
+      transform: scale(1.06);
+    }
+
+    .data-refresh-pulse {
+      animation: data-pulse 1.2s ease;
+    }
+
+    @keyframes reveal-up {
+      from {
+        opacity: 0;
+        transform: translateY(22px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes panel-reveal {
+      from {
+        opacity: 0;
+        transform: translateY(16px) scale(.992);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes text-reveal {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes nav-reveal {
+      from {
+        opacity: 0;
+        transform: translateX(-12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes alert-reveal {
+      from {
+        opacity: 0;
+        transform: translateX(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes map-reveal {
+      from {
+        opacity: 0;
+        transform: scale(.985);
+        filter: saturate(.75);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+        filter: saturate(1);
+      }
+    }
+
+    @keyframes chart-reveal {
+      from {
+        opacity: 0;
+        transform: scale(.94);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes hero-breathe {
+      from {
+        opacity: .65;
+        transform: scale(1);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1.035);
+      }
+    }
+
+    @keyframes ambient-drift {
+      from {
+        transform: translate3d(-1%, -1%, 0) scale(1);
+      }
+
+      to {
+        transform: translate3d(1%, 1%, 0) scale(1.025);
+      }
+    }
+
+    @keyframes glass-sweep {
+
+      0%,
+      55% {
+        transform: translateX(-65%);
+      }
+
+      75%,
+      100% {
+        transform: translateX(65%);
+      }
+    }
+
+    @keyframes node-float {
+
+      0%,
+      100% {
+        transform: translate3d(0, 0, 0);
+      }
+
+      50% {
+        transform: translate3d(0, -7px, 0);
+      }
+    }
+
+    @keyframes node-pulse {
+
+      0%,
+      100% {
+        filter: brightness(1);
+      }
+
+      50% {
+        filter: brightness(1.35);
+      }
+    }
+
+    @keyframes connection-breathe {
+
+      0%,
+      100% {
+        opacity: .45;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes connection-flow {
+      from {
+        transform: translateX(0);
+      }
+
+      to {
+        transform: translateX(390%);
+      }
+    }
+
+    @keyframes data-pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(249, 115, 22, .22);
+      }
+
+      100% {
+        box-shadow: 0 0 0 14px rgba(249, 115, 22, 0);
+      }
+    }
+
+    html:not(.dark) {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --line: rgba(15, 23, 42, .10);
+    }
+
+    html:not(.dark) body {
+      background:
+        radial-gradient(circle at 18% 22%, rgba(249, 115, 22, .08), transparent 28%),
+        radial-gradient(circle at 82% 52%, rgba(59, 130, 246, .07), transparent 30%),
+        var(--bg);
+    }
+
+    html:not(.dark) .glass,
+    html:not(.dark) .section-card {
+      background: rgba(255, 255, 255, .82);
+      border-color: rgba(15, 23, 42, .09);
+      box-shadow: 0 18px 45px rgba(15, 23, 42, .07);
+    }
+
+    @media (max-width: 1023px) {
+      #sidebar.mobile-open {
+        box-shadow: 18px 0 60px rgba(0, 0, 0, .42);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
   </style>
 </head>
 
@@ -403,6 +865,40 @@
     lucide.createIcons();
 
     // 1. Chart Initialization
+
+    const riskDoughnutCenterPlugin = {
+      id: 'riskDoughnutCenterPlugin',
+
+      afterDraw(chart) {
+        if (!chart.chartArea || !chart.data?.datasets?.[0]) return;
+
+        const values = chart.data.datasets[0].data || [];
+        const total = values.reduce((sum, value) => sum + (Number(value) || 0), 0);
+
+        const { left, right, top, bottom } = chart.chartArea;
+        const x = (left + right) / 2;
+        const y = (top + bottom) / 2;
+
+        const ctx = chart.ctx;
+        const isDark = document.documentElement.classList.contains('dark');
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.font = '700 24px Inter, sans-serif';
+        ctx.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+        ctx.fillText(total.toLocaleString(), x, y - 5);
+
+        ctx.font = '600 9px Inter, sans-serif';
+        ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+        ctx.letterSpacing = '1px';
+        ctx.fillText('TOTAL PROJECTS', x, y + 16);
+
+        ctx.restore();
+      }
+    };
+
     let riskChart = null;
     try {
       const chartCanvas = document.getElementById('riskChart');
@@ -454,6 +950,19 @@
                 }
               },
 
+              animation: {
+                duration: 1100,
+                easing: 'easeOutQuart'
+              },
+
+              transitions: {
+                active: {
+                  animation: {
+                    duration: 260
+                  }
+                }
+              },
+
               tooltip: {
                 callbacks: {
                   label: function (context) {
@@ -475,7 +984,10 @@
             }
           },
 
-          plugins: [ChartDataLabels]
+          plugins: [
+            riskDoughnutCenterPlugin,
+            ...(typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels] : [])
+          ]
         });
       }
     } catch (e) {
@@ -518,11 +1030,11 @@
           format: (v) => `₹${v.toFixed(2)}L Cr`
         });
       } catch (err) {
-        console.warn("Using default KPIs:", err);
-        document.getElementById('kpi-total').innerText = "0";
-        document.getElementById('kpi-high-risk').innerText = "0";
-        document.getElementById('kpi-delayed').innerText = "0";
-        document.getElementById('kpi-cost').innerText = "₹0.00L Cr";
+        console.warn("KPI API unavailable:", err);
+        document.getElementById('kpi-total').innerText = "--";
+        document.getElementById('kpi-high-risk').innerText = "--";
+        document.getElementById('kpi-delayed').innerText = "--";
+        document.getElementById('kpi-cost').innerText = "--";
       }
     }
 
@@ -538,10 +1050,12 @@
             data.elevated || 0,
             data.critical || 0
           ];
-          riskChart.update();
+          riskChart.update('active');
+          document.getElementById('riskChart')?.classList.add('data-refresh-pulse');
+          setTimeout(() => document.getElementById('riskChart')?.classList.remove('data-refresh-pulse'), 1200);
         }
       } catch (err) {
-        console.warn("Chart data fallback:", err);
+        console.warn("Chart data unavailable:", err);
       }
     }
 
@@ -564,9 +1078,10 @@
           const lng = parseFloat(p.lng);
           if (isNaN(lat) || isNaN(lng)) return;
 
-          const score = Number(p.risk_score) || 75;
-          const status = (p.status || 'ELEVATED').toUpperCase();
-          const isCritical = status.includes("CRIT") || score >= 75;
+          const parsedScore = Number(p.risk_score);
+          const score = Number.isFinite(parsedScore) ? parsedScore : null;
+          const status = String(p.status || '').toUpperCase();
+          const isCritical = status.includes("CRIT") || (score !== null && score >= 75);
           const color = isCritical ? "#ef4444" : "#f97316";
 
           const marker = L.circleMarker([lat, lng], {
@@ -579,15 +1094,21 @@
             pane: 'markerPane'
           });
 
+          const scoreText = score !== null ? `${score.toFixed(1)}/100` : 'N/A';
+          const delayText = p.delay_months !== null && p.delay_months !== undefined && p.delay_months !== ''
+            ? `${p.delay_months} Months`
+            : 'N/A';
+          const statusText = status || 'RISK';
+
           marker.bindPopup(`
             <div style="font-family: 'Inter', sans-serif; min-width: 190px; padding: 4px;">
               <span style="font-size: 10px; font-weight: bold; color: ${color}; text-transform: uppercase;">
-                ${status} RISK
+                ${statusText} RISK
               </span>
-              <h4 style="margin: 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">${p.project_name}</h4>
-              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Sector:</strong> ${p.sector}</p>
-              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Risk Score:</strong> ${score.toFixed(1)}/100</p>
-              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Delay:</strong> ${p.delay_months || 0} Months</p>
+              <h4 style="margin: 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">${p.project_name || 'Project'}</h4>
+              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Sector:</strong> ${p.sector || 'N/A'}</p>
+              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Risk Score:</strong> ${scoreText}</p>
+              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Delay:</strong> ${delayText}</p>
               <div style="margin-top: 6px;">
                 <a href="project-details.html?id=${p.project_id}" style="font-size: 11px; color: #ea580c; font-weight: 600; text-decoration: underline;">
                   View Project Details →
@@ -630,6 +1151,7 @@
         `).join('');
       } catch (err) {
         console.warn("Alerts loading error:", err);
+        container.innerHTML = '<p class="text-xs text-slate-400">Unable to load alerts.</p>';
       }
     }
 
@@ -659,7 +1181,109 @@
       });
     }
 
-    // 5. Initializer Pipeline
+
+    // =========================================================
+    // 6. UI Motion Controller
+    // Animation parameters are visual-only. All dashboard data
+    // continues to come from the existing API endpoints above.
+    // =========================================================
+    const paimanaReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function initMotionLayer() {
+
+      // Stagger sidebar navigation without touching its hrefs.
+      document.querySelectorAll('#sidebar nav a').forEach((link, index) => {
+        link.classList.add('sidebar-nav-link-motion');
+        link.style.animationDelay = `${0.08 + index * 0.055}s`;
+      });
+
+      // Cursor-follow spotlight for metric cards.
+      if (!paimanaReduceMotion) {
+        document.querySelectorAll('.metric-card').forEach(card => {
+          card.addEventListener('pointermove', event => {
+            const rect = card.getBoundingClientRect();
+            card.style.setProperty('--mx', `${event.clientX - rect.left}px`);
+            card.style.setProperty('--my', `${event.clientY - rect.top}px`);
+          });
+
+          card.addEventListener('pointerleave', () => {
+            card.style.setProperty('--mx', '50%');
+            card.style.setProperty('--my', '50%');
+          });
+        });
+      }
+
+      // Give dynamically inserted alerts the same entrance animation.
+      const alerts = document.getElementById('recent-alerts-container');
+      if (alerts && !paimanaReduceMotion) {
+        const observer = new MutationObserver(() => {
+          alerts.querySelectorAll(':scope > *').forEach((item, index) => {
+            item.style.animationDelay = `${index * 80}ms`;
+          });
+        });
+        observer.observe(alerts, { childList: true });
+      }
+
+      // Animate the metric value when a real API response updates it.
+      document.querySelectorAll('.metric-value').forEach(el => {
+        const observer = new MutationObserver(() => {
+          el.classList.remove('value-updating');
+          void el.offsetWidth;
+          el.classList.add('value-updating');
+          window.setTimeout(() => el.classList.remove('value-updating'), 220);
+        });
+        observer.observe(el, { childList: true, characterData: true, subtree: true });
+      });
+    }
+
+    // Safe count-up fallback. It uses only the value supplied by the API.
+    if (!window.PaimanaFX) {
+      window.PaimanaFX = {};
+    }
+
+    if (typeof window.PaimanaFX.countUp !== 'function') {
+      window.PaimanaFX.countUp = function (element, target, options = {}) {
+        if (!element || !Number.isFinite(Number(target))) {
+          if (element) element.textContent = '--';
+          return;
+        }
+
+        const end = Number(target);
+        const decimals = Number.isFinite(options.decimals) ? options.decimals : 0;
+        const format = typeof options.format === 'function'
+          ? options.format
+          : value => decimals > 0 ? value.toFixed(decimals) : Math.round(value).toLocaleString();
+
+        if (paimanaReduceMotion) {
+          element.textContent = format(end);
+          return;
+        }
+
+        const start = Number(element.dataset.numericValue || 0);
+        const duration = 900;
+        const started = performance.now();
+
+        function tick(now) {
+          const progress = Math.min((now - started) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const value = start + (end - start) * eased;
+          element.textContent = format(value);
+
+          if (progress < 1) {
+            requestAnimationFrame(tick);
+          } else {
+            element.dataset.numericValue = String(end);
+            element.textContent = format(end);
+          }
+        }
+
+        requestAnimationFrame(tick);
+      };
+    }
+
+    initMotionLayer();
+
+    // 7. Initializer Pipeline
     document.addEventListener('DOMContentLoaded', () => {
       initMap();
       loadKPIs();
