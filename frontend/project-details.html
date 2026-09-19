@@ -76,7 +76,7 @@
       <!-- Project Header & AI Badge -->
       <div
         class="relative flex flex-col md:flex-row md:items-start justify-between gap-6 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
-        <div class="min-w-0 flex-1">
+        <div>
           <div
             class="flex items-center gap-2 text-[11px] font-bold tracking-wide uppercase text-slate-500 dark:text-slate-400 mb-2">
             <span id="p-sector">SECTOR</span> <span class="text-slate-300 dark:text-slate-600">•</span>
@@ -91,9 +91,9 @@
         </div>
 
         <!-- Big AI Risk Badge -->
-        <div class="relative shrink-0 z-40 flex flex-col items-stretch md:items-end">
+        <div class="relative shrink-0 z-40">
           <div id="risk-badge"
-            class="flex w-fit max-w-full items-center gap-4 bg-orange-500/10 border border-orange-500/30 px-5 py-3 rounded-xl">
+            class="flex items-center gap-4 bg-orange-500/10 border border-orange-500/30 px-6 py-3 rounded-xl">
 
             <div class="text-right">
               <span class="block text-[10px] uppercase font-bold tracking-wide" id="risk-label-text"
@@ -107,20 +107,20 @@
             </div>
 
             <!-- Expand / Collapse Button -->
-            <button id="risk-breakdown-toggle" type="button" class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center
+            <button id="risk-breakdown-toggle" type="button" class="w-9 h-9 rounded-lg flex items-center justify-center
              hover:bg-black/10 dark:hover:bg-white/10
              transition" title="View model breakdown" aria-expanded="false" aria-controls="risk-breakdown">
               <i data-lucide="chevron-down" id="risk-breakdown-icon" class="w-6 h-6"></i>
             </button>
 
-            <i data-lucide="alert-triangle" id="risk-icon" class="w-8 h-8 shrink-0" style="color: inherit;"></i>
+            <i data-lucide="alert-triangle" id="risk-icon" class="w-8 h-8" style="color: inherit;"></i>
           </div>
 
           <!-- Model Breakdown Dropdown -->
-          <div id="risk-breakdown" class="hidden mt-3 w-full md:w-80
+          <div id="risk-breakdown" class="hidden absolute right-0 top-full mt-3 w-80
            bg-white dark:bg-[#121826]
            border border-slate-200 dark:border-[#1E293B]
-           rounded-xl shadow-xl z-50 p-5">
+           rounded-xl shadow-xl z-30 p-5">
 
             <div class="flex items-center justify-between mb-4">
               <div>
@@ -232,125 +232,127 @@
           </div>
         </div>
 
-        <!-- KPI Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <div
-            class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
-            <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Original Cost</p>
-            <p id="p-orig-cost" class="text-xl font-bold text-slate-900 dark:text-white mt-1">₹-- Cr</p>
-          </div>
-          <div
-            class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
-            <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Anticipated Cost</p>
-            <p id="p-anti-cost" class="text-xl font-bold text-orange-600 dark:text-orange-400 mt-1">₹-- Cr</p>
-          </div>
-          <div
-            class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
-            <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Cost Escalation</p>
-            <p id="p-cost-escalation" class="text-xl font-bold text-red-600 dark:text-red-500 mt-1">--%</p>
-          </div>
-          <div
-            class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
-            <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Current Delay</p>
-            <p id="p-delay" class="text-xl font-bold text-red-600 dark:text-red-500 mt-1">-- Months</p>
-            <p class="text-[10px] text-slate-400 mt-0.5">vs. original schedule, as of today</p>
-          </div>
+      </div>
+
+      <!-- KPI Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Original Cost</p>
+          <p id="p-orig-cost" class="text-xl font-bold text-slate-900 dark:text-white mt-1">₹-- Cr</p>
         </div>
-
-        <!-- Main Two Columns -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-          <!-- Left: Progress Bars -->
-          <div
-            class="lg:col-span-2 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200 space-y-6">
-            <h2
-              class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-[#1E293B] pb-3">
-              Project Progress Metrics</h2>
-
-            <!-- Physical -->
-            <div class="space-y-2">
-              <div class="flex justify-between text-xs">
-                <span class="text-slate-600 dark:text-slate-400">Physical Progress (Milestones)</span>
-                <span id="p-phys-text" class="font-bold text-slate-900 dark:text-white">--%</span>
-              </div>
-              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div id="p-phys-bar" class="bg-emerald-500 h-full w-0 transition-all duration-1000"></div>
-              </div>
-              <p id="p-milestone-text" class="text-[10px] text-slate-500 text-right">0 / 0 Achieved</p>
-            </div>
-
-            <!-- Financial -->
-            <div class="space-y-2">
-              <div class="flex justify-between text-xs">
-                <span class="text-slate-600 dark:text-slate-400">Financial Progress (Expenditure vs Anticipated)</span>
-                <span id="p-fin-text" class="font-bold text-slate-900 dark:text-white">--%</span>
-              </div>
-              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div id="p-fin-bar" class="bg-blue-500 h-full w-0 transition-all duration-1000"></div>
-              </div>
-              <p id="p-expenditure-text" class="text-[10px] text-slate-500 text-right">₹0 / ₹0 Cr Spent</p>
-            </div>
-
-            <!-- Timeline Dates -->
-            <div class="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100 dark:border-[#1E293B]">
-              <div>
-                <p class="text-[10px] text-slate-500 uppercase font-semibold">Approval Date</p>
-                <p id="p-date-approve" class="text-xs font-medium text-slate-900 dark:text-white mt-1">--</p>
-              </div>
-              <div>
-                <p class="text-[10px] text-slate-500 uppercase font-semibold">Org. Commissioning</p>
-                <p id="p-date-org" class="text-xs font-medium text-slate-900 dark:text-white mt-1">--</p>
-              </div>
-              <div>
-                <p class="text-[10px] text-orange-600 dark:text-orange-400 uppercase font-semibold">Anti. Commissioning
-                </p>
-                <p id="p-date-anti" class="text-xs font-bold text-orange-600 dark:text-orange-400 mt-1">--</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right: AI Drivers (SHAP Simulation) -->
-          <div
-            class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
-            <h2
-              class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-[#1E293B] pb-3 mb-4">
-              ML Risk Drivers (Attribution)</h2>
-            <p class="text-[10px] text-slate-500 mb-4 leading-relaxed">The Random Forest model identified the following
-              historical variables as the primary drivers for this project's risk score.</p>
-
-            <div class="space-y-4 text-xs">
-              <div>
-                <div class="flex justify-between mb-1.5">
-                  <span class="text-slate-700 dark:text-slate-300 font-medium">Cost Growth %</span>
-                  <span class="text-red-600 dark:text-red-400 font-bold">High Impact</span>
-                </div>
-                <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-red-500 h-full w-[75%]"></div>
-                </div>
-              </div>
-              <div>
-                <div class="flex justify-between mb-1.5">
-                  <span class="text-slate-700 dark:text-slate-300 font-medium">Schedule Delay (Months)</span>
-                  <span class="text-orange-600 dark:text-orange-400 font-bold">Medium Impact</span>
-                </div>
-                <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-orange-500 h-full w-[45%]"></div>
-                </div>
-              </div>
-              <div>
-                <div class="flex justify-between mb-1.5">
-                  <span class="text-slate-700 dark:text-slate-300 font-medium">Lagging Physical Progress</span>
-                  <span class="text-amber-500 dark:text-amber-400 font-bold">Low Impact</span>
-                </div>
-                <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                  <div class="bg-amber-500 h-full w-[20%]"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Anticipated Cost</p>
+          <p id="p-anti-cost" class="text-xl font-bold text-orange-600 dark:text-orange-400 mt-1">₹-- Cr</p>
+        </div>
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Cost Escalation</p>
+          <p id="p-cost-escalation" class="text-xl font-bold text-red-600 dark:text-red-500 mt-1">--%</p>
+        </div>
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
+          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Current Delay</p>
+          <p id="p-delay" class="text-xl font-bold text-red-600 dark:text-red-500 mt-1">-- Months</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">vs. original schedule, as of today</p>
         </div>
       </div>
+
+      <!-- Main Two Columns -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Left: Progress Bars -->
+        <div
+          class="lg:col-span-2 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200 space-y-6">
+          <h2
+            class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-[#1E293B] pb-3">
+            Project Progress Metrics</h2>
+
+          <!-- Physical -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600 dark:text-slate-400">Physical Progress (Milestones)</span>
+              <span id="p-phys-text" class="font-bold text-slate-900 dark:text-white">--%</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div id="p-phys-bar" class="bg-emerald-500 h-full w-0 transition-all duration-1000"></div>
+            </div>
+            <p id="p-milestone-text" class="text-[10px] text-slate-500 text-right">0 / 0 Achieved</p>
+          </div>
+
+          <!-- Financial -->
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-600 dark:text-slate-400">Financial Progress (Expenditure vs Anticipated)</span>
+              <span id="p-fin-text" class="font-bold text-slate-900 dark:text-white">--%</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+              <div id="p-fin-bar" class="bg-blue-500 h-full w-0 transition-all duration-1000"></div>
+            </div>
+            <p id="p-expenditure-text" class="text-[10px] text-slate-500 text-right">₹0 / ₹0 Cr Spent</p>
+          </div>
+
+          <!-- Timeline Dates -->
+          <div class="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100 dark:border-[#1E293B]">
+            <div>
+              <p class="text-[10px] text-slate-500 uppercase font-semibold">Approval Date</p>
+              <p id="p-date-approve" class="text-xs font-medium text-slate-900 dark:text-white mt-1">--</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-slate-500 uppercase font-semibold">Org. Commissioning</p>
+              <p id="p-date-org" class="text-xs font-medium text-slate-900 dark:text-white mt-1">--</p>
+            </div>
+            <div>
+              <p class="text-[10px] text-orange-600 dark:text-orange-400 uppercase font-semibold">Anti. Commissioning
+              </p>
+              <p id="p-date-anti" class="text-xs font-bold text-orange-600 dark:text-orange-400 mt-1">--</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: AI Drivers (SHAP Simulation) -->
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
+          <h2
+            class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-[#1E293B] pb-3 mb-4">
+            ML Risk Drivers (Attribution)</h2>
+          <p class="text-[10px] text-slate-500 mb-4 leading-relaxed">The Random Forest model identified the following
+            historical variables as the primary drivers for this project's risk score.</p>
+
+          <div class="space-y-4 text-xs">
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span class="text-slate-700 dark:text-slate-300 font-medium">Cost Growth %</span>
+                <span class="text-red-600 dark:text-red-400 font-bold">High Impact</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-red-500 h-full w-[75%]"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span class="text-slate-700 dark:text-slate-300 font-medium">Schedule Delay (Months)</span>
+                <span class="text-orange-600 dark:text-orange-400 font-bold">Medium Impact</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-orange-500 h-full w-[45%]"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-1.5">
+                <span class="text-slate-700 dark:text-slate-300 font-medium">Lagging Physical Progress</span>
+                <span class="text-amber-500 dark:text-amber-400 font-bold">Low Impact</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-amber-500 h-full w-[20%]"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </main>
 
   <script src="js/theme.js"></script>
