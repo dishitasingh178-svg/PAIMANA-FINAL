@@ -149,7 +149,59 @@
 
 
     <div class="p-4 md:p-8 max-w-4xl mx-auto w-full space-y-6">
+      <!-- ================= INGESTION METHOD ================= -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
+        <!-- Through Details -->
+        <button
+          type="button"
+          id="detailsModeBtn"
+          class="ingestion-mode-btn border-2 border-orange-500 bg-orange-500/10 rounded-xl p-5 text-left transition-all">
+
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center">
+              <i data-lucide="file-pen-line" class="w-5 h-5"></i>
+            </div>
+
+            <div>
+              <h3 class="font-semibold text-slate-900 dark:text-white">
+                Through Details
+              </h3>
+
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                Enter project information manually
+              </p>
+            </div>
+          </div>
+
+        </button>
+
+
+        <!-- Through PDF -->
+        <button
+          type="button"
+          id="pdfModeBtn"
+          class="ingestion-mode-btn border-2 border-slate-200 dark:border-[#1E293B] rounded-xl p-5 text-left transition-all hover:border-orange-400">
+
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
+              <i data-lucide="file-up" class="w-5 h-5"></i>
+            </div>
+
+            <div>
+              <h3 class="font-semibold text-slate-900 dark:text-white">
+                Through PDF
+              </h3>
+
+              <p class="text-xs text-slate-500 dark:text-slate-400">
+                Upload a PAIMANA project PDF
+              </p>
+            </div>
+          </div>
+
+        </button>
+
+      </div>
       <!-- ================= PROJECT FORM ================= -->
       <form id="projectForm"
         class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-4 sm:p-8 rounded-xl shadow-sm space-y-6 transition-colors duration-200">
@@ -497,7 +549,101 @@
         </button>
 
       </form>
+<!-- ================= PDF UPLOAD ================= -->
+      <div
+        id="pdfUploadSection"
+        class="hidden bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-4 sm:p-8 rounded-xl shadow-sm">
 
+        <div class="mb-6">
+
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-white">
+            Upload PAIMANA PDF
+          </h2>
+
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Upload a PAIMANA project report. The project information will be
+            extracted automatically and added to the database.
+          </p>
+
+        </div>
+
+
+        <!-- PDF Drop Area -->
+        <label
+          for="projectPdf"
+          class="block cursor-pointer border-2 border-dashed border-slate-300 dark:border-[#334155] hover:border-orange-500 rounded-xl p-8 text-center transition-colors">
+
+          <div class="flex flex-col items-center">
+
+            <div
+              class="w-14 h-14 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center mb-4">
+
+              <i data-lucide="file-up" class="w-7 h-7"></i>
+
+            </div>
+
+            <p class="text-sm font-semibold text-slate-900 dark:text-white">
+              Choose a PAIMANA PDF
+            </p>
+
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Click here to select your PDF file
+            </p>
+
+            <p
+              id="selectedPdfName"
+              class="text-xs text-orange-500 mt-3 hidden">
+            </p>
+
+          </div>
+
+          <input
+            type="file"
+            id="projectPdf"
+            name="projectPdf"
+            accept=".pdf,application/pdf"
+            class="hidden">
+
+        </label>
+
+
+        <!-- Upload Button -->
+        <button
+          type="button"
+          id="uploadPdfBtn"
+          class="w-full mt-6 bg-orange-600 hover:bg-orange-500 text-white font-semibold py-3 rounded-lg transition-colors flex justify-center items-center gap-2">
+
+          <i data-lucide="upload" class="w-5 h-5"></i>
+
+          Upload & Process
+
+        </button>
+
+
+        <!-- PDF Processing Status -->
+        <div
+          id="pdfStatus"
+          class="hidden mt-5 rounded-lg p-4 text-sm">
+        </div>
+
+
+        <!-- PDF Import Result -->
+        <div
+          id="pdfResult"
+          class="hidden mt-5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-5">
+
+          <h3 class="font-semibold text-emerald-600 dark:text-emerald-400 mb-3">
+            Processing Complete
+          </h3>
+
+          <div
+            id="pdfResultText"
+            class="text-sm text-slate-700 dark:text-slate-300 space-y-1">
+          </div>
+
+        </div>
+
+      </div>
 
       <!-- ================= RESULT CARD ================= -->
       <div id="resultCard" class="hidden bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-xl transition-all">
@@ -523,7 +669,333 @@
   <script src="js/animations.js"></script>
 
   <script>
+    // =========================================================
+    // INGESTION MODE SWITCHING
+    // =========================================================
 
+    const detailsModeBtn =
+      document.getElementById('detailsModeBtn');
+
+    const pdfModeBtn =
+      document.getElementById('pdfModeBtn');
+
+    const projectForm =
+      document.getElementById('projectForm');
+
+    const pdfUploadSection =
+      document.getElementById('pdfUploadSection');
+
+
+    function showDetailsMode() {
+
+      projectForm.classList.remove('hidden');
+
+      pdfUploadSection.classList.add('hidden');
+
+      detailsModeBtn.classList.add(
+        'border-orange-500',
+        'bg-orange-500/10'
+      );
+
+      detailsModeBtn.classList.remove(
+        'border-slate-200',
+        'dark:border-[#1E293B]'
+      );
+
+      pdfModeBtn.classList.remove(
+        'border-orange-500',
+        'bg-orange-500/10'
+      );
+
+      pdfModeBtn.classList.add(
+        'border-slate-200',
+        'dark:border-[#1E293B]'
+      );
+
+    }
+
+
+    function showPdfMode() {
+
+      projectForm.classList.add('hidden');
+
+      pdfUploadSection.classList.remove('hidden');
+
+      pdfModeBtn.classList.add(
+        'border-orange-500',
+        'bg-orange-500/10'
+      );
+
+      pdfModeBtn.classList.remove(
+        'border-slate-200',
+        'dark:border-[#1E293B]'
+      );
+
+      detailsModeBtn.classList.remove(
+        'border-orange-500',
+        'bg-orange-500/10'
+      );
+
+      detailsModeBtn.classList.add(
+        'border-slate-200',
+        'dark:border-[#1E293B]'
+      );
+
+    }
+
+
+    detailsModeBtn.addEventListener(
+      'click',
+      showDetailsMode
+    );
+
+    pdfModeBtn.addEventListener(
+      'click',
+      showPdfMode
+    );
+
+    // =========================================================
+    // PDF FILE SELECTION
+    // =========================================================
+
+    const projectPdf =
+      document.getElementById('projectPdf');
+
+    const selectedPdfName =
+      document.getElementById('selectedPdfName');
+
+
+    projectPdf.addEventListener('change', function () {
+
+      const file = this.files[0];
+
+      if (!file) {
+
+        selectedPdfName.textContent = '';
+
+        selectedPdfName.classList.add('hidden');
+
+        return;
+
+      }
+
+
+      if (file.type !== 'application/pdf') {
+
+        alert('Please select a PDF file.');
+
+        this.value = '';
+
+        return;
+
+      }
+
+
+      selectedPdfName.textContent =
+        `Selected: ${file.name}`;
+
+      selectedPdfName.classList.remove('hidden');
+
+    });
+
+    // =========================================================
+    // PDF UPLOAD
+    // =========================================================
+
+    const uploadPdfBtn =
+      document.getElementById('uploadPdfBtn');
+
+    const pdfStatus =
+      document.getElementById('pdfStatus');
+
+    const pdfResult =
+      document.getElementById('pdfResult');
+
+    const pdfResultText =
+      document.getElementById('pdfResultText');
+
+
+    uploadPdfBtn.addEventListener(
+      'click',
+      async function () {
+
+        const file =
+          projectPdf.files[0];
+
+
+        if (!file) {
+
+          alert('Please choose a PDF file first.');
+
+          return;
+
+        }
+
+
+        // -------------------------------------------------------
+        // Button state
+        // -------------------------------------------------------
+
+        const originalText =
+          uploadPdfBtn.innerHTML;
+
+        uploadPdfBtn.disabled = true;
+
+        uploadPdfBtn.innerHTML = `
+          <span class="animate-pulse">
+            Processing PDF...
+          </span>
+        `;
+
+
+        // -------------------------------------------------------
+        // Status
+        // -------------------------------------------------------
+
+        pdfStatus.className =
+          'mt-5 rounded-lg p-4 text-sm bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400';
+
+        pdfStatus.textContent =
+          'Uploading and extracting project information...';
+
+        pdfStatus.classList.remove('hidden');
+
+        pdfResult.classList.add('hidden');
+
+
+        try {
+
+          const result =
+            await window.API.uploadProjectPDF(file);
+
+
+          // -----------------------------------------------------
+          // Success
+          // -----------------------------------------------------
+
+          pdfStatus.className =
+            'mt-5 rounded-lg p-4 text-sm bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400';
+
+          pdfStatus.textContent =
+            'PDF processing completed successfully.';
+
+
+          pdfResult.classList.remove('hidden');
+
+
+          pdfResultText.innerHTML = '';
+
+
+          const values = [
+            ['Projects found', result.projects_found],
+            ['New projects', result.projects_created],
+            ['Existing projects updated', result.projects_updated],
+            ['Monthly updates added', result.updates_created],
+            ['Monthly updates updated', result.updates_updated],
+            ['Errors', result.errors?.length || 0]
+          ];
+
+
+          values.forEach(([label, value]) => {
+
+            const row =
+              document.createElement('p');
+
+            row.textContent =
+              `${label}: ${value ?? 0}`;
+
+            pdfResultText.appendChild(row);
+
+          });
+
+
+          if (
+            result.errors &&
+            result.errors.length > 0
+          ) {
+
+            const errorHeading =
+              document.createElement('p');
+
+            errorHeading.className =
+              'font-semibold text-red-500 mt-4';
+
+            errorHeading.textContent =
+              'Import errors:';
+
+            pdfResultText.appendChild(
+              errorHeading
+            );
+
+
+            result.errors.forEach(error => {
+
+              const errorRow =
+                document.createElement('p');
+
+              errorRow.className =
+                'text-red-500';
+
+              errorRow.textContent =
+                `Page ${error.page}: ${error.reason}`;
+
+              pdfResultText.appendChild(
+                errorRow
+              );
+
+            });
+
+          }
+
+
+          const predictionMessage =
+            document.createElement('p');
+
+          predictionMessage.className =
+            'mt-4 text-slate-500 dark:text-slate-400';
+
+          predictionMessage.textContent =
+            'Predictions are being generated in the background.';
+
+          pdfResultText.appendChild(
+            predictionMessage
+          );
+
+
+          // Clear selected file
+          projectPdf.value = '';
+
+          selectedPdfName.textContent = '';
+
+          selectedPdfName.classList.add('hidden');
+
+
+        } catch (error) {
+
+          console.error(
+            'PDF upload failed:',
+            error
+          );
+
+
+          pdfStatus.className =
+            'mt-5 rounded-lg p-4 text-sm bg-red-500/10 border border-red-500/20 text-red-500';
+
+          pdfStatus.textContent =
+            error.message ||
+            'PDF upload failed. Please try again.';
+
+        } finally {
+
+          uploadPdfBtn.disabled = false;
+
+          uploadPdfBtn.innerHTML =
+            originalText;
+
+        }
+
+      }
+    );
     lucide.createIcons();
 
 
