@@ -3,13 +3,13 @@
 const PAIMANA_ROLE_KEY = 'paimana_role';
 
 function getRole() {
-  const stored = localStorage.getItem(PAIMANA_ROLE_KEY);
+  const stored = sessionStorage.getItem(PAIMANA_ROLE_KEY);
   // FIX: Default to 'user' so public visitors don't see admin buttons
   return stored === 'admin' ? 'admin' : 'user'; 
 }
 
 function setRole(role) {
-  localStorage.setItem(PAIMANA_ROLE_KEY, role === 'admin' ? 'admin' : 'user');
+  sessionStorage.setItem(PAIMANA_ROLE_KEY, role === 'admin' ? 'admin' : 'user');
 }
 
 function isAdmin() {

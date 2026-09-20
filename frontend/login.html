@@ -108,7 +108,7 @@
     // and just assign the admin role unconditionally upon form submission.
     document.getElementById('loginForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      localStorage.setItem('paimana_role', 'admin');
+      sessionStorage.setItem('paimana_role', 'admin');
       window.location.href = 'dashboard.html';
     });
   </script>
