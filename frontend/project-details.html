@@ -219,32 +219,14 @@
               </div>
             </div>
 
-            <!-- Overall AI Risk + Run AI -->
+            <!-- Formula -->
             <div class="mt-5 pt-4 border-t border-slate-100 dark:border-[#1E293B]">
-              <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Overall AI Risk
-                </span>
-                <span id="dropdown-overall-risk" class="text-sm font-black text-orange-500">
-                  -- / 100
-                </span>
-              </div>
-
               <p class="text-[10px] text-slate-500 leading-relaxed">
                 Overall Risk =
                 <strong>40% Cost</strong> +
                 <strong>40% Schedule</strong> +
                 <strong>20% Lifecycle</strong>
               </p>
-
-              <button id="run-ai-prediction" type="button" class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
-                bg-slate-900 text-white dark:bg-white dark:text-slate-900
-                hover:opacity-90 transition disabled:opacity-50">
-                <i data-lucide="brain-circuit" class="w-4 h-4"></i>
-                <span id="run-ai-text">Run AI Analysis</span>
-              </button>
-
-              <p id="ai-prediction-status" class="text-[10px] text-center text-slate-500 mt-2 hidden"></p>
             </div>
 
           </div>
@@ -399,112 +381,6 @@
     // 1. Extract the Project ID from URL query parameters (e.g. project-details.html?id=220100181)
     const urlParams = new URLSearchParams(window.location.search);
     const projectId = urlParams.get('id');
-
-    // Run the existing PAIMANA ML pipeline and refresh the dropdown with live results.
-    async function runAIPrediction() {
-      const button = document.getElementById('run-ai-prediction');
-      const buttonText = document.getElementById('run-ai-text');
-      const status = document.getElementById('ai-prediction-status');
-
-      if (!projectId || !button) return;
-
-      button.disabled = true;
-      buttonText.innerText = 'Running AI...';
-      status.classList.remove('hidden');
-      status.innerText = 'Running Cost, Schedule and Lifecycle models...';
-
-      try {
-        const response = await fetch('/api/v1/predictions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ project_id: projectId })
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.detail || `Server returned HTTP ${response.status}`);
-        }
-
-        const costRisk = Number(result.cost_risk_probability) || 0;
-        const scheduleRisk = Number(result.schedule_risk_probability) || 0;
-        const coxRisk = Number(result.cox_risk_probability) || 0;
-
-        const compositeScore = Number(
-          result.composite_risk_score ?? result.risk_score
-        ) || 0;
-
-        const riskTier = (
-          result.risk_tier ??
-          result.risk_label ??
-          'LOW'
-        ).toUpperCase();
-
-        const costPct = costRisk * 100;
-        const schedulePct = scheduleRisk * 100;
-        const coxPct = coxRisk * 100;
-
-        const costContribution = costPct * 0.40;
-        const scheduleContribution = schedulePct * 0.40;
-        const coxContribution = coxPct * 0.20;
-
-        document.getElementById('model-cost-risk').innerText =
-          `${costPct.toFixed(1)}%`;
-
-        document.getElementById('model-schedule-risk').innerText =
-          `${schedulePct.toFixed(1)}%`;
-
-        document.getElementById('model-cox-risk').innerText =
-          `${coxPct.toFixed(1)}%`;
-
-        document.getElementById('model-cost-contribution').innerText =
-          `${costContribution.toFixed(1)} pts`;
-
-        document.getElementById('model-schedule-contribution').innerText =
-          `${scheduleContribution.toFixed(1)} pts`;
-
-        document.getElementById('model-cox-contribution').innerText =
-          `${coxContribution.toFixed(1)} pts`;
-
-        document.getElementById('model-cost-bar').style.width =
-          `${Math.min(100, costPct)}%`;
-
-        document.getElementById('model-schedule-bar').style.width =
-          `${Math.min(100, schedulePct)}%`;
-
-        document.getElementById('model-cox-bar').style.width =
-          `${Math.min(100, coxPct)}%`;
-
-        const riskScoreEl = document.getElementById('p-riskscore');
-
-        PaimanaFX.countUp(riskScoreEl, compositeScore, {
-          decimals: 1,
-          format: (v) => `${v.toFixed(1)} / 100`
-        });
-
-        document.getElementById('dropdown-overall-risk').innerText =
-          `${compositeScore.toFixed(1)} / 100`;
-
-        document.getElementById('risk-label-text').innerText =
-          `${riskTier} RISK`;
-
-        status.innerText =
-          `AI analysis complete • ${riskTier}`;
-
-        buttonText.innerText = 'Run AI Analysis';
-
-      } catch (error) {
-        console.error('AI prediction failed:', error);
-        status.innerText = `AI analysis failed: ${error.message}`;
-        buttonText.innerText = 'Retry AI Analysis';
-      } finally {
-        button.disabled = false;
-
-        if (window.lucide) {
-          lucide.createIcons();
-        }
-      }
-    }
 
     // 2. Fetch live data from backend endpoint
     async function loadProjectData() {
@@ -781,13 +657,6 @@ async function loadSHAPExplanation() {
 document.addEventListener('DOMContentLoaded', loadProjectData);
 
 loadSHAPExplanation();
-
-      // Run the existing AI/ML prediction pipeline from the dropdown.
-      const runAIBtn = document.getElementById('run-ai-prediction');
-
-      if (runAIBtn) {
-        runAIBtn.addEventListener('click', runAIPrediction);
-      }
 
       // Risk model breakdown toggle
       const riskBreakdownToggle = document.getElementById('risk-breakdown-toggle');
