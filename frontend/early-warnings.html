@@ -596,7 +596,80 @@
       }
 
     }
-  </style>
+      @media (prefers-reduced-motion:reduce) {
+    *, *::before, *::after {
+      animation-duration:.001ms !important;
+      animation-iteration-count:1 !important;
+      scroll-behavior:auto !important;
+      transition-duration:.001ms !important;
+    }
+  }
+
+  /* ============================================================
+     RESPONSIVE VIEWPORT FIT
+     ============================================================ */
+
+  html,
+  body {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+
+  #sidebar {
+    width: 16rem;
+    flex: 0 0 16rem;
+  }
+
+  main {
+    min-width: 0;
+    width: 100%;
+  }
+
+  main > header {
+    flex-shrink: 0;
+  }
+
+  #alerts-container {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #alerts-container > div {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  @media (min-width: 1280px) {
+    #sidebar {
+      width: 15.5rem;
+      flex-basis: 15.5rem;
+    }
+  }
+
+  @media (max-width: 767px) {
+    main > header {
+      min-height: 4.5rem;
+      height: auto;
+      padding-top: .75rem;
+      padding-bottom: .75rem;
+    }
+
+    main > header h1 {
+      font-size: 1rem;
+    }
+
+    main > header p {
+      font-size: .68rem;
+    }
+
+    main .pm-radar-backdrop {
+      left: 65%;
+      top: 48%;
+    }
+  }
+
+</style>
 
 
 
@@ -755,7 +828,7 @@
 
 
 
-        <div class="p-4 md:p-8 max-w-5xl mx-auto w-full space-y-6">
+        <div class="w-full px-4 sm:px-5 lg:px-7 xl:px-8 py-5 lg:py-6 space-y-5">
 
 
 
@@ -931,7 +1004,7 @@
         return `
           <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] rounded-xl shadow-sm overflow-hidden flex flex-col md:flex-row transition-colors duration-200 p-micro-enter" style="animation-delay:${Math.min(index * 70, 420)}ms;">
             <div class="w-full md:w-2 ${config.bar} shrink-0"></div>
-            <div class="p-6 flex-1 flex flex-col md:flex-row justify-between gap-6">
+            <div class="p-5 sm:p-6 flex-1 min-w-0 flex flex-col md:flex-row justify-between gap-5 lg:gap-6">
               <div class="space-y-3 flex-1 min-w-0">
                 <div class="flex flex-wrap items-center gap-3">
                   <span class="px-2 py-1 ${config.subtle} ${config.text} border ${config.border} rounded text-[10px] font-bold uppercase tracking-wider">${escapeHtml(config.label)} Risk</span>
