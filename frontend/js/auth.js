@@ -46,7 +46,7 @@ function applyRoleToPage() {
   });
 
   document.querySelectorAll('[data-role-greeting]').forEach((el) => {
-    el.textContent = admin ? 'Good morning, Administrator.' : 'Good morning.';
+    el.textContent = admin ? 'Good morning, Administrator.' : 'Good morning, User.';
   });
 }
 
