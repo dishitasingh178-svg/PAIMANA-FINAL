@@ -556,139 +556,124 @@
     }
 
     #alerts-container a:hover {
-  transform: translateY(-1px);
-}
+      transform: translateY(-1px);
+    }
 
-/* ============================================================
-   PAIMANA EARLY WARNING - FINAL SCREEN LAYOUT
-   ============================================================ */
 
-html,
-body {
-  width: 100%;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
 
-/* ============================================================
-   DESKTOP
-   Sidebar = 256px
-   Main = remaining screen width
-   ============================================================ */
+    @media (max-width: 767px) {
 
-@media (min-width: 1024px) {
+      main .pm-radar-backdrop {
 
-  #sidebar {
-    width: 256px !important;
-    min-width: 256px !important;
-    max-width: 256px !important;
-    flex: 0 0 256px !important;
-  }
+        left: 62%;
 
-  main {
-    width: calc(100vw - 256px) !important;
-    min-width: 0 !important;
-    max-width: calc(100vw - 256px) !important;
-    flex: 1 1 auto !important;
-    overflow-x: hidden !important;
-  }
+        width: 620px;
 
-  main > header {
-    width: 100% !important;
-    min-width: 0 !important;
-  }
+        height: 620px;
 
-  main > div:not(.pm-radar-backdrop) {
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
+        opacity: calc(var(--pm-radar-opacity) * .72);
 
-  #alerts-container {
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-  }
+      }
 
-  #alerts-container > div {
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
+    }
 
-  #alert-search {
-    width: 288px !important;
-  }
-}
 
-/* ============================================================
-   TABLET
-   ============================================================ */
 
-@media (min-width: 768px) and (max-width: 1023px) {
+    @media (prefers-reduced-motion:reduce) {
 
-  #sidebar {
-    width: 256px !important;
-    max-width: 256px !important;
-  }
+      *,
+      *::before,
+      *::after {
 
-  main {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-  }
-}
+        animation-duration: .001ms !important;
 
-/* ============================================================
-   MOBILE
-   ============================================================ */
+        animation-iteration-count: 1 !important;
 
-@media (max-width: 767px) {
+        scroll-behavior: auto !important;
 
-  main {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-  }
+        transition-duration: .001ms !important;
 
-  main > header {
-    width: 100% !important;
-    min-height: 80px;
-    height: auto;
-  }
+      }
 
-  #alert-search {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
+    }
 
-  main .pm-radar-backdrop {
-    left: 62%;
-    width: 620px;
-    height: 620px;
-  }
-}
+    @media (prefers-reduced-motion:reduce) {
 
-/* ============================================================
-   REDUCED MOTION
-   ============================================================ */
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .001ms !important;
+      }
+    }
 
-@media (prefers-reduced-motion: reduce) {
+    /* ============================================================
+     RESPONSIVE VIEWPORT FIT
+     ============================================================ */
 
-  *,
-  *::before,
-  *::after {
-    animation-duration: .001ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: .001ms !important;
-  }
-}
-</style>
+    html,
+    body {
+      width: 100%;
+      min-height: 100%;
+      overflow-x: hidden;
+    }
+
+    #sidebar {
+      width: 16rem;
+      flex: 0 0 16rem;
+    }
+
+    main {
+      min-width: 0;
+      width: 100%;
+    }
+
+    main>header {
+      flex-shrink: 0;
+    }
+
+    #alerts-container {
+      width: 100%;
+      min-width: 0;
+    }
+
+    #alerts-container>div {
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    @media (min-width: 1280px) {
+      #sidebar {
+        width: 15.5rem;
+        flex-basis: 15.5rem;
+      }
+    }
+
+    @media (max-width: 767px) {
+      main>header {
+        min-height: 4.5rem;
+        height: auto;
+        padding-top: .75rem;
+        padding-bottom: .75rem;
+      }
+
+      main>header h1 {
+        font-size: 1rem;
+      }
+
+      main>header p {
+        font-size: .68rem;
+      }
+
+      main .pm-radar-backdrop {
+        left: 65%;
+        top: 48%;
+      }
+    }
+  </style>
+
 
 
 </head>
@@ -960,8 +945,7 @@ body {
       Object.entries(counts).forEach(([key, value]) => {
         const element = document.getElementById(`count-${key}`);
         if (!element) return;
-        if (window.PaimanaFX && typeof PaimanaFX.countUp === 'function') PaimanaFX.countUp(element, value, { duration: 500 });
-        else element.textContent = value;
+        element.textContent = value;
       });
     }
 
