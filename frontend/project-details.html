@@ -639,8 +639,148 @@
         alert(`Could not load project details: ${error.message}`);
       }
     }
+async function loadSHAPExplanation() {
+  const costContainer = document.getElementById('cost-shap-drivers');
+  const scheduleContainer = document.getElementById('schedule-shap-drivers');
 
+  if (!costContainer || !scheduleContainer || !projectId) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `/api/v1/projects/${encodeURIComponent(projectId)}/explanation`
+    );
+
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => ({}));
+      throw new Error(
+        errorPayload.detail || `Server returned HTTP ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    const featureNames = {
+      agency_overrun_rate: "Agency Overrun Rate",
+      sector_overrun_rate: "Sector Overrun Rate",
+      cost_growth_3m: "Cost Growth — 3 Months",
+      cost_growth_6m: "Cost Growth — 6 Months",
+      cost_growth_12m: "Cost Growth — 12 Months",
+      expenditure_growth_3m: "Expenditure Growth — 3 Months",
+      expenditure_growth_6m: "Expenditure Growth — 6 Months",
+      expenditure_growth_12m: "Expenditure Growth — 12 Months",
+      cost_revision_percentage: "Cost Revision",
+      anticipated_cost_percentage: "Anticipated Cost Change",
+      current_cost: "Current Cost",
+      project_duration_elapsed_percentage: "Project Duration Elapsed",
+      schedule_progress_mismatch: "Schedule Progress Mismatch",
+      anticipated_delay_from_original: "Anticipated Delay",
+      remaining_org_months: "Remaining Original Duration",
+      milestone_completion_percentage: "Milestone Completion",
+      milestone_progress_change_3m: "Milestone Progress — 3 Months",
+      milestone_progress_change_6m: "Milestone Progress — 6 Months",
+      milestone_progress_change_12m: "Milestone Progress — 12 Months",
+      expenditure_progress_gap_org: "Expenditure vs Progress",
+      expenditure_progress_gap_anti: "Expenditure vs Anticipated Progress",
+      exp_vs_org_prct: "Expenditure vs Original Cost",
+      exp_vs_anti_prct: "Expenditure vs Anticipated Cost",
+      exp_vs_rev_prct: "Expenditure vs Revised Cost",
+      project_age: "Project Age",
+      duration_overrun_months: "Duration Overrun",
+      year: "Year",
+      month: "Month"
+    };
+
+    function formatFeatureName(feature) {
+      if (featureNames[feature]) return featureNames[feature];
+
+      return feature
+        .replaceAll('_', ' ')
+        .replace(/\b\w/g, letter => letter.toUpperCase());
+    }
+
+    function renderDrivers(container, drivers) {
+      if (!drivers || drivers.length === 0) {
+        container.innerHTML =
+          `<div class="text-xs text-slate-400">No explanation available.</div>`;
+        return;
+      }
+
+      container.innerHTML = drivers.map(driver => {
+        const increasesRisk = driver.direction === 'increases_risk';
+
+        const arrow = increasesRisk ? '↑' : '↓';
+        const directionClass = increasesRisk
+          ? 'text-red-500'
+          : 'text-emerald-500';
+
+        const impact = Math.abs(Number(driver.shap_value) || 0);
+
+        let impactLabel = 'LOW IMPACT';
+
+        if (impact >= 0.5) {
+          impactLabel = 'HIGH IMPACT';
+        } else if (impact >= 0.2) {
+          impactLabel = 'MEDIUM IMPACT';
+        }
+
+        const barWidth = Math.min(
+          100,
+          Math.max(8, impact * 25)
+        );
+
+        return `
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-xs font-medium text-slate-700 dark:text-slate-300">
+                <span class="${directionClass} font-bold mr-1">${arrow}</span>
+                ${formatFeatureName(driver.feature)}
+              </span>
+
+              <span class="${directionClass} text-[9px] font-bold">
+                ${impactLabel}
+              </span>
+            </div>
+
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+              <div
+                class="${increasesRisk ? 'bg-red-500' : 'bg-emerald-500'} h-full rounded-full"
+                style="width: ${barWidth}%">
+              </div>
+            </div>
+
+            <div class="text-[9px] text-slate-400 mt-1">
+              SHAP: ${Number(driver.shap_value).toFixed(3)}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    renderDrivers(
+      costContainer,
+      data.cost?.drivers || []
+    );
+
+    renderDrivers(
+      scheduleContainer,
+      data.schedule?.drivers || []
+    );
+
+  } catch (error) {
+    console.error('SHAP explanation failed:', error);
+
+    costContainer.innerHTML =
+      `<div class="text-xs text-red-500">Unable to load cost risk explanation.</div>`;
+
+    scheduleContainer.innerHTML =
+      `<div class="text-xs text-red-500">Unable to load schedule risk explanation.</div>`;
+  }
+}
 document.addEventListener('DOMContentLoaded', loadProjectData);
+
+loadSHAPExplanation();
 
       // Run the existing AI/ML prediction pipeline from the dropdown.
       const runAIBtn = document.getElementById('run-ai-prediction');
@@ -675,7 +815,7 @@ document.addEventListener('DOMContentLoaded', loadProjectData);
           }
         });
       }
-    });
+      
   </script>
 </body>
 
