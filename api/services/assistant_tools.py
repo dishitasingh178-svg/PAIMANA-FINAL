@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from api.models.models import Project, ProjectUpdate, Prediction, Alert
 
@@ -251,7 +252,7 @@ def get_project_alerts(
     )
 
     if unresolved_only:
-        query = query.filter(Alert.is_resolved == False)
+        query = query.filter(Alert.is_resolved == False, func.coalesce(Alert.status, "NEW") != "DISMISSED")
 
     alerts = (
         query

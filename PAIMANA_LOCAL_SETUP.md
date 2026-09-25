@@ -103,3 +103,16 @@ Then refresh the dashboard.
 - Project IDs are identifiers, not ML features.
 - Historical lookbacks use exact calendar-month keys. Missing months stay missing rather than silently using a neighboring month.
 - Dashboard numbers are data-derived. There are no fabricated 1,981/247/183/42.78 fallback values.
+
+## Early Warning workflow upgrade
+
+Before starting against an existing PostgreSQL database, run from the repository root:
+
+```powershell
+.venv/Scripts/python.exe -m scripts.migrate_alert_workflow
+```
+
+The same additive migration also runs during API startup. It preserves existing alerts.
+No new application environment variables are required. See README.md, “Actionable Early
+Warning Center”, for Docker deployment, exact verification/curl commands, priority rules,
+and optional PostgreSQL integration tests. Demo page: `/early-warnings.html`.

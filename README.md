@@ -1102,3 +1102,149 @@ This project is developed as a **Smart India Hackathon prototype** demonstrating
 The repository currently contains prototype frontend and backend components. Production deployment would require integration with authorized operational data, security and privacy controls, database infrastructure, model validation, model monitoring, domain-expert review, governance and appropriate human oversight.
 
 **No specific monetary savings or operational outcomes should be assumed until validated through a real-world pilot.**
+
+## Actionable Early Warning Center
+
+Open `http://127.0.0.1:8000/early-warnings.html` locally, or `/early-warnings.html`
+on the deployed PAIMANA host. Project details link to a project-filtered warning queue.
+
+### Migration and deployment
+
+No new application environment variable is required. The existing `DATABASE_URL`
+must point to PostgreSQL and its role must be allowed to alter `alerts`. Plain
+`postgresql://` URLs are normalized to the installed psycopg2 driver, preserving
+compatibility with SQLAlchemy 2.1. Explicit driver URLs are left unchanged.
+
+For the existing Docker deployment, from the repository directory on the server:
+
+```sh
+docker compose build paimana-api
+docker compose run --rm paimana-api python -m scripts.migrate_alert_workflow
+docker compose up -d paimana-api
+```
+
+For a non-Docker server with its environment already configured:
+
+```sh
+python -m scripts.migrate_alert_workflow
+```
+
+The migration is also run automatically during FastAPI startup, after `create_all`.
+Existing tables are migrated explicitly; `create_all` alone is not used as a migration.
+It is transactional, serialized across workers, and repeatable. Existing resolved rows
+become RESOLVED and other legacy rows become NEW. No rows are removed. Historical
+workflow timestamps are left unknown rather than inventing resolution dates.
+The standalone SQL alternative is:
+
+```sh
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f scripts/migrate_alert_workflow.sql
+```
+
+For psql use a plain `postgresql://` connection URL, not a SQLAlchemy `+psycopg2` URL.
+
+### Local verification (PowerShell)
+
+From the project root with Python 3.11+ installed and the existing `.env` configured:
+
+```powershell
+python -m venv .venv
+.venv/Scripts/python.exe -m pip install -r requirements-dev.txt
+.venv/Scripts/python.exe -m pytest tests -q
+node --check frontend/js/api.js
+node --check frontend/js/early-warnings.js
+node --check frontend/js/project-warnings.js
+node --test tests/test_early_warnings_ui.cjs
+.venv/Scripts/python.exe -m scripts.migrate_alert_workflow
+.venv/Scripts/python.exe -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+```
+
+Unit/API tests use disposable in-memory SQLite and never the application database.
+To also test the additive migration and workflow persistence on PostgreSQL, set the
+optional **test-only** variable `TEST_POSTGRES_URL` to a disposable PostgreSQL database
+whose role can create schemas, then run the same pytest command. The test creates a
+randomly named schema, migrates legacy rows twice, verifies all statuses/notes, and
+removes only its own schema. Without this variable that integration test is skipped.
+
+To exercise the existing batch prediction pipeline against a populated local database
+(this writes real predictions and alerts):
+
+```powershell
+.venv/Scripts/python.exe scripts/generate_predictions.py --limit 5
+```
+
+### API examples (bash/curl)
+
+Use an alert ID returned by the list call; no demo IDs are hardcoded:
+
+```sh
+BASE=http://127.0.0.1:8000
+curl -fsS "$BASE/api/v1/alerts"
+curl -fsS "$BASE/api/v1/alerts/priority?limit=10"
+curl -fsS "$BASE/api/v1/alerts/summary"
+read -r -p 'Alert ID from the list: ' ALERT_ID
+curl -fsS -X PATCH "$BASE/api/v1/alerts/$ALERT_ID/status" -H 'Content-Type: application/json' -d '{"status":"ACKNOWLEDGED","review_note":"Agency contacted. Awaiting clarification."}'
+curl -fsS -X PATCH "$BASE/api/v1/alerts/$ALERT_ID/status" -H 'Content-Type: application/json' -d '{"status":"UNDER_REVIEW","review_note":"Reviewing the latest execution report."}'
+curl -fsS -X PATCH "$BASE/api/v1/alerts/$ALERT_ID/status" -H 'Content-Type: application/json' -d '{"status":"RESOLVED","review_note":"Review completed."}'
+curl -fsS -X PATCH "$BASE/api/v1/alerts/$ALERT_ID/status" -H 'Content-Type: application/json' -d '{"status":"DISMISSED","review_note":"Reporting discrepancy verified."}'
+```
+
+`GET /alerts` preserves the original array shape and fields, defaults to active rows,
+and accepts `status`, `severity`, `alert_class`, `min_priority`, `project_id`,
+`include_closed`, `limit` (1–500, default 100), and `offset`. Filtering and priority
+sorting happen before pagination. Summary counts cover the whole portfolio; Immediate
+counts unique active projects. Priority returns unique projects with active warnings.
+
+### Calculation and interpretation
+
+Priority = 40% stored composite risk + 25% deterioration + 20% financial exposure
++ 15% urgency. Deterioration is `clamp(delta * 5, 0, 100)`. The prior prediction is
+from the immediately previous distinct available report month, not the most recently
+executed job. Same-month reruns are selected by generated_at and prediction ID.
+Missing prediction/history/cost is explicitly unavailable and contributes zero.
+
+Exposure prefers positive anticipated, then revised, then original cost. It is
+normalized against the linearly interpolated 95th percentile of all current portfolio
+project exposures, capped at 100. Exposure is project cost, **not expected financial
+loss**. Alert urgency is 100/70/40 for CRITICAL/ELEVATED/WATCH. Project priority uses
+the highest active alert severity. Priority labels are IMMEDIATE >=80, HIGH >=65,
+MEDIUM >=45, otherwise ROUTINE. The ML artifacts, feature ordering and 40/40/20 model
+fusion are unchanged.
+
+Freshness compares project reports with the maximum report_month in project_updates,
+never today's date: current is HIGH, one calendar reporting month behind is MEDIUM,
+and two or more behind is LOW, subject to relevant field/history completeness.
+Data confidence measures evidence quality, not calibrated model confidence.
+
+The actual engine shares COST_ESCALATION for anticipated/revised cost rules and
+SCHEDULE_SLIPPAGE for delay/date movement. Classification follows these actual types.
+The original alert message remains the recorded trigger. Evidence and priority use
+latest available data, with each reporting month displayed separately; a continuing
+alert is not a claim that its condition was re-triggered this month. Rule cost baselines
+retain the engine's existing revised/anticipated/original preference, distinct from
+financial exposure's requested anticipated/revised/original preference.
+
+Unresolved alerts deduplicate by project and type, including dismissed rows. A higher
+severity reopens the existing row as NEW and preserves its note and workflow timestamps.
+Same/lower severity preserves the original message and review state; latest risk
+increases of at least 10 points are surfaced in the derived explanation. Resolved
+conditions may generate a new alert on a later run. Existing duplicate rows are retained
+for safety; the top project list groups them. No full event-history table is added.
+All five statuses are accepted; reopening is supported. `is_resolved` is true only
+for RESOLVED. Dashboard and assistant active queries also exclude DISMISSED.
+
+### Validation performed for this iteration
+
+- 34 passing tests, including focused calculations/API coverage, constant query count,
+  and a real PostgreSQL 18 additive migration/persistence test.
+- Existing feature engineering and prediction service run against 578 real CSV updates
+  for eight projects: 16 April/May 2024 predictions and 22 rule-generated alerts.
+- Application startup/model loading and live alerts, priority, summary, dashboard,
+  project, SHAP and analytics endpoints verified locally; frontend JavaScript syntax checked.
+- Browser workflow verified for acknowledgement, review, resolution, dismissal, filters,
+  empty states, project details and literal rendering of markup in review notes.
+- Existing batch prediction script completed five real projects with zero failures.
+
+The verification database is isolated from deployment. No production credentials,
+model artifacts, synthetic demo records or external APIs were added. Example priority
+92 is not forced: actual project data determines whether any IMMEDIATE projects exist.
+Deploying the live site and recording a submission video remain deployment/demo steps.

@@ -49,6 +49,12 @@ CREATE TABLE IF NOT EXISTS alerts (
     severity VARCHAR(20) NOT NULL,
     message TEXT NOT NULL,
     is_resolved BOOLEAN DEFAULT FALSE,
+    status VARCHAR(20) NOT NULL DEFAULT 'NEW',
+    status_updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    acknowledged_at TIMESTAMP WITH TIME ZONE,
+    resolved_at TIMESTAMP WITH TIME ZONE,
+    dismissed_at TIMESTAMP WITH TIME ZONE,
+    review_note TEXT,
     triggered_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

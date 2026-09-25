@@ -15,7 +15,12 @@ const API = {
   getDashboardStats: () => fetchAPI("/dashboard/summary"),
   getHighRiskMapProjects: () => fetchAPI("/dashboard/ongoing-high-risk"),
   getRiskDistribution: () => fetchAPI("/dashboard/risk-distribution"),
-  getAlerts: () => fetchAPI("/dashboard/alerts"),
+  getAlerts: (filters = {}) => fetchAPI(`/alerts?${new URLSearchParams(filters)}`),
+  getPriorityAlerts: (limit = 10) => fetchAPI(`/alerts/priority?limit=${limit}`),
+  getAlertSummary: () => fetchAPI("/alerts/summary"),
+  updateAlertStatus: (alertId, status, reviewNote) => fetchAPI(`/alerts/${encodeURIComponent(alertId)}/status`, {
+    method: "PATCH", body: JSON.stringify({status, ...(reviewNote === undefined ? {} : {review_note: reviewNote})})
+  }),
   getProjects: (search = "") => fetchAPI(`/projects${search ? `?q=${encodeURIComponent(search)}` : ""}`),
   getProjectById: (id) => fetchAPI(`/projects/${encodeURIComponent(id)}`),
   uploadProjectPDF: async (file) => {
