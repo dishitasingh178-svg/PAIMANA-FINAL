@@ -72,6 +72,12 @@ class Alert(Base):
     severity = Column(String(20), nullable=False)
     message = Column(Text, nullable=False)
     is_resolved = Column(Boolean, default=False)
+    status = Column(String(20), nullable=False, default="NEW", server_default="NEW")
+    status_updated_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    acknowledged_at = Column(DateTime(timezone=True))
+    resolved_at = Column(DateTime(timezone=True))
+    dismissed_at = Column(DateTime(timezone=True))
+    review_note = Column(Text)
     triggered_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
     project = relationship("Project", back_populates="alerts")

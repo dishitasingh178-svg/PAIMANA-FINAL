@@ -39,6 +39,8 @@ async def lifespan(app: FastAPI):
     print("[STARTUP] Connecting to database and verifying schema...")
 
     Base.metadata.create_all(bind=engine)
+    from scripts.migrate_alert_workflow import migrate
+    migrate(engine)
 
     print("[STARTUP] Preloading ML model artifacts and pipelines into RAM...")
 

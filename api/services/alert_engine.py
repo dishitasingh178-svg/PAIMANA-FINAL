@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Any, Optional
 
 from sqlalchemy.orm import Session
@@ -911,14 +911,21 @@ def _save_alert_if_new(
         .filter(
             Alert.project_id == project_id,
             Alert.alert_type == candidate.alert_type,
-            Alert.severity == candidate.severity,
-            Alert.message == candidate.message,
             Alert.is_resolved.is_(False),
         )
+        .order_by(Alert.triggered_at.asc(), Alert.alert_id.asc())
+        .with_for_update()
         .first()
     )
 
     if existing:
+        rank = {"WATCH": 40, "ELEVATED": 70, "CRITICAL": 100}
+        if rank.get(candidate.severity, 0) > rank.get(existing.severity, 0):
+            existing.severity = candidate.severity
+            existing.message = candidate.message
+            existing.status = "NEW"
+            existing.status_updated_at = datetime.now(timezone.utc)
+        # Dismissed warnings stay suppressed unless severity escalates.
         return None
 
     alert = Alert(
@@ -929,6 +936,8 @@ def _save_alert_if_new(
     )
 
     db.add(alert)
+    # Sessions disable autoflush; subsequent candidates must see this row.
+    db.flush()
 
     return alert
 
@@ -951,6 +960,9 @@ def generate_alerts(
     target_month = str(
         target_month
     ).strip()[:7]
+
+    # Serialize alert generation for a project across concurrent ingestion jobs.
+    db.query(Project).filter(Project.project_id == project.project_id).with_for_update().first()
 
     updates = _get_updates(
         db,

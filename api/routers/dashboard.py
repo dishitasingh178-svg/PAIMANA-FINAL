@@ -346,7 +346,8 @@ def get_alerts(db: Session = Depends(get_db)):
             Project.project_id == Alert.project_id,
         )
         .filter(
-            Alert.is_resolved.is_(False)
+            Alert.is_resolved.is_(False),
+            func.coalesce(Alert.status, "NEW") != "DISMISSED",
         )
         .order_by(
             Alert.triggered_at.desc()
