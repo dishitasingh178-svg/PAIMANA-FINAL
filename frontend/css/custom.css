@@ -1,0 +1,31 @@
+/* Smooth scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+/* Makes the map look cool and dark in dark mode */
+.dark .leaflet-tile-pane { 
+    filter: brightness(0.65) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3); 
+}
+
+/* ================= Mobile / responsive polish ================= */
+
+/* Never allow the off-canvas sidebar drawer to introduce horizontal scroll */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Shrink the dashboard map on small screens so it doesn't dominate the viewport */
+@media (max-width: 640px) {
+  #map {
+    height: 260px !important;
+    min-height: 260px !important;
+  }
+}
+
+/* Give the mobile sidebar drawer a visible shadow so it reads as an overlay */
+@media (max-width: 1023px) {
+  #sidebar {
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+  }
+}

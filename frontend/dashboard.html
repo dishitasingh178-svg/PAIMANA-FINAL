@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAIMANA AI - Executive Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+
+  <script>
+    if (
+      localStorage.getItem('theme') === 'dark' ||
+      (!('theme' in localStorage) &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches)
+    ) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
+  <link rel="stylesheet" href="/css/custom.css">
+
+  <style>
+    :root {
+      --bg: #080b14;
+      --panel: #111722;
+      --panel-2: #151c2a;
+      --line: rgba(148, 163, 184, .16);
+      --muted: #94a3b8;
+      --orange: #f97316;
+      --blue: #3b82f6;
+      --green: #10b981;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 18% 22%, rgba(249, 115, 22, .10), transparent 28%),
+        radial-gradient(circle at 82% 52%, rgba(59, 130, 246, .10), transparent 30%),
+        var(--bg);
+    }
+
+    .dashboard-grid {
+      background-image:
+        linear-gradient(rgba(148, 163, 184, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, .035) 1px, transparent 1px);
+      background-size: 44px 44px;
+    }
+
+    .hero-glow {
+      background:
+        radial-gradient(circle at 15% 50%, rgba(249, 115, 22, .13), transparent 26%),
+        radial-gradient(circle at 85% 50%, rgba(59, 130, 246, .12), transparent 28%);
+    }
+
+    .node {
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #94a3b8;
+      box-shadow: 0 0 18px rgba(148, 163, 184, .25);
+    }
+
+    .node.orange {
+      background: var(--orange);
+      box-shadow: 0 0 20px rgba(249, 115, 22, .55);
+    }
+
+    .node.green {
+      background: var(--green);
+      box-shadow: 0 0 20px rgba(16, 185, 129, .45);
+    }
+
+    .node.blue {
+      background: var(--blue);
+      box-shadow: 0 0 20px rgba(59, 130, 246, .45);
+    }
+
+    .connection {
+      position: absolute;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(148, 163, 184, .22), transparent);
+      transform-origin: left center;
+    }
+
+    .glass {
+      background: rgba(17, 23, 34, .82);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+    }
+
+    .metric-card {
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(249, 115, 22, .32);
+      background: rgba(21, 28, 42, .92);
+    }
+
+    .metric-card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(249, 115, 22, .75), transparent);
+    }
+
+    .metric-card.blue::before {
+      background: linear-gradient(90deg, transparent, rgba(59, 130, 246, .75), transparent);
+    }
+
+    .metric-card.green::before {
+      background: linear-gradient(90deg, transparent, rgba(16, 185, 129, .75), transparent);
+    }
+
+    .metric-value {
+      letter-spacing: -0.045em;
+    }
+
+    .section-card {
+      background: rgba(17, 23, 34, .88);
+      border: 1px solid var(--line);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, .18);
+    }
+
+    #map {
+      border: 1px solid rgba(148, 163, 184, .12);
+    }
+
+
+    @media (max-width: 560px) {
+      .risk-legend {
+        grid-template-columns: 1fr 1fr;
+        column-gap: .5rem;
+      }
+      .donut-wrap {
+        width: min(100%, 205px);
+      }
+    }
+
+    @media (max-width: 1023px) {
+      .dashboard-grid {
+        background-size: 34px 34px;
+      }
+    }
+
+    /* =========================================================
+       PAIMANA MOTION + CLAUDE-STYLE DONUT LAYER
+       No business/project values are hardcoded here.
+       ========================================================= */
+    :root {
+      --motion-ease: cubic-bezier(.2, .7, .2, 1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      transition: background-color .45s ease, color .45s ease;
+    }
+
+    .dashboard-grid {
+      position: relative;
+      isolation: isolate;
+    }
+
+    .dashboard-grid::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 12% 18%, rgba(249,115,22,.045), transparent 24%),
+        radial-gradient(circle at 88% 72%, rgba(59,130,246,.045), transparent 28%);
+      animation: ambient-drift 12s ease-in-out infinite alternate;
+    }
+
+    .hero-glow {
+      animation: hero-breathe 8s ease-in-out infinite alternate;
+    }
+
+    .glass {
+      position: relative;
+      overflow: hidden;
+      animation: panel-reveal .8s var(--motion-ease) both;
+    }
+
+    .glass::after {
+      content: "";
+      position: absolute;
+      inset: -60% -20%;
+      pointer-events: none;
+      background: linear-gradient(
+        110deg,
+        transparent 35%,
+        rgba(255,255,255,.045) 48%,
+        transparent 61%
+      );
+      transform: translateX(-55%);
+      animation: glass-sweep 8s ease-in-out infinite;
+    }
+
+    .node {
+      animation: node-float 4s ease-in-out infinite,
+                 node-pulse 2.8s ease-in-out infinite;
+    }
+
+    .connection {
+      overflow: hidden;
+      animation: connection-breathe 3.8s ease-in-out infinite;
+    }
+
+    .connection::after {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 -35%;
+      width: 35%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.55),
+        transparent
+      );
+      animation: connection-flow 4.2s linear infinite;
+    }
+
+    .metric-card,
+    .section-card {
+      will-change: transform, opacity;
+    }
+
+    .metric-card {
+      --mx: 50%;
+      --my: 50%;
+      animation: reveal-up .65s var(--motion-ease) both;
+      transition:
+        transform .28s var(--motion-ease),
+        border-color .28s ease,
+        background .28s ease,
+        box-shadow .28s ease;
+    }
+
+    .metric-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(
+        180px circle at var(--mx) var(--my),
+        rgba(255,255,255,.075),
+        transparent 62%
+      );
+      opacity: 0;
+      transition: opacity .25s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-7px) scale(1.012);
+      box-shadow: 0 22px 55px rgba(0,0,0,.24);
+    }
+
+    .metric-card:hover::after { opacity: 1; }
+
+    .metric-card:nth-child(1) { animation-delay: .10s; }
+    .metric-card:nth-child(2) { animation-delay: .18s; }
+    .metric-card:nth-child(3) { animation-delay: .26s; }
+    .metric-card:nth-child(4) { animation-delay: .34s; }
+
+    .section-card {
+      animation: reveal-up .7s var(--motion-ease) both;
+      transition:
+        transform .28s var(--motion-ease),
+        border-color .28s ease,
+        box-shadow .28s ease;
+    }
+
+    .section-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(148,163,184,.24);
+      box-shadow: 0 24px 60px rgba(0,0,0,.22);
+    }
+
+    #map {
+      animation: map-reveal .9s var(--motion-ease) both;
+      transform-origin: center;
+    }
+
+    #recent-alerts-container > * {
+      animation: alert-reveal .48s var(--motion-ease) both;
+    }
+
+    .sidebar-nav-link-motion {
+      animation: nav-reveal .45s var(--motion-ease) both;
+    }
+
+    [data-hover-lift] {
+      transition:
+        transform .2s var(--motion-ease),
+        background-color .2s ease,
+        color .2s ease;
+    }
+
+    [data-hover-lift]:hover { transform: translateX(4px); }
+
+    #theme-toggle {
+      transition:
+        transform .25s var(--motion-ease),
+        background-color .2s ease,
+        color .2s ease;
+    }
+
+    #theme-toggle:hover { transform: rotate(12deg) scale(1.08); }
+
+    #sidebar {
+      transition:
+        transform .38s var(--motion-ease),
+        box-shadow .38s ease;
+    }
+
+    .metric-value {
+      transition: transform .22s var(--motion-ease), opacity .22s ease;
+    }
+
+    /* Claude-style SVG risk donut */
+    .donut-wrap {
+      position: relative;
+      width: min(100%, 220px);
+      margin: .35rem auto .15rem;
+    }
+
+    .donut {
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+
+    .risk-donut-segment {
+      fill: none;
+      stroke-width: 24;
+      cursor: pointer;
+      transition:
+        stroke-width .3s var(--motion-ease),
+        opacity .3s ease;
+    }
+
+    .donut.has-active .risk-donut-segment:not(.active) {
+      opacity: .3;
+    }
+
+    .risk-donut-segment.active {
+      stroke-width: 29;
+    }
+
+    .donut-sweep {
+      fill: none;
+      stroke: #fff;
+      stroke-width: 40;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+    }
+
+    .donut.play .donut-sweep {
+      animation: sweep 1.5s var(--motion-ease) .2s both;
+    }
+
+    .donut-center {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .dc-val {
+      font-size: clamp(1.7rem, 3vw, 2.1rem);
+      font-weight: 800;
+      letter-spacing: -.03em;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dc-label {
+      margin-top: .2rem;
+      color: #94a3b8;
+      font-size: .8rem;
+      font-weight: 500;
+    }
+
+    .risk-legend {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1rem;
+      row-gap: .65rem;
+      margin: .9rem .15rem 0;
+      padding-top: .25rem;
+    }
+
+    .risk-legend-button {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      width: 100%;
+      min-width: 0;
+      padding: .5rem .35rem;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: transparent;
+      color: #94a3b8;
+      text-align: left;
+      cursor: pointer;
+      transition:
+        background-color .25s ease,
+        border-color .25s ease,
+        color .25s ease,
+        transform .25s var(--motion-ease);
+    }
+
+    .risk-legend-button:hover,
+    .risk-legend-button.on {
+      background: rgba(255,255,255,.055);
+      border-color: rgba(148,163,184,.16);
+      color: #f8fafc;
+    }
+
+    .risk-legend-button:active { transform: scale(.97); }
+
+    .risk-legend-dot {
+      flex: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .risk-legend-text {
+      display: grid;
+      line-height: 1.25;
+    }
+
+    .risk-legend-name {
+      font-size: .9rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .risk-legend-value {
+      color: #94a3b8;
+      font-size: .7rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .data-refresh-pulse {
+      animation: data-pulse 1.2s ease;
+    }
+
+    .leaflet-control-zoom a {
+      transition: transform .18s ease, background-color .18s ease;
+    }
+
+    .leaflet-control-zoom a:hover { transform: scale(1.06); }
+
+    @keyframes reveal-up {
+      from { opacity: 0; transform: translateY(22px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes panel-reveal {
+      from { opacity: 0; transform: translateY(16px) scale(.992); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes nav-reveal {
+      from { opacity: 0; transform: translateX(-12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes alert-reveal {
+      from { opacity: 0; transform: translateX(12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes map-reveal {
+      from { opacity: 0; transform: scale(.985); filter: saturate(.75); }
+      to { opacity: 1; transform: scale(1); filter: saturate(1); }
+    }
+
+    @keyframes hero-breathe {
+      from { opacity: .65; transform: scale(1); }
+      to { opacity: 1; transform: scale(1.035); }
+    }
+
+    @keyframes ambient-drift {
+      from { transform: translate3d(-1%, -1%, 0) scale(1); }
+      to { transform: translate3d(1%, 1%, 0) scale(1.025); }
+    }
+
+    @keyframes glass-sweep {
+      0%, 55% { transform: translateX(-65%); }
+      75%, 100% { transform: translateX(65%); }
+    }
+
+    @keyframes node-float {
+      0%, 100% { transform: translate3d(0,0,0); }
+      50% { transform: translate3d(0,-7px,0); }
+    }
+
+    @keyframes node-pulse {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.35); }
+    }
+
+    @keyframes connection-breathe {
+      0%, 100% { opacity: .45; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes connection-flow {
+      from { transform: translateX(0); }
+      to { transform: translateX(390%); }
+    }
+
+    @keyframes sweep {
+      from { stroke-dashoffset: 100; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    @keyframes data-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(249,115,22,.22); }
+      100% { box-shadow: 0 0 0 14px rgba(249,115,22,0); }
+    }
+
+    @media (max-width: 1023px) {
+      #sidebar.mobile-open {
+        box-shadow: 18px 0 60px rgba(0,0,0,.42);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-300 flex min-h-screen antialiased">
+
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/70 z-30 hidden lg:hidden"></div>
+
+  <!-- KEEPING ALL EXISTING NAVIGATION LINKS -->
+  <aside id="sidebar"
+    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 bg-[#0d121d]/95 border-r border-slate-800/80 flex flex-col justify-between p-5 shrink-0 overflow-y-auto">
+
+    <div>
+      <div class="flex items-center gap-3 mb-10 pl-2">
+        <div
+          class="w-9 h-9 rounded-xl bg-orange-500/15 text-orange-400 flex items-center justify-center ring-1 ring-orange-500/20">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+        <span class="text-lg font-extrabold text-white tracking-wide">PAIMANA AI</span>
+      </div>
+
+      <nav class="space-y-1.5 text-sm font-medium">
+        <a href="dashboard.html"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+        </a>
+
+        <a href="projects.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition">
+          <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
+        </a>
+
+        <a href="add-project.html"
+           id="admin-add-project"
+           style="display: none;"
+           data-role="admin"
+           data-hover-lift
+           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            Add Project
+        </a>
+
+        <a href="risk-analytics.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition">
+          <i data-lucide="line-chart" class="w-4 h-4"></i> Risk Analytics
+        </a>
+
+        <a href="early-warnings.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition">
+          <i data-lucide="bell" class="w-4 h-4"></i> Early Warnings
+        </a>
+
+        <a href="ai-assistant.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition">
+          <i data-lucide="bot" class="w-4 h-4"></i> AI Assistant
+        </a>
+      </nav>
+    </div>
+
+    <div class="pt-4 border-t border-slate-800/80 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-xs font-semibold text-white">
+        PL</div>
+      <div class="text-xs">
+        <p class="font-medium text-white">Parth Lamba</p>
+        <p class="text-slate-500" data-role-label>Administrator</p>
+      </div>
+    </div>
+  </aside>
+
+  <main class="flex-1 flex flex-col h-screen overflow-y-auto min-w-0 dashboard-grid">
+
+    <header
+      class="h-20 border-b border-slate-800/80 px-4 md:px-8 flex items-center justify-between sticky top-0 bg-[#080b14]/80 backdrop-blur-xl z-20">
+      <div class="flex items-center gap-3 min-w-0">
+        <button id="sidebar-toggle"
+          class="lg:hidden shrink-0 p-2 -ml-2 rounded-lg text-slate-400 hover:bg-white/5 transition">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <div class="min-w-0">
+          <p class="text-[10px] uppercase tracking-[.2em] text-orange-400 font-bold mb-1">Infrastructure Intelligence
+          </p>
+          <h1 class="text-lg md:text-xl font-bold text-white truncate" data-role-greeting>
+            Good morning, Administrator.
+          </h1>
+          <p class="text-xs text-slate-500 mt-1 hidden sm:block">
+            Live intelligence across India's infrastructure portfolio.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4 shrink-0">
+        <button id="theme-toggle"
+          class="p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-white/5 transition">
+          <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
+          <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="relative overflow-hidden px-4 md:px-8 pt-8 pb-2">
+      <div class="absolute inset-0 hero-glow pointer-events-none"></div>
+
+      <div class="relative max-w-7xl mx-auto">
+        <div class="glass rounded-3xl px-6 md:px-10 py-8 md:py-10 overflow-hidden">
+          <div class="relative">
+            <div class="node orange left-[18%] top-3"></div>
+            <div class="node left-[34%] top-12"></div>
+            <div class="node green right-[18%] top-5"></div>
+            <div class="node blue right-[34%] bottom-0"></div>
+
+            <div class="connection left-[20%] top-6 w-[20%] rotate-[12deg]"></div>
+            <div class="connection right-[20%] top-8 w-[18%] rotate-[-14deg]"></div>
+
+            <div class="max-w-3xl">
+              <div
+                class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-xs font-semibold">
+                <span class="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
+                Live project intelligence
+              </div>
+
+              <h2 class="mt-5 text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-[1.05]">
+                Infrastructure intelligence
+                <span class="block mt-1">
+                  for a <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Stronger
+                    India.</span>
+                </span>
+              </h2>
+
+              <p class="mt-5 max-w-2xl text-sm md:text-base leading-7 text-slate-400">
+                Predicting risks, surfacing delays, and turning project data into actionable infrastructure
+                intelligence.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="relative px-4 md:px-8 pb-8 space-y-6">
+      <div class="max-w-7xl mx-auto w-full">
+
+        <!-- Dynamic KPI cards. Values remain API-driven. -->
+        <div id="kpi-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+          <div class="metric-card section-card rounded-2xl p-5">
+            <p class="text-xs text-slate-500 font-medium uppercase tracking-wide">Total Projects</p>
+            <div class="flex items-end gap-3 mt-2">
+              <span id="kpi-total" class="metric-value text-3xl font-extrabold text-white">--</span>
+            </div>
+          </div>
+
+          <div class="metric-card section-card rounded-2xl p-5">
+            <p class="text-xs text-slate-500 font-medium uppercase tracking-wide">High Risk Projects</p>
+            <div class="flex items-end gap-3 mt-2">
+              <span id="kpi-high-risk" class="metric-value text-3xl font-extrabold text-orange-400">--</span>
+            </div>
+          </div>
+
+          <div class="metric-card section-card rounded-2xl p-5">
+            <p class="text-xs text-slate-500 font-medium uppercase tracking-wide">Delayed Projects</p>
+            <div class="flex items-end gap-3 mt-2">
+              <span id="kpi-delayed" class="metric-value text-3xl font-extrabold text-red-500">--</span>
+            </div>
+          </div>
+
+          <div class="metric-card green section-card rounded-2xl p-5">
+            <p class="text-xs text-slate-500 font-medium uppercase tracking-wide">Revised Project Cost</p>
+            <div class="flex items-end gap-3 mt-2">
+              <span id="kpi-cost" class="metric-value text-3xl font-extrabold text-emerald-400">--</span>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+
+          <div class="lg:col-span-2 section-card rounded-2xl p-5">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <p class="text-[10px] uppercase tracking-[.16em] text-orange-400 font-bold">Geospatial intelligence</p>
+                <h2 class="text-sm font-semibold text-white mt-1">Projects Across India (Ongoing High Risk)</h2>
+              </div>
+              <i data-lucide="map" class="w-4 h-4 text-slate-500"></i>
+            </div>
+
+            <div id="map" style="height: 400px; min-height: 400px; width: 100%; border-radius: 12px;"
+              class="z-10 bg-slate-900 overflow-hidden"></div>
+          </div>
+
+          <div class="space-y-6">
+
+            <div class="section-card rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <p class="text-[10px] uppercase tracking-[.16em] text-blue-400 font-bold">Portfolio signal</p>
+                  <h2 class="text-sm font-semibold text-white mt-1">Risk Distribution</h2>
+                </div>
+                <i data-lucide="pie-chart" class="w-4 h-4 text-slate-500"></i>
+              </div>
+
+              <div class="relative h-48 flex justify-center items-center">
+                <div class="donut-wrap">
+                  <svg class="donut" id="riskDonut" viewBox="0 0 200 200"
+                       role="img" aria-label="Risk distribution donut chart">
+                    <defs>
+                      <mask id="riskDonutMask" maskUnits="userSpaceOnUse"
+                            x="0" y="0" width="200" height="200">
+                        <circle class="donut-sweep" cx="100" cy="100" r="78"
+                                pathLength="100" transform="rotate(-90 100 100)"/>
+                      </mask>
+                    </defs>
+                    <g id="riskDonutSegments"
+                       mask="url(#riskDonutMask)"
+                       transform="rotate(-90 100 100)"></g>
+                  </svg>
+                  <div class="donut-center" aria-live="polite">
+                    <p class="dc-val" id="riskDonutValue">--</p>
+                    <p class="dc-label" id="riskDonutLabel">Total projects</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 mt-4 text-[11px] text-slate-400">
+                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Low</div>
+                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Medium</div>
+                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-orange-500"></span> High</div>
+                <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span> Critical
+                </div>
+              </div>
+            </div>
+
+            <div class="section-card rounded-2xl p-5">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <p class="text-[10px] uppercase tracking-[.16em] text-red-400 font-bold">Attention required</p>
+                  <h2 class="text-sm font-semibold text-white mt-1">Recent Alerts</h2>
+                </div>
+                <i data-lucide="bell-ring" class="w-4 h-4 text-slate-500"></i>
+              </div>
+
+              <div class="space-y-4" id="recent-alerts-container">
+                <p class="text-xs text-slate-400">Loading alerts...</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script src="js/animations.js"></script>
+  <script>
+    lucide.createIcons();
+
+    // 1. Dynamic SVG Risk Donut
+    // Visual structure inspired by the Claude version, but the values
+    // are populated exclusively from the existing backend API.
+    const riskDonut = document.getElementById('riskDonut');
+    const riskDonutSegments = document.getElementById('riskDonutSegments');
+    const riskDonutValue = document.getElementById('riskDonutValue');
+    const riskDonutLabel = document.getElementById('riskDonutLabel');
+
+    const riskCategories = [
+      { key: 'low', label: 'Low', color: '#10b981' },
+      { key: 'watch', label: 'Medium', color: '#3b82f6' },
+      { key: 'elevated', label: 'High', color: '#f97316' },
+      { key: 'critical', label: 'Critical', color: '#ef4444' }
+    ];
+
+    const numberFormatter = new Intl.NumberFormat('en-IN');
+    let riskValues = [0, 0, 0, 0];
+    let riskSegmentElements = [];
+    let riskLegendButtons = [];
+    let activeRiskIndex = -1;
+
+    function renderRiskDonut(values, animate = true) {
+      if (!riskDonut || !riskDonutSegments) return;
+
+      riskValues = values.map(value => {
+        const n = Number(value);
+        return Number.isFinite(n) && n >= 0 ? n : 0;
+      });
+
+      const total = riskValues.reduce((sum, value) => sum + value, 0);
+
+      riskDonutSegments.innerHTML = '';
+      riskSegmentElements = [];
+
+      if (total <= 0) {
+        riskDonutValue.textContent = '--';
+        riskDonutLabel.textContent = 'No risk data';
+        return;
+      }
+
+      let accumulated = 0;
+      const NS = 'http://www.w3.org/2000/svg';
+
+      riskValues.forEach((value, index) => {
+        if (value <= 0) return;
+
+        const percentage = (value / total) * 100;
+        // Keep segments contiguous. The previous artificial gap created
+        // a dark divider through the blue segment at its boundary.
+        const segmentLength = Math.max(percentage, 0.25);
+
+        const circle = document.createElementNS(NS, 'circle');
+        circle.setAttribute('cx', '100');
+        circle.setAttribute('cy', '100');
+        circle.setAttribute('r', '78');
+        circle.setAttribute('pathLength', '100');
+        circle.setAttribute(
+          'stroke-dasharray',
+          `${segmentLength} ${100 - segmentLength}`
+        );
+        circle.setAttribute('stroke-dashoffset', `${-accumulated}`);
+        circle.setAttribute('class', 'risk-donut-segment');
+        circle.style.stroke = riskCategories[index].color;
+        circle.dataset.index = String(index);
+
+        riskDonutSegments.appendChild(circle);
+        riskSegmentElements.push(circle);
+
+        accumulated += percentage;
+      });
+
+      riskDonutValue.textContent = numberFormatter.format(total);
+      riskDonutLabel.textContent = 'Total projects';
+
+      if (animate && !paimanaReduceMotion) {
+        riskDonut.classList.remove('play');
+        void riskDonut.offsetWidth;
+        riskDonut.classList.add('play');
+      }
+
+      bindRiskDonutInteractions();
+    }
+
+    function setRiskDonutActive(index) {
+      if (!riskSegmentElements.length) return;
+
+      activeRiskIndex = index;
+      riskDonut.classList.add('has-active');
+
+      riskSegmentElements.forEach(segment => {
+        segment.classList.toggle(
+          'active',
+          Number(segment.dataset.index) === index
+        );
+      });
+
+      riskLegendButtons.forEach((button, buttonIndex) => {
+        button.classList.toggle('on', buttonIndex === index);
+      });
+
+      const value = riskValues[index] || 0;
+      const category = riskCategories[index];
+      const total = riskValues.reduce((sum, current) => sum + current, 0);
+      const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+
+      riskDonutValue.textContent = numberFormatter.format(value);
+      riskDonutLabel.textContent = `${category.label} risk · ${percentage}%`;
+    }
+
+    function resetRiskDonut() {
+      activeRiskIndex = -1;
+      riskDonut.classList.remove('has-active');
+
+      riskSegmentElements.forEach(segment => {
+        segment.classList.remove('active');
+      });
+
+      riskLegendButtons.forEach(button => {
+        button.classList.remove('on');
+      });
+
+      const total = riskValues.reduce((sum, current) => sum + current, 0);
+      riskDonutValue.textContent = total > 0
+        ? numberFormatter.format(total)
+        : '--';
+      riskDonutLabel.textContent = total > 0
+        ? 'Total projects'
+        : 'No risk data';
+    }
+
+    function bindRiskDonutInteractions() {
+      riskLegendButtons = [...document.querySelectorAll('#riskLegend .risk-legend-button')];
+
+      riskSegmentElements.forEach(segment => {
+        const index = Number(segment.dataset.index);
+
+        segment.onpointerenter = () => setRiskDonutActive(index);
+        segment.onpointerleave = resetRiskDonut;
+      });
+
+      riskLegendButtons.forEach((button, index) => {
+        button.onpointerenter = () => setRiskDonutActive(index);
+        button.onpointerleave = resetRiskDonut;
+        button.onfocus = () => setRiskDonutActive(index);
+        button.onblur = resetRiskDonut;
+        button.onclick = () => (
+          activeRiskIndex === index
+            ? resetRiskDonut()
+            : setRiskDonutActive(index)
+        );
+      });
+    }
+
+    function renderRiskLegend() {
+      const legend = document.getElementById('riskLegend');
+      if (!legend) return;
+
+      legend.innerHTML = riskCategories.map((category, index) => `
+        <li>
+          <button type="button"
+                  class="risk-legend-button"
+                  data-risk-index="${index}">
+            <span class="risk-legend-dot"
+                  style="background:${category.color}"></span>
+            <span class="risk-legend-text">
+              <span class="risk-legend-name">${category.label}</span>
+              <span class="risk-legend-value">--</span>
+            </span>
+          </button>
+        </li>
+      `).join('');
+
+      riskLegendButtons = [...legend.querySelectorAll('.risk-legend-button')];
+    }
+
+    function updateRiskLegend(values) {
+      const total = values.reduce((sum, value) => sum + value, 0);
+
+      riskLegendButtons.forEach((button, index) => {
+        const valueElement = button.querySelector('.risk-legend-value');
+        const value = values[index] || 0;
+        const percentage = total > 0
+          ? ((value / total) * 100).toFixed(1)
+          : '0.0';
+
+        valueElement.textContent =
+          `${numberFormatter.format(value)} · ${percentage}%`;
+      });
+
+      bindRiskDonutInteractions();
+    }
+
+    renderRiskLegend();
+
+    // 2. Leaflet Map Initialization
+    let map = null;
+    let markerLayerGroup = null;
+
+    function initMap() {
+      const mapElement = document.getElementById('map');
+      if (!mapElement || typeof L === 'undefined') return;
+
+      map = L.map('map', { attributionControl: false, zoomControl: true }).setView([22.5937, 78.9629], 4.5);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18
+      }).addTo(map);
+
+      markerLayerGroup = L.layerGroup().addTo(map);
+
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+      }, 300);
+    }
+
+    // 3. Robust Data Fetchers
+    async function loadKPIs() {
+      try {
+        const res = await fetch('/api/v1/dashboard/summary');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const stats = await res.json();
+
+        PaimanaFX.countUp(document.getElementById('kpi-total'), stats.total_projects || 0);
+        PaimanaFX.countUp(document.getElementById('kpi-high-risk'), stats.high_risk_count || 0);
+        PaimanaFX.countUp(document.getElementById('kpi-delayed'), stats.delayed_count || 0);
+        PaimanaFX.countUp(document.getElementById('kpi-cost'), parseFloat(stats.revised_cost_lakh_cr) || 0, {
+          decimals: 2,
+          format: (v) => `₹${v.toFixed(2)}L Cr`
+        });
+      } catch (err) {
+        console.warn("KPI API unavailable:", err);
+        document.getElementById('kpi-total').innerText = "--";
+        document.getElementById('kpi-high-risk').innerText = "--";
+        document.getElementById('kpi-delayed').innerText = "--";
+        document.getElementById('kpi-cost').innerText = "--";
+      }
+    }
+
+    async function loadRiskDistributionChart() {
+      try {
+        const res = await fetch('/api/v1/dashboard/risk-distribution');
+        if (!res.ok) throw new Error("Chart API offline");
+
+        const data = await res.json();
+
+        const values = riskCategories.map(category => {
+          const value = Number(data[category.key]);
+          return Number.isFinite(value) && value >= 0 ? value : 0;
+        });
+
+        renderRiskDonut(values, true);
+        updateRiskLegend(values);
+      } catch (err) {
+        console.warn("Chart data unavailable:", err);
+        renderRiskDonut([0, 0, 0, 0], false);
+      }
+    }
+
+    async function loadOngoingHighRiskProjects() {
+      if (!map || !markerLayerGroup) return;
+
+      try {
+        const res = await fetch('/api/v1/dashboard/ongoing-high-risk');
+        let projects = [];
+
+        if (res.ok) {
+          projects = await res.json();
+        }
+
+        // Every project returned by the existing API is rendered.
+        // No hardcoded cap is applied to high-risk or critical projects.
+        markerLayerGroup.clearLayers();
+
+        // Critical projects first so they render above normal high-risk markers.
+        projects.sort((a, b) => {
+          const getRiskLabel = (project) => String(
+            project.risk_label ??
+            project.risk_level ??
+            project.risk_category ??
+            project.severity ??
+            ''
+          ).trim().toUpperCase();
+
+          const scoreA = Number(a.risk_score);
+          const scoreB = Number(b.risk_score);
+          const labelA = getRiskLabel(a);
+          const labelB = getRiskLabel(b);
+
+          const criticalA =
+            labelA.includes('CRITICAL') ||
+            labelA.includes('CRIT') ||
+            String(a.status || '').toUpperCase().includes('CRIT') ||
+            (Number.isFinite(scoreA) && scoreA >= 75);
+
+          const criticalB =
+            labelB.includes('CRITICAL') ||
+            labelB.includes('CRIT') ||
+            String(b.status || '').toUpperCase().includes('CRIT') ||
+            (Number.isFinite(scoreB) && scoreB >= 75);
+
+          return Number(criticalB) - Number(criticalA);
+        });
+
+        let renderedCount = 0;
+        let criticalCount = 0;
+        let invalidCoordinateCount = 0;
+
+        projects.forEach(p => {
+          const lat = parseFloat(p.lat);
+          const lng = parseFloat(p.lng);
+
+          if (isNaN(lat) || isNaN(lng)) {
+            invalidCoordinateCount++;
+            console.warn(
+              'Skipping high-risk project with invalid coordinates:',
+              p
+            );
+            return;
+          }
+
+          const parsedScore = Number(p.risk_score);
+          const score = Number.isFinite(parsedScore) ? parsedScore : null;
+          const status = String(p.status || '').toUpperCase();
+
+          // Respect an explicit risk classification from the API when available.
+          // Fall back to the existing status/score logic for compatibility.
+          const riskLabel = String(
+            p.risk_label ??
+            p.risk_level ??
+            p.risk_category ??
+            p.severity ??
+            ''
+          ).trim().toUpperCase();
+
+          const isCritical =
+            riskLabel.includes('CRITICAL') ||
+            riskLabel.includes('CRIT') ||
+            status.includes('CRIT') ||
+            (score !== null && score >= 75);
+
+          if (isCritical) criticalCount++;
+
+          const color = isCritical ? '#991b1b' : '#f97316';
+          const borderColor = isCritical ? '#7f1d1d' : '#ffffff';
+
+          const marker = L.circleMarker([lat, lng], {
+            radius: isCritical ? 9 : 7,
+            fillColor: color,
+            color: borderColor,
+            weight: 2,
+            fillOpacity: 0.95,
+            opacity: 1.0,
+            pane: 'markerPane',
+            zIndexOffset: isCritical ? 1000 : 100
+          });
+
+          const scoreText =
+            score !== null ? `${score.toFixed(1)}/100` : 'N/A';
+
+          const delayText =
+            p.delay_months !== null &&
+            p.delay_months !== undefined &&
+            p.delay_months !== ''
+              ? `${p.delay_months} Months`
+              : 'N/A';
+
+          const statusText = riskLabel || status || 'RISK';
+
+          marker.bindPopup(`
+            <div style="font-family: 'Inter', sans-serif; min-width: 190px; padding: 4px;">
+              <span style="font-size: 10px; font-weight: bold; color: ${color}; text-transform: uppercase;">
+                ${statusText} RISK
+              </span>
+              <h4 style="margin: 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">
+                ${p.project_name || 'Project'}
+              </h4>
+              <p style="margin: 0; font-size: 11px; color: #475569;">
+                <strong>Sector:</strong> ${p.sector || 'N/A'}
+              </p>
+              <p style="margin: 0; font-size: 11px; color: #475569;">
+                <strong>Risk Score:</strong> ${scoreText}
+              </p>
+              <p style="margin: 0; font-size: 11px; color: #475569;">
+                <strong>Delay:</strong> ${delayText}
+              </p>
+              <div style="margin-top: 6px;">
+                <a href="project-details.html?id=${p.project_id}" style="font-size: 11px; color: #ea580c; font-weight: 600; text-decoration: underline;">
+                  View Project Details →
+                </a>
+              </div>
+            </div>
+          `);
+
+          markerLayerGroup.addLayer(marker);
+          renderedCount++;
+        });
+
+        console.log(
+          `High-risk map: ${renderedCount}/${projects.length} projects rendered. ` +
+          `Critical: ${criticalCount}. Invalid coordinates: ${invalidCoordinateCount}.`
+        );
+
+        map.invalidateSize();
+      } catch (err) {
+        console.error("Map render failed:", err);
+      }
+    }
+
+    async function loadRecentAlerts() {
+      const container = document.getElementById('recent-alerts-container');
+      if (!container) return;
+
+      try {
+        const res = await fetch('/api/v1/dashboard/alerts');
+        let alerts = [];
+        if (res.ok) alerts = await res.json();
+
+        if (!alerts || alerts.length === 0) {
+          container.innerHTML = '<p class="text-xs text-slate-400">No active alerts.</p>';
+          return;
+        }
+
+        container.innerHTML = alerts.slice(0, 4).map(a => `
+          <div class="flex gap-3 items-start border-b border-slate-100 dark:border-[#1E293B] pb-3 last:border-0">
+            <span class="w-2 h-2 mt-1.5 rounded-full ${(a.severity || '').toUpperCase() === 'CRITICAL' ? 'bg-red-500' : 'bg-orange-500'} shrink-0"></span>
+            <div>
+              <p class="text-xs font-semibold text-slate-900 dark:text-white">${a.project_name}</p>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${a.message}</p>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.warn("Alerts loading error:", err);
+        container.innerHTML = '<p class="text-xs text-slate-400">Unable to load alerts.</p>';
+      }
+    }
+
+    // 4. Theme Toggle
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const darkIcon = document.getElementById('theme-dark-icon');
+    const lightIcon = document.getElementById('theme-light-icon');
+
+    function syncThemeIcons() {
+      const isDark = document.documentElement.classList.contains('dark');
+      if (darkIcon && lightIcon) {
+        darkIcon.classList.toggle('hidden', isDark);
+        lightIcon.classList.toggle('hidden', !isDark);
+      }
+    }
+    syncThemeIcons();
+
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        syncThemeIcons();
+        if (false) {
+          riskChart.data.datasets[0].borderColor = isDark ? '#121826' : '#ffffff';
+          riskChart.update();
+        }
+      });
+    }
+
+
+    // =========================================================
+    // 6. UI Motion Controller
+    // Animation parameters are visual-only. All dashboard data
+    // continues to come from the existing API endpoints above.
+    // =========================================================
+    const paimanaReduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function initMotionLayer() {
+
+      // Stagger sidebar navigation without touching its hrefs.
+      document.querySelectorAll('#sidebar nav a').forEach((link, index) => {
+        link.classList.add('sidebar-nav-link-motion');
+        link.style.animationDelay = `${0.08 + index * 0.055}s`;
+      });
+
+      // Cursor-follow spotlight for metric cards.
+      if (!paimanaReduceMotion) {
+        document.querySelectorAll('.metric-card').forEach(card => {
+          card.addEventListener('pointermove', event => {
+            const rect = card.getBoundingClientRect();
+            card.style.setProperty('--mx', `${event.clientX - rect.left}px`);
+            card.style.setProperty('--my', `${event.clientY - rect.top}px`);
+          });
+
+          card.addEventListener('pointerleave', () => {
+            card.style.setProperty('--mx', '50%');
+            card.style.setProperty('--my', '50%');
+          });
+        });
+      }
+
+      // Give dynamically inserted alerts the same entrance animation.
+      const alerts = document.getElementById('recent-alerts-container');
+      if (alerts && !paimanaReduceMotion) {
+        const observer = new MutationObserver(() => {
+          alerts.querySelectorAll(':scope > *').forEach((item, index) => {
+            item.style.animationDelay = `${index * 80}ms`;
+          });
+        });
+        observer.observe(alerts, { childList: true });
+      }
+
+      // Animate the metric value when a real API response updates it.
+      document.querySelectorAll('.metric-value').forEach(el => {
+        const observer = new MutationObserver(() => {
+          el.classList.remove('value-updating');
+          void el.offsetWidth;
+          el.classList.add('value-updating');
+          window.setTimeout(() => el.classList.remove('value-updating'), 220);
+        });
+        observer.observe(el, { childList: true, characterData: true, subtree: true });
+      });
+    }
+
+    // Safe count-up fallback. It uses only the value supplied by the API.
+    if (!window.PaimanaFX) {
+      window.PaimanaFX = {};
+    }
+
+    if (typeof window.PaimanaFX.countUp !== 'function') {
+      window.PaimanaFX.countUp = function (element, target, options = {}) {
+        if (!element || !Number.isFinite(Number(target))) {
+          if (element) element.textContent = '--';
+          return;
+        }
+
+        const end = Number(target);
+        const decimals = Number.isFinite(options.decimals) ? options.decimals : 0;
+        const format = typeof options.format === 'function'
+          ? options.format
+          : value => decimals > 0 ? value.toFixed(decimals) : Math.round(value).toLocaleString();
+
+        if (paimanaReduceMotion) {
+          element.textContent = format(end);
+          return;
+        }
+
+        const start = Number(element.dataset.numericValue || 0);
+        const duration = 900;
+        const started = performance.now();
+
+        function tick(now) {
+          const progress = Math.min((now - started) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const value = start + (end - start) * eased;
+          element.textContent = format(value);
+
+          if (progress < 1) {
+            requestAnimationFrame(tick);
+          } else {
+            element.dataset.numericValue = String(end);
+            element.textContent = format(end);
+          }
+        }
+
+        requestAnimationFrame(tick);
+      };
+    }
+
+    initMotionLayer();
+
+    // 7. Initializer Pipeline
+    document.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      loadKPIs();
+      loadRiskDistributionChart();
+      loadOngoingHighRiskProjects();
+      loadRecentAlerts();
+    });
+  </script>
+
+</body>
+
+</html>

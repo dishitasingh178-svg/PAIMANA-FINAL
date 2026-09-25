@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>PAIMANA AI - Home</title>
+    <meta name="description"
+        content="AI-powered monitoring and predictive analytics for India's massive infrastructure portfolio.">
+    <meta name="theme-color" content="#090c15">
+
+    ```
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        try {
+            if (localStorage.getItem('paimana-theme') === 'light') {
+                document.documentElement.dataset.theme = 'light';
+            }
+        } catch (e) { }
+    </script>
+
+    <style>
+        :root {
+            --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+            --ease: cubic-bezier(.2, .7, .2, 1);
+            --nav-h: 76px;
+
+            --orange: #f0782c;
+            --amber: #f7a146;
+            --coral: #e5544a;
+            --blue: #3468ec;
+            --green: #3fbf8a;
+
+            color-scheme: dark;
+
+            --bg: #090c15;
+            --text: #f4f6fb;
+            --text-soft: #c6cddc;
+            --muted: #8f9ab0;
+            --orange-text: #f28a42;
+            --green-text: #4fd19a;
+
+            --line: rgba(255, 255, 255, .09);
+            --glass: rgba(255, 255, 255, .04);
+            --glass-hover: rgba(255, 255, 255, .07);
+            --nav-bg: rgba(9, 12, 21, .55);
+            --nav-bg-solid: rgba(9, 12, 21, .82);
+            --panel: rgba(14, 19, 33, .95);
+
+            --grid: rgba(255, 255, 255, .045);
+            --edge: rgba(143, 154, 176, .22);
+            --node: rgba(180, 190, 210, .75);
+            --orb-a: rgba(240, 120, 44, .20);
+            --orb-b: rgba(52, 104, 236, .22);
+            --spot: rgba(52, 104, 236, .11);
+            --spot-card: rgba(255, 255, 255, .075);
+            --neutral: rgba(143, 154, 176, .55);
+            --tip-bg: #1a2136;
+            --tip-text: #e9edf7;
+        }
+
+        [data-theme="light"] {
+            color-scheme: light;
+
+            --bg: #f5f6fa;
+            --text: #0c1222;
+            --text-soft: #2f384d;
+            --muted: #586179;
+            --orange-text: #c4530f;
+            --green-text: #14805a;
+
+            --line: rgba(12, 18, 34, .11);
+            --glass: rgba(255, 255, 255, .72);
+            --glass-hover: rgba(255, 255, 255, .96);
+            --nav-bg: rgba(245, 246, 250, .6);
+            --nav-bg-solid: rgba(245, 246, 250, .9);
+            --panel: rgba(255, 255, 255, .97);
+
+            --grid: rgba(12, 18, 34, .055);
+            --edge: rgba(12, 18, 34, .14);
+            --node: rgba(12, 18, 34, .45);
+            --orb-a: rgba(240, 120, 44, .20);
+            --orb-b: rgba(52, 104, 236, .14);
+            --spot: rgba(240, 120, 44, .10);
+            --spot-card: rgba(240, 120, 44, .09);
+            --neutral: rgba(12, 18, 34, .28);
+            --tip-bg: #0c1222;
+            --tip-text: #e9edf7;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: var(--nav-h);
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            margin: 0;
+            ```
