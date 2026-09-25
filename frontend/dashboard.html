@@ -170,6 +170,7 @@
         grid-template-columns: 1fr 1fr;
         column-gap: .5rem;
       }
+
       .donut-wrap {
         width: min(100%, 205px);
       }
@@ -189,7 +190,9 @@
       --motion-ease: cubic-bezier(.2, .7, .2, 1);
     }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+    }
 
     body {
       transition: background-color .45s ease, color .45s ease;
@@ -207,8 +210,8 @@
       pointer-events: none;
       z-index: -1;
       background:
-        radial-gradient(circle at 12% 18%, rgba(249,115,22,.045), transparent 24%),
-        radial-gradient(circle at 88% 72%, rgba(59,130,246,.045), transparent 28%);
+        radial-gradient(circle at 12% 18%, rgba(249, 115, 22, .045), transparent 24%),
+        radial-gradient(circle at 88% 72%, rgba(59, 130, 246, .045), transparent 28%);
       animation: ambient-drift 12s ease-in-out infinite alternate;
     }
 
@@ -227,19 +230,17 @@
       position: absolute;
       inset: -60% -20%;
       pointer-events: none;
-      background: linear-gradient(
-        110deg,
-        transparent 35%,
-        rgba(255,255,255,.045) 48%,
-        transparent 61%
-      );
+      background: linear-gradient(110deg,
+          transparent 35%,
+          rgba(255, 255, 255, .045) 48%,
+          transparent 61%);
       transform: translateX(-55%);
       animation: glass-sweep 8s ease-in-out infinite;
     }
 
     .node {
       animation: node-float 4s ease-in-out infinite,
-                 node-pulse 2.8s ease-in-out infinite;
+        node-pulse 2.8s ease-in-out infinite;
     }
 
     .connection {
@@ -252,12 +253,10 @@
       position: absolute;
       inset: 0 auto 0 -35%;
       width: 35%;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255,255,255,.55),
-        transparent
-      );
+      background: linear-gradient(90deg,
+          transparent,
+          rgba(255, 255, 255, .55),
+          transparent);
       animation: connection-flow 4.2s linear infinite;
     }
 
@@ -282,26 +281,37 @@
       position: absolute;
       inset: 0;
       pointer-events: none;
-      background: radial-gradient(
-        180px circle at var(--mx) var(--my),
-        rgba(255,255,255,.075),
-        transparent 62%
-      );
+      background: radial-gradient(180px circle at var(--mx) var(--my),
+          rgba(255, 255, 255, .075),
+          transparent 62%);
       opacity: 0;
       transition: opacity .25s ease;
     }
 
     .metric-card:hover {
       transform: translateY(-7px) scale(1.012);
-      box-shadow: 0 22px 55px rgba(0,0,0,.24);
+      box-shadow: 0 22px 55px rgba(0, 0, 0, .24);
     }
 
-    .metric-card:hover::after { opacity: 1; }
+    .metric-card:hover::after {
+      opacity: 1;
+    }
 
-    .metric-card:nth-child(1) { animation-delay: .10s; }
-    .metric-card:nth-child(2) { animation-delay: .18s; }
-    .metric-card:nth-child(3) { animation-delay: .26s; }
-    .metric-card:nth-child(4) { animation-delay: .34s; }
+    .metric-card:nth-child(1) {
+      animation-delay: .10s;
+    }
+
+    .metric-card:nth-child(2) {
+      animation-delay: .18s;
+    }
+
+    .metric-card:nth-child(3) {
+      animation-delay: .26s;
+    }
+
+    .metric-card:nth-child(4) {
+      animation-delay: .34s;
+    }
 
     .section-card {
       animation: reveal-up .7s var(--motion-ease) both;
@@ -313,8 +323,8 @@
 
     .section-card:hover {
       transform: translateY(-3px);
-      border-color: rgba(148,163,184,.24);
-      box-shadow: 0 24px 60px rgba(0,0,0,.22);
+      border-color: rgba(148, 163, 184, .24);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .22);
     }
 
     #map {
@@ -322,7 +332,7 @@
       transform-origin: center;
     }
 
-    #recent-alerts-container > * {
+    #recent-alerts-container>* {
       animation: alert-reveal .48s var(--motion-ease) both;
     }
 
@@ -337,7 +347,9 @@
         color .2s ease;
     }
 
-    [data-hover-lift]:hover { transform: translateX(4px); }
+    [data-hover-lift]:hover {
+      transform: translateX(4px);
+    }
 
     #theme-toggle {
       transition:
@@ -346,7 +358,9 @@
         color .2s ease;
     }
 
-    #theme-toggle:hover { transform: rotate(12deg) scale(1.08); }
+    #theme-toggle:hover {
+      transform: rotate(12deg) scale(1.08);
+    }
 
     #sidebar {
       transition:
@@ -455,12 +469,14 @@
 
     .risk-legend-button:hover,
     .risk-legend-button.on {
-      background: rgba(255,255,255,.055);
-      border-color: rgba(148,163,184,.16);
+      background: rgba(255, 255, 255, .055);
+      border-color: rgba(148, 163, 184, .16);
       color: #f8fafc;
     }
 
-    .risk-legend-button:active { transform: scale(.97); }
+    .risk-legend-button:active {
+      transform: scale(.97);
+    }
 
     .risk-legend-dot {
       flex: none;
@@ -494,86 +510,183 @@
       transition: transform .18s ease, background-color .18s ease;
     }
 
-    .leaflet-control-zoom a:hover { transform: scale(1.06); }
+    .leaflet-control-zoom a:hover {
+      transform: scale(1.06);
+    }
 
     @keyframes reveal-up {
-      from { opacity: 0; transform: translateY(22px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(22px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes panel-reveal {
-      from { opacity: 0; transform: translateY(16px) scale(.992); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from {
+        opacity: 0;
+        transform: translateY(16px) scale(.992);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     @keyframes nav-reveal {
-      from { opacity: 0; transform: translateX(-12px); }
-      to { opacity: 1; transform: translateX(0); }
+      from {
+        opacity: 0;
+        transform: translateX(-12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
     @keyframes alert-reveal {
-      from { opacity: 0; transform: translateX(12px); }
-      to { opacity: 1; transform: translateX(0); }
+      from {
+        opacity: 0;
+        transform: translateX(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
     @keyframes map-reveal {
-      from { opacity: 0; transform: scale(.985); filter: saturate(.75); }
-      to { opacity: 1; transform: scale(1); filter: saturate(1); }
+      from {
+        opacity: 0;
+        transform: scale(.985);
+        filter: saturate(.75);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+        filter: saturate(1);
+      }
     }
 
     @keyframes hero-breathe {
-      from { opacity: .65; transform: scale(1); }
-      to { opacity: 1; transform: scale(1.035); }
+      from {
+        opacity: .65;
+        transform: scale(1);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1.035);
+      }
     }
 
     @keyframes ambient-drift {
-      from { transform: translate3d(-1%, -1%, 0) scale(1); }
-      to { transform: translate3d(1%, 1%, 0) scale(1.025); }
+      from {
+        transform: translate3d(-1%, -1%, 0) scale(1);
+      }
+
+      to {
+        transform: translate3d(1%, 1%, 0) scale(1.025);
+      }
     }
 
     @keyframes glass-sweep {
-      0%, 55% { transform: translateX(-65%); }
-      75%, 100% { transform: translateX(65%); }
+
+      0%,
+      55% {
+        transform: translateX(-65%);
+      }
+
+      75%,
+      100% {
+        transform: translateX(65%);
+      }
     }
 
     @keyframes node-float {
-      0%, 100% { transform: translate3d(0,0,0); }
-      50% { transform: translate3d(0,-7px,0); }
+
+      0%,
+      100% {
+        transform: translate3d(0, 0, 0);
+      }
+
+      50% {
+        transform: translate3d(0, -7px, 0);
+      }
     }
 
     @keyframes node-pulse {
-      0%, 100% { filter: brightness(1); }
-      50% { filter: brightness(1.35); }
+
+      0%,
+      100% {
+        filter: brightness(1);
+      }
+
+      50% {
+        filter: brightness(1.35);
+      }
     }
 
     @keyframes connection-breathe {
-      0%, 100% { opacity: .45; }
-      50% { opacity: 1; }
+
+      0%,
+      100% {
+        opacity: .45;
+      }
+
+      50% {
+        opacity: 1;
+      }
     }
 
     @keyframes connection-flow {
-      from { transform: translateX(0); }
-      to { transform: translateX(390%); }
+      from {
+        transform: translateX(0);
+      }
+
+      to {
+        transform: translateX(390%);
+      }
     }
 
     @keyframes sweep {
-      from { stroke-dashoffset: 100; }
-      to { stroke-dashoffset: 0; }
+      from {
+        stroke-dashoffset: 100;
+      }
+
+      to {
+        stroke-dashoffset: 0;
+      }
     }
 
     @keyframes data-pulse {
-      0% { box-shadow: 0 0 0 0 rgba(249,115,22,.22); }
-      100% { box-shadow: 0 0 0 14px rgba(249,115,22,0); }
+      0% {
+        box-shadow: 0 0 0 0 rgba(249, 115, 22, .22);
+      }
+
+      100% {
+        box-shadow: 0 0 0 14px rgba(249, 115, 22, 0);
+      }
     }
 
     @media (max-width: 1023px) {
       #sidebar.mobile-open {
-        box-shadow: 18px 0 60px rgba(0,0,0,.42);
+        box-shadow: 18px 0 60px rgba(0, 0, 0, .42);
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
+      html {
+        scroll-behavior: auto;
+      }
 
       *,
       *::before,
@@ -584,7 +697,6 @@
         scroll-behavior: auto !important;
       }
     }
-
   </style>
 </head>
 
@@ -616,14 +728,10 @@
           <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
         </a>
 
-        <a href="add-project.html"
-           id="admin-add-project"
-           style="display: none;"
-           data-role="admin"
-           data-hover-lift
-           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition">
-            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            Add Project
+        <a href="add-project.html" id="admin-add-project" style="display: none;" data-role="admin" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          Add Project
         </a>
 
         <a href="risk-analytics.html" data-hover-lift
@@ -787,18 +895,15 @@
 
               <div class="relative h-48 flex justify-center items-center">
                 <div class="donut-wrap">
-                  <svg class="donut" id="riskDonut" viewBox="0 0 200 200"
-                       role="img" aria-label="Risk distribution donut chart">
+                  <svg class="donut" id="riskDonut" viewBox="0 0 200 200" role="img"
+                    aria-label="Risk distribution donut chart">
                     <defs>
-                      <mask id="riskDonutMask" maskUnits="userSpaceOnUse"
-                            x="0" y="0" width="200" height="200">
-                        <circle class="donut-sweep" cx="100" cy="100" r="78"
-                                pathLength="100" transform="rotate(-90 100 100)"/>
+                      <mask id="riskDonutMask" maskUnits="userSpaceOnUse" x="0" y="0" width="200" height="200">
+                        <circle class="donut-sweep" cx="100" cy="100" r="78" pathLength="100"
+                          transform="rotate(-90 100 100)" />
                       </mask>
                     </defs>
-                    <g id="riskDonutSegments"
-                       mask="url(#riskDonutMask)"
-                       transform="rotate(-90 100 100)"></g>
+                    <g id="riskDonutSegments" mask="url(#riskDonutMask)" transform="rotate(-90 100 100)"></g>
                   </svg>
                   <div class="donut-center" aria-live="polite">
                     <p class="dc-val" id="riskDonutValue">--</p>
@@ -1105,52 +1210,156 @@
       try {
         const res = await fetch('/api/v1/dashboard/ongoing-high-risk');
         let projects = [];
+
         if (res.ok) {
           projects = await res.json();
         }
 
-        // No fabricated markers: an empty result means no stored high-risk predictions yet.
-
+        // Every project returned by the API is considered.
+        // There is NO hardcoded limit on high-risk or critical projects.
         markerLayerGroup.clearLayers();
+
+        // Put critical projects first so they render above normal high-risk markers.
+        projects.sort((a, b) => {
+          const scoreA = Number(a.risk_score);
+          const scoreB = Number(b.risk_score);
+
+          const criticalA =
+            String(a.status || '').toUpperCase().includes('CRIT') ||
+            (Number.isFinite(scoreA) && scoreA >= 75);
+
+          const criticalB =
+            String(b.status || '').toUpperCase().includes('CRIT') ||
+            (Number.isFinite(scoreB) && scoreB >= 75);
+
+          return Number(criticalB) - Number(criticalA);
+        });
+
+        let renderedCount = 0;
+        let criticalCount = 0;
+        let invalidCoordinateCount = 0;
 
         projects.forEach(p => {
           const lat = parseFloat(p.lat);
           const lng = parseFloat(p.lng);
-          if (isNaN(lat) || isNaN(lng)) return;
+
+          // Do not create a marker when coordinates are invalid.
+          if (isNaN(lat) || isNaN(lng)) {
+            invalidCoordinateCount++;
+            console.warn(
+              'Skipping high-risk project with invalid coordinates:',
+              p
+            );
+            return;
+          }
 
           const parsedScore = Number(p.risk_score);
           const score = Number.isFinite(parsedScore) ? parsedScore : null;
+
           const status = String(p.status || '').toUpperCase();
-          const isCritical = status.includes("CRIT") || (score !== null && score >= 75);
-          const color = isCritical ? "#ef4444" : "#f97316";
+
+          // Critical is determined dynamically for every project.
+          // Any future project with CRIT status OR risk score >= 75
+          // will automatically be displayed as critical.
+          const isCritical =
+            status.includes("CRIT") ||
+            (score !== null && score >= 75);
+
+          if (isCritical) {
+            criticalCount++;
+          }
+
+          // Critical = dark red
+          // High risk = orange
+          const color = isCritical
+            ? "#991b1b"
+            : "#f97316";
+
+          const borderColor = isCritical
+            ? "#7f1d1d"
+            : "#ffffff";
 
           const marker = L.circleMarker([lat, lng], {
             radius: isCritical ? 9 : 7,
             fillColor: color,
-            color: '#ffffff',
+            color: borderColor,
             weight: 2,
             fillOpacity: 0.95,
             opacity: 1.0,
-            pane: 'markerPane'
+            pane: 'markerPane',
+
+            // Critical markers render above normal high-risk markers.
+            zIndexOffset: isCritical ? 1000 : 100
           });
 
-          const scoreText = score !== null ? `${score.toFixed(1)}/100` : 'N/A';
-          const delayText = p.delay_months !== null && p.delay_months !== undefined && p.delay_months !== ''
-            ? `${p.delay_months} Months`
-            : 'N/A';
+          const scoreText =
+            score !== null
+              ? `${score.toFixed(1)}/100`
+              : 'N/A';
+
+          const delayText =
+            p.delay_months !== null &&
+              p.delay_months !== undefined &&
+              p.delay_months !== ''
+              ? `${p.delay_months} Months`
+              : 'N/A';
+
           const statusText = status || 'RISK';
 
           marker.bindPopup(`
             <div style="font-family: 'Inter', sans-serif; min-width: 190px; padding: 4px;">
-              <span style="font-size: 10px; font-weight: bold; color: ${color}; text-transform: uppercase;">
+              <span style="
+                font-size: 10px;
+                font-weight: bold;
+                color: ${color};
+                text-transform: uppercase;
+              ">
                 ${statusText} RISK
               </span>
-              <h4 style="margin: 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">${p.project_name || 'Project'}</h4>
-              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Sector:</strong> ${p.sector || 'N/A'}</p>
-              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Risk Score:</strong> ${scoreText}</p>
-              <p style="margin: 0; font-size: 11px; color: #475569;"><strong>Delay:</strong> ${delayText}</p>
+
+              <h4 style="
+                margin: 4px 0;
+                font-size: 12px;
+                font-weight: 600;
+                color: #0f172a;
+              ">
+                ${p.project_name || 'Project'}
+              </h4>
+
+              <p style="
+                margin: 0;
+                font-size: 11px;
+                color: #475569;
+              ">
+                <strong>Sector:</strong> ${p.sector || 'N/A'}
+              </p>
+
+              <p style="
+                margin: 0;
+                font-size: 11px;
+                color: #475569;
+              ">
+                <strong>Risk Score:</strong> ${scoreText}
+              </p>
+
+              <p style="
+                margin: 0;
+                font-size: 11px;
+                color: #475569;
+              ">
+                <strong>Delay:</strong> ${delayText}
+              </p>
+
               <div style="margin-top: 6px;">
-                <a href="project-details.html?id=${p.project_id}" style="font-size: 11px; color: #ea580c; font-weight: 600; text-decoration: underline;">
+                <a
+                  href="project-details.html?id=${p.project_id}"
+                  style="
+                    font-size: 11px;
+                    color: #ea580c;
+                    font-weight: 600;
+                    text-decoration: underline;
+                  "
+                >
                   View Project Details →
                 </a>
               </div>
@@ -1158,9 +1367,17 @@
           `);
 
           markerLayerGroup.addLayer(marker);
+          renderedCount++;
         });
 
+        console.log(
+          `High-risk map: ${renderedCount}/${projects.length} projects rendered. ` +
+          `Critical: ${criticalCount}. ` +
+          `Invalid coordinates: ${invalidCoordinateCount}.`
+        );
+
         map.invalidateSize();
+
       } catch (err) {
         console.error("Map render failed:", err);
       }
