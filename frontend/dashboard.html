@@ -1187,14 +1187,13 @@
           const borderColor = isCritical ? '#7f1d1d' : '#ffffff';
 
           const marker = L.circleMarker([lat, lng], {
-            radius: isCritical ? 9 : 7,
-            fillColor: color,
-            color: borderColor,
-            weight: 2,
-            fillOpacity: 0.95,
-            opacity: 1.0,
-            pane: 'markerPane',
-            zIndexOffset: isCritical ? 1000 : 100
+            radius: isCritical ? 10 : 7,
+            fillColor: isCritical ? '#991b1b' : '#f97316',
+            color: isCritical ? '#450a0a' : '#ffffff',
+            weight: isCritical ? 3 : 2,
+            fillOpacity: 1,
+            opacity: 1,
+            pane: 'markerPane'
           });
 
           const scoreText =
