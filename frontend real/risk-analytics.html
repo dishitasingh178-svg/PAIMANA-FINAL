@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAIMANA AI - Risk Analytics</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Prevent Flash of Unstyled Content -->
+  <script>
+    if (
+      localStorage.getItem('theme') === 'dark' ||
+      (
+        !('theme' in localStorage) &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches
+      )
+    ) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
+
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body
+  class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
+
+  <!-- Mobile sidebar backdrop -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden"></div>
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside id="sidebar"
+    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 overflow-y-auto">
+
+    <div>
+
+      <!-- Logo -->
+      <div class="flex items-center gap-3 mb-10 pl-2">
+
+        <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+        </div>
+
+        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
+          PAIMANA AI
+        </span>
+
+      </div>
+
+      <!-- Navigation -->
+      <nav class="space-y-1 text-sm font-medium">
+
+        <a href="dashboard.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          Overview
+        </a>
+
+        <a href="projects.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="folder-kanban" class="w-4 h-4"></i>
+          Projects
+        </a>
+
+        <a href="add-project.html" data-role="admin" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          Add Project
+        </a>
+
+        <a href="risk-analytics.html"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
+          <i data-lucide="line-chart" class="w-4 h-4"></i>
+          Risk Analytics
+        </a>
+
+        <a href="early-warnings.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          Early Warnings
+        </a>
+
+        <a href="ai-assistant.html" data-hover-lift
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+          <i data-lucide="bot" class="w-4 h-4"></i>
+          AI Assistant
+        </a>
+
+      </nav>
+    </div>
+
+  </aside>
+
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="flex-1 flex flex-col overflow-y-auto h-screen min-w-0">
+
+    <!-- Header -->
+    <header
+      class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-4 md:px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
+
+      <div class="flex items-center gap-3 min-w-0">
+
+        <button id="sidebar-toggle"
+          class="lg:hidden shrink-0 p-2 -ml-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+
+        <div class="min-w-0">
+
+          <h1 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white truncate">
+            Portfolio Risk Analytics
+          </h1>
+
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden sm:block">
+            Deep insights into AI-predicted project risks across sectors.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- Theme Button -->
+      <div class="flex items-center gap-4 shrink-0">
+
+        <button id="theme-toggle"
+          class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition ml-2">
+          <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
+          <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <!-- ================= PAGE CONTENT ================= -->
+    <div class="p-4 md:p-8 space-y-6">
+
+
+      <!-- ================= TOP ROW ================= -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start"></div>
+
+
+        <!-- ================= RISK BY SECTOR ================= -->
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
+
+          <div class="mb-5">
+
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-white">
+              Risk Distribution by Sector
+            </h2>
+
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Number of projects by predicted risk level
+            </p>
+
+          </div>
+
+
+          <!-- IMPORTANT:
+               Increased height because we are now using
+               horizontal bars and long sector names.
+          -->
+          <div class="relative h-[430px] md:h-[470px]">
+
+            <canvas id="sectorChart"></canvas>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- ================= TOP DRIVERS ================= -->
+        <div
+          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200 flex flex-col justify-center"
+
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-white">
+              Top AI Cost Escalation Drivers
+            </h2>
+
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Factors associated with higher project cost escalation
+            </p>
+
+          </div>
+
+
+          <div class="space-y-6 text-xs">
+
+
+            <!-- Driver 1 -->
+            <div>
+
+              <div class="flex justify-between mb-2">
+
+                <span class="text-slate-700 dark:text-slate-300 font-medium">
+                  Prolonged Schedule Delay
+                </span>
+
+                <span class="text-slate-900 dark:text-white font-bold">
+                  72% correlation
+                </span>
+
+              </div>
+
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+
+                <div class="bg-red-500 h-full w-[72%] rounded-full"></div>
+
+              </div>
+
+            </div>
+
+
+            <!-- Driver 2 -->
+            <div>
+
+              <div class="flex justify-between mb-2">
+
+                <span class="text-slate-700 dark:text-slate-300 font-medium">
+                  Low Physical Milestone Completion
+                </span>
+
+                <span class="text-slate-900 dark:text-white font-bold">
+                  58% correlation
+                </span>
+
+              </div>
+
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+
+                <div class="bg-orange-500 h-full w-[58%] rounded-full"></div>
+
+              </div>
+
+            </div>
+
+
+            <!-- Driver 3 -->
+            <div>
+
+              <div class="flex justify-between mb-2">
+
+                <span class="text-slate-700 dark:text-slate-300 font-medium">
+                  High Cumulative Expenditure Variance
+                </span>
+
+                <span class="text-slate-900 dark:text-white font-bold">
+                  46% correlation
+                </span>
+
+              </div>
+
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+
+                <div class="bg-amber-500 h-full w-[46%] rounded-full"></div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- ================= HISTORICAL TREND ================= -->
+      <div
+        class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
+
+        <div class="mb-5">
+
+          <h2 class="text-sm font-semibold text-slate-900 dark:text-white">
+            Historical Risk Trend Over Time
+          </h2>
+
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Historical cost escalation observed across analyzed projects
+          </p>
+
+        </div>
+
+
+        <div class="relative h-72">
+
+          <canvas id="trendChart"></canvas>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+
+  <!-- ================= JS FILES ================= -->
+
+  <script src="js/theme.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/animations.js"></script>
+
+
+  <script>
+
+    // ============================================================
+    // INITIALIZATION
+    // ============================================================
+
+    lucide.createIcons();
+
+
+    // ============================================================
+    // CHART DEFAULTS
+    // ============================================================
+
+    Chart.defaults.font.family = "'Inter', sans-serif";
+
+    Chart.defaults.color = '#64748B';
+
+
+    // ============================================================
+    // THEME COLORS
+    // ============================================================
+
+    const getGridColor = () => {
+
+      return document.documentElement.classList.contains('dark')
+        ? '#1E293B'
+        : '#E2E8F0';
+
+    };
+
+
+    const getTextColor = () => {
+
+      return document.documentElement.classList.contains('dark')
+        ? '#94A3B8'
+        : '#475569';
+
+    };
+
+
+    // ============================================================
+    // 1. SECTOR RISK CHART
+    // ============================================================
+
+    const ctxSector =
+      document.getElementById('sectorChart').getContext('2d');
+
+
+    const sectorChart = new Chart(ctxSector, {
+
+      type: 'bar',
+
+
+      data: {
+
+        labels: [],
+
+
+        datasets: [
+
+          {
+            label: 'Critical Risk',
+
+            data: [],
+
+            backgroundColor: '#ef4444',
+
+            borderRadius: {
+              topLeft: 6,
+              bottomLeft: 6,
+              topRight: 0,
+              bottomRight: 0
+            },
+
+            borderSkipped: false,
+
+            barPercentage: 0.70,
+
+            categoryPercentage: 0.78
+          },
+
+
+          {
+            label: 'High Risk',
+
+            data: [],
+
+            backgroundColor: '#f97316',
+
+            borderRadius: 0,
+
+            borderSkipped: false,
+
+            barPercentage: 0.70,
+
+            categoryPercentage: 0.78
+          },
+
+
+          {
+            label: 'Medium Risk',
+
+            data: [],
+
+            backgroundColor: '#3b82f6',
+
+            borderRadius: {
+              topLeft: 0,
+              bottomLeft: 0,
+              topRight: 6,
+              bottomRight: 6
+            },
+
+            borderSkipped: false,
+
+            barPercentage: 0.70,
+
+            categoryPercentage: 0.78
+          }
+
+        ]
+
+      },
+
+
+      options: {
+
+        // ========================================================
+        // THIS IS THE MAIN FIX
+        // Makes the chart horizontal.
+        // ========================================================
+
+        indexAxis: 'y',
+
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+
+        interaction: {
+
+          mode: 'index',
+
+          intersect: false
+
+        },
+
+
+        scales: {
+
+
+          // ======================================================
+          // Y AXIS
+          // Contains sector names
+          // ======================================================
+
+          y: {
+
+            stacked: true,
+
+            offset: true,
+
+
+            border: {
+
+              display: false
+
+            },
+
+
+            grid: {
+
+              display: false
+
+            },
+
+
+            ticks: {
+
+              color: getTextColor(),
+
+              padding: 8,
+
+
+              font: {
+
+                size: 10,
+
+                weight: '500'
+
+              },
+
+
+              // Wrap long sector names
+              callback: function (value) {
+
+                const label =
+                  this.getLabelForValue(value);
+
+
+                if (!label) {
+
+                  return '';
+
+                }
+
+
+                const words =
+                  String(label).split(' ');
+
+
+                const lines = [];
+
+                let currentLine = '';
+
+
+                words.forEach(word => {
+
+                  const testLine =
+                    currentLine.length > 0
+                      ? currentLine + ' ' + word
+                      : word;
+
+
+                  if (testLine.length > 24) {
+
+                    if (currentLine) {
+
+                      lines.push(currentLine);
+
+                    }
+
+                    currentLine = word;
+
+                  } else {
+
+                    currentLine = testLine;
+
+                  }
+
+                });
+
+
+                if (currentLine) {
+
+                  lines.push(currentLine);
+
+                }
+
+
+                return lines;
+
+              }
+
+            }
+
+          },
+
+
+          // ======================================================
+          // X AXIS
+          // Contains number of projects
+          // ======================================================
+
+          x: {
+
+            stacked: true,
+
+            beginAtZero: true,
+
+
+            border: {
+
+              display: false
+
+            },
+
+
+            grid: {
+
+              color: getGridColor(),
+
+              drawTicks: false
+
+            },
+
+
+            ticks: {
+
+              color: getTextColor(),
+
+              precision: 0,
+
+              padding: 6
+
+            }
+
+          }
+
+        },
+
+
+        // ========================================================
+        // PLUGINS
+        // ========================================================
+
+        plugins: {
+
+
+          // ======================================================
+          // LEGEND
+          // ======================================================
+
+          legend: {
+
+            position: 'top',
+
+            align: 'start',
+
+
+            labels: {
+
+              color: getTextColor(),
+
+              boxWidth: 10,
+
+              boxHeight: 10,
+
+              usePointStyle: true,
+
+              pointStyle: 'circle',
+
+              padding: 18,
+
+
+              font: {
+
+                size: 11,
+
+                weight: '500'
+
+              }
+
+            }
+
+          },
+
+
+          // ======================================================
+          // TOOLTIP
+          // ======================================================
+
+          tooltip: {
+
+            backgroundColor: '#111827',
+
+            titleColor: '#ffffff',
+
+            bodyColor: '#CBD5E1',
+
+            borderColor: '#334155',
+
+            borderWidth: 1,
+
+            padding: 12,
+
+            displayColors: true,
+
+
+            callbacks: {
+
+
+              title: function (context) {
+
+                return context[0].label;
+
+              },
+
+
+              label: function (context) {
+
+                const value =
+                  context.raw ?? 0;
+
+
+                return ` ${context.dataset.label}: ${value} projects`;
+
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+
+    });
+
+
+
+    // ============================================================
+    // 2. LOAD LIVE SECTOR ANALYTICS
+    // ============================================================
+
+    async function loadDynamicSectorAnalytics() {
+
+      try {
+
+        const response =
+          await fetch('/api/v1/dashboard/sector-breakdown');
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            "Analytics API offline"
+          );
+
+        }
+
+
+        const data =
+          await response.json();
+
+
+        // Update labels
+        sectorChart.data.labels =
+          data.labels;
+
+
+        // Critical
+        sectorChart.data.datasets[0].data =
+          data.critical;
+
+
+        // High
+        sectorChart.data.datasets[1].data =
+          data.high;
+
+
+        // Medium
+        sectorChart.data.datasets[2].data =
+          data.medium;
+
+
+        sectorChart.update();
+
+      }
+
+
+      catch (err) {
+
+        console.warn(
+          "Using fallback data for Sector Analytics:",
+          err
+        );
+
+
+        // ========================================================
+        // FALLBACK DATA
+        // Used only if API is unavailable
+        // ========================================================
+
+        sectorChart.data.labels = [
+
+          'Railways',
+
+          'Road Transport and Highways',
+
+          'Petroleum',
+
+          'Power',
+
+          'Coal',
+
+          'Urban Development',
+
+          'Water Resources',
+
+          'Steel',
+
+          'Health and Family Welfare',
+
+          'Civil Aviation'
+
+        ];
+
+
+        sectorChart.data.datasets[0].data = [
+
+          4,
+
+          2,
+
+          3,
+
+          1,
+
+          2,
+
+          0,
+
+          1,
+
+          1,
+
+          0,
+
+          0
+
+        ];
+
+
+        sectorChart.data.datasets[1].data = [
+
+          8,
+
+          5,
+
+          4,
+
+          3,
+
+          2,
+
+          1,
+
+          2,
+
+          2,
+
+          1,
+
+          1
+
+        ];
+
+
+        sectorChart.data.datasets[2].data = [
+
+          12,
+
+          10,
+
+          8,
+
+          5,
+
+          3,
+
+          2,
+
+          2,
+
+          2,
+
+          1,
+
+          1
+
+        ];
+
+
+        sectorChart.update();
+
+      }
+
+    }
+
+
+
+    // ============================================================
+    // 3. HISTORICAL TREND LINE CHART
+    // ============================================================
+
+    const ctxTrend =
+      document.getElementById('trendChart').getContext('2d');
+
+
+    const trendChart = new Chart(ctxTrend, {
+
+      type: 'line',
+
+
+      data: {
+
+        labels: [
+
+          '2016',
+
+          '2017',
+
+          '2018',
+
+          '2019',
+
+          '2020',
+
+          '2021',
+
+          '2022',
+
+          '2023',
+
+          '2024'
+
+        ],
+
+
+        datasets: [
+
+          {
+
+            label: 'Cost Escalation (Lakh Cr)',
+
+
+            data: [
+
+              2.1,
+
+              2.4,
+
+              2.9,
+
+              3.2,
+
+              3.8,
+
+              4.5,
+
+              5.1,
+
+              5.0,
+
+              5.4
+
+            ],
+
+
+            borderColor: '#f97316',
+
+            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+
+            borderWidth: 2,
+
+            fill: true,
+
+            tension: 0.4,
+
+            pointRadius: 4,
+
+            pointHoverRadius: 6
+
+          }
+
+        ]
+
+      },
+
+
+      options: {
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+
+        scales: {
+
+          x: {
+
+            grid: {
+
+              display: false
+
+            },
+
+
+            ticks: {
+
+              color: getTextColor()
+
+            }
+
+          },
+
+
+          y: {
+
+            border: {
+
+              display: false
+
+            },
+
+
+            grid: {
+
+              color: getGridColor()
+
+            },
+
+
+            ticks: {
+
+              color: getTextColor()
+
+            }
+
+          }
+
+        },
+
+
+        plugins: {
+
+          legend: {
+
+            position: 'top',
+
+
+            labels: {
+
+              boxWidth: 20,
+
+              color: getTextColor()
+
+            }
+
+          }
+
+        }
+
+      }
+
+    });
+
+
+
+    // ============================================================
+    // 4. THEME CHANGE HANDLER
+    // ============================================================
+
+    window.addEventListener(
+      'themeChanged',
+      () => {
+
+        const gridColor =
+          getGridColor();
+
+
+        const textColor =
+          getTextColor();
+
+
+        // ======================================================
+        // SECTOR CHART
+        // ======================================================
+
+        // Horizontal chart:
+        // X = numeric values
+        // Y = sector names
+
+        sectorChart.options.scales.x.ticks.color =
+          textColor;
+
+        sectorChart.options.scales.x.grid.color =
+          gridColor;
+
+        sectorChart.options.scales.y.ticks.color =
+          textColor;
+
+
+        sectorChart.options.plugins.legend.labels.color =
+          textColor;
+
+
+        sectorChart.update();
+
+
+        // ======================================================
+        // TREND CHART
+        // ======================================================
+
+        trendChart.options.scales.x.ticks.color =
+          textColor;
+
+        trendChart.options.scales.y.ticks.color =
+          textColor;
+
+        trendChart.options.scales.y.grid.color =
+          gridColor;
+
+        trendChart.options.plugins.legend.labels.color =
+          textColor;
+
+
+        trendChart.update();
+
+      }
+    );
+
+
+
+    // ============================================================
+    // 5. LOAD DATA WHEN PAGE LOADS
+    // ============================================================
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      () => {
+
+        loadDynamicSectorAnalytics();
+
+      }
+    );
+
+  </script>
+
+</body>
+
+</html>
