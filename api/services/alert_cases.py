@@ -18,6 +18,15 @@ def workflow_order(signal):
     return (signal.get("status_updated_at") or "", signal.get("alert_id") or 0)
 
 
+CLASS_RANK = {"PREDICTIVE": 3, "DETERIORATION": 2, "OBSERVED_ISSUE": 1}
+
+
+def dominant_order(signal):
+    # Priority first, then the documented class tie-break; IDs never choose a class.
+    return (signal.get("priority_score") or 0, CLASS_RANK.get(signal.get("alert_class"), 0),
+            URGENCY.get(signal.get("severity"), 0), signal.get("alert_type") or "", signal.get("alert_id") or 0)
+
+
 def aggregate_cases(items):
     grouped = defaultdict(list)
     for item in items:
@@ -27,7 +36,7 @@ def aggregate_cases(items):
         status = case_status(signals)
         opened = [s for s in signals if s["status"] not in CLOSED]
         relevant = opened or [s for s in signals if s["status"] == status]
-        dominant = max(relevant, key=lambda s: (URGENCY.get(s.get("severity"), 0), s.get("priority_score") or 0, s.get("alert_id") or 0))
+        dominant = max(relevant, key=dominant_order)
         reviewed = [s for s in relevant if s["status"] == status]
         workflow = max(reviewed, key=workflow_order)
         note_source = max((s for s in relevant if s.get("review_note") is not None), key=workflow_order, default=workflow)
@@ -48,6 +57,8 @@ def aggregate_cases(items):
             is_resolved=status == "RESOLVED", highest_severity=dominant.get("severity"),
             highest_alert_severity=dominant.get("severity"), active_signal_count=len(opened),
             active_alert_count=len(opened), signal_count=len(relevant),
+            dominant_classification=dominant["alert_class"],
+            contributing_classifications=sorted({s["alert_class"] for s in relevant}),
             underlying_signals=relevant, alert_classifications=sorted({s["alert_class"] for s in relevant}),
             review_note=note_source.get("review_note"), status_updated_at=workflow.get("status_updated_at"),
             has_new_evidence=has_new_evidence, evidence=evidence,
