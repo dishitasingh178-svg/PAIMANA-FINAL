@@ -1,5 +1,7 @@
 # Early Warning corrective validation — 26 September 2026
 
+**Current follow-up results:** see [classification and performance validation](EARLY_WARNING_PERFORMANCE.md). The results below describe the preceding release; current contract is 3 and assets use `cases-3`.
+
 ## Outcome and root causes
 
 The operational unit is now one case per project. Raw alert rows remain contributing signals and retain backward-compatible endpoints. The default queue is New; New, Acknowledged, Under Review, Resolved and Dismissed are mutually exclusive. Priority/classification views intentionally include open reviewed cases and display their state.
@@ -89,7 +91,7 @@ If the API is still starting, retry the verifier once startup completes. It fail
 ```bash
 BASE=https://65.1.139.1:8443
 curl -fsS "$BASE/health"
-curl -fsSI "$BASE/js/early-warnings.js?v=cases-2"
+curl -fsSI "$BASE/js/early-warnings.js?v=cases-3"
 curl -fsS "$BASE/api/v1/alerts/summary"
 curl -fsS "$BASE/api/v1/alerts/cases?status=NEW"
 curl -fsS "$BASE/api/v1/alerts/cases?status=ACKNOWLEDGED&include_closed=true"
@@ -99,7 +101,7 @@ curl -fsS "$BASE/api/v1/alerts/cases?status=DISMISSED&include_closed=true"
 curl -fsS "$BASE/api/v1/alerts/priority?limit=5"
 ```
 
-Health must contain the fix SHA and `early_warning_contract: 2`; case endpoints must return 200 and exclusive project IDs. New must not exceed total projects. No certificate verification bypass is needed.
+Health must contain the fix SHA and `early_warning_contract: 3`; case endpoints must return 200 and exclusive project IDs. New must not exceed total projects. No certificate verification bypass is needed.
 
 ## Browser acceptance after deployment
 

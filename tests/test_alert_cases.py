@@ -22,7 +22,7 @@ def test_unique_counts_and_multi_classification(db, client):
     assert len(cases) == 1 and len(cases[0]['underlying_signals']) == 3
     assert set(cases[0]['alert_classifications']) == {'PREDICTIVE','DETERIORATION','OBSERVED_ISSUE'}
     for classification in cases[0]['alert_classifications']:
-        assert len(client.get('/api/v1/alerts/cases?classification='+classification).json()) == 1
+        assert len(client.get('/api/v1/alerts/cases?classification='+classification).json()) == (classification == cases[0]['dominant_classification'])
 
 
 def test_case_transitions_notes_and_refetch(db, client):
@@ -93,3 +93,48 @@ def test_closed_unchanged_rerun_does_not_reopen(db):
     assert _save_alert_if_new(db,'p1',CandidateAlert('SCHEDULE_SLIPPAGE','ELEVATED','Reported delay')) is None
     db.commit()
     assert db.query(Alert).count() == before and get_cases(db)[0]['workflow_status'] == 'RESOLVED'
+
+
+def test_dominant_tie_break_independent_of_row_order():
+    from itertools import permutations
+    from api.services.alert_cases import dominant_order
+    signals = [dict(priority_score=80, alert_class=c, severity='ELEVATED', alert_id=i)
+               for i, c in enumerate(['PREDICTIVE', 'DETERIORATION', 'OBSERVED_ISSUE'])]
+    for ordering in permutations(signals):
+        assert max(ordering, key=dominant_order)['alert_class'] == 'PREDICTIVE'
+    signals[1]['priority_score'] = 81
+    assert max(signals, key=dominant_order)['alert_class'] == 'DETERIORATION'
+
+
+def test_workspace_single_aggregation_query_budget(db, client, monkeypatch):
+    from sqlalchemy import event
+    from api.services import alert_priority
+    three_signals(db)
+    original = alert_priority.percentile95
+    percentiles = []
+    monkeypatch.setattr(alert_priority, 'percentile95', lambda values: (percentiles.append(1), original(values))[1])
+    statements = []
+    def count(*args): statements.append(args[2])
+    event.listen(db.bind, 'before_cursor_execute', count)
+    try:
+        response = client.get('/api/v1/alerts/workspace?status=NEW&limit=1')
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body['cases']) == body['summary']['new'] == 1
+        assert body['has_more'] is False
+        assert 'underlying_signals' in body['cases'][0]
+        assert 'underlying_signals' not in body['priority'][0]
+        assert len(statements) == 6 and len(percentiles) == 1
+    finally:
+        event.remove(db.bind, 'before_cursor_execute', count)
+
+
+def test_dominant_groups_are_disjoint(db, client):
+    for i, kind in enumerate(['ML_RISK_WARNING', 'MILESTONE_STAGNATION', 'COST_ESCALATION']):
+        db.add(Project(project_id=str(i), project_name=kind))
+        db.flush()
+        db.add(Alert(project_id=str(i), alert_type=kind, severity='WATCH', message='Recorded signal'))
+    db.commit()
+    groups = [{c['project_id'] for c in client.get('/api/v1/alerts/cases?classification='+category).json()}
+              for category in ['PREDICTIVE','DETERIORATION','OBSERVED_ISSUE']]
+    assert groups == [{'0'}, {'1'}, {'2'}]

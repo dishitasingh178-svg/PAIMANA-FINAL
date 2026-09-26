@@ -1260,3 +1260,7 @@ for operational cases; the raw-alert endpoint above remains backward compatible.
 Summary counts are distinct projects. Actions transition all open signals and save
 the officer note transactionally. See [the corrective validation report](EARLY_WARNING_VALIDATION.md)
 for current test results, real-data counts, deployment commands and known blockers.
+
+Classification tabs now use one deterministic `dominant_classification` per case;
+other classes remain contributing evidence. The page loads all panels through one
+`GET /api/v1/alerts/workspace` request. See [measured performance and current validation](EARLY_WARNING_PERFORMANCE.md).

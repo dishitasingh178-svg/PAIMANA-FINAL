@@ -66,7 +66,9 @@ app = FastAPI(
 @app.middleware("http")
 async def revalidate_warning_assets(request: Request, call_next):
     response = await call_next(request)
-    if request.url.path.endswith(".html") or request.url.path.startswith("/js/") or request.url.path.startswith("/api/v1/alerts"):
+    warning_assets = {"/early-warnings.html", "/project-details.html", "/js/api.js",
+                      "/js/early-warnings.js", "/js/warning-ui.js", "/js/project-warnings.js"}
+    if request.url.path in warning_assets or request.url.path.startswith("/api/v1/alerts"):
         response.headers["Cache-Control"] = "no-store"
     response.headers["X-PAIMANA-Revision"] = os.getenv("PAIMANA_REVISION", "unknown")
     return response
@@ -151,7 +153,7 @@ def health_check():
     return {
         "status": "online",
         "revision": os.getenv("PAIMANA_REVISION", "unknown"),
-        "early_warning_contract": 2,
+        "early_warning_contract": 3,
         "model_version": getattr(
             predictor,
             "manifest",

@@ -37,4 +37,4 @@ jobs:
           "from pathlib import Path; import os; assert os.environ['PAIMANA_REVISION'] == '${{ github.sha }}';
           files=['early-warnings.html','js/early-warnings.js','js/warning-ui.js','js/project-warnings.js'];
           assert all((Path('/app/frontend') / f).is_file() for f in files);
-          assert b'warning-ui.js?v=cases-2' in Path('/app/frontend/early-warnings.html').read_bytes()"
+          assert b'warning-ui.js?v=cases-3' in Path('/app/frontend/early-warnings.html').read_bytes()"

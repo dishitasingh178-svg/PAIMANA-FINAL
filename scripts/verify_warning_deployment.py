@@ -28,7 +28,7 @@ def main():
         print("Asset verified:", name)
     with urlopen(args.base_url + "/health", timeout=20) as response:
         health = json.load(response)
-    assert health.get("revision") == args.revision and health.get("early_warning_contract") == 2
+    assert health.get("revision") == args.revision and health.get("early_warning_contract") == 3
     with urlopen(args.base_url + "/api/v1/alerts/summary", timeout=20) as response:
         summary = json.load(response)
     assert summary["new"] <= summary["total_cases"] <= summary["total_projects"]
@@ -37,6 +37,10 @@ def main():
         cases = json.load(response)
     assert len({c["project_id"] for c in cases}) == len(cases)
     assert all(c["workflow_status"] == "NEW" for c in cases)
+    with urlopen(args.base_url + "/api/v1/alerts/workspace?status=NEW", timeout=20) as response:
+        workspace = json.load(response)
+    assert workspace['summary']['total_cases'] == summary['total_cases']
+    assert all(c['dominant_classification'] in c['contributing_classifications'] for c in workspace['cases'])
     print(json.dumps(summary, indent=2))
     print("Deployment verified:", args.revision)
 

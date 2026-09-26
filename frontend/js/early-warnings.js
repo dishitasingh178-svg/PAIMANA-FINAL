@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  if (window.__warningCenterInitialized) return;
+  window.__warningCenterInitialized = true;
   const U = window.WarningUI, el = id => document.getElementById(id);
   const {escape:esc, fmt, humanize} = U;
   const params = new URLSearchParams(location.search), projectId = params.get('project_id');
@@ -17,7 +19,7 @@
   function matches(item) {
     const query = filters.find(f => f[0] === active)[2];
     return (query.status ? item.workflow_status === query.status : !U.closed(item))
-      && (!query.classification || item.alert_classifications.includes(query.classification))
+      && (!query.classification || item.dominant_classification === query.classification)
       && (!query.priority || item.priority_label === query.priority);
   }
   function normalizeList(data) {
@@ -34,7 +36,8 @@
     el('alerts-container').innerHTML = rows.length ? rows.map(item => {
       const color = {CRITICAL:'text-red-500',ELEVATED:'text-orange-500',WATCH:'text-amber-500'}[item.severity] || 'text-slate-500';
       return `<article class="${panel}" data-project-id="${esc(item.project_id)}">
-        <div class="flex flex-wrap justify-between gap-3 mb-3"><div><p class="text-xs font-bold ${color}">Highest severity: ${esc(item.severity)} · ${esc(item.alert_classifications.map(c => U.classLabels[c]).join(' · '))}</p>
+        <div class="flex flex-wrap justify-between gap-3 mb-3"><div><p class="text-xs font-bold ${color}">Highest severity: ${esc(item.severity)} · Primary reason: ${esc(U.classLabels[item.dominant_classification])}</p>
+        <p class="text-xs">Other signals: ${esc(item.alert_classifications.filter(c => c !== item.dominant_classification).map(c => U.classLabels[c]).join(', ') || 'None')}</p>
         <a class="text-lg font-bold hover:underline" href="project-details.html?id=${encodeURIComponent(item.project_id)}">${esc(item.project_name)}</a>
         <p class="text-xs text-slate-500">${esc(item.sector)} · Case status: ${esc(humanize(item.workflow_status))} · ${fmt(item.signal_count)} contributing signals</p>
         ${item.has_new_evidence === true ? '<p class="text-orange-500 text-xs font-bold">New evidence / escalation since last review</p>' : ''}</div>
@@ -67,24 +70,24 @@
   function refresh(append = false) {
     if (refreshFlight) return refreshFlight;
     controls(true);
+    el('warning-feedback').textContent='';
     const query = {...filters.find(f => f[0] === active)[2], limit:50, offset:append ? rows.length : 0, ...(projectId ? {project_id:projectId} : {})};
     el('alerts-container').setAttribute('aria-busy','true');
     refreshFlight = (async () => {
-      const results = await Promise.allSettled([API.getAlertCases(query), API.getAlertSummary(), API.getPriorityAlerts(5)]);
-      const failures = [];
-      const [list, summary, priority] = results;
       try {
-        if (list.status === 'rejected') throw list.reason;
-        const data = normalizeList(list.value).filter(matches);
-        rows = append ? normalizeList(rows.concat(data)) : data;
-        renderRows();
-        el('load-more-warnings').hidden = data.length < 50;
-      } catch (error) { rows=[]; el('alerts-container').textContent='Unable to load cases. Click Refresh to retry.'; el('load-more-warnings').hidden=true; failures.push(U.safeText(error?.message)); }
-      if (summary.status === 'fulfilled') renderSummary(summary.value);
-      else { el('warning-summary').textContent='Counts unavailable.'; failures.push('Counts could not be refreshed.'); }
-      try { if (priority.status === 'rejected') throw priority.reason; renderPriority(priority.value); }
-      catch (_) { el('priority-projects').textContent='Priority projects unavailable.'; failures.push('Priority projects could not be refreshed.'); }
-      if (failures.length) el('warning-feedback').textContent=failures.join(' ')+' Click Refresh to retry.';
+        const data = await API.getWarningWorkspace(query);
+        if (!data || !data.summary || !Array.isArray(data.priority)) throw new Error('Invalid warning workspace response.');
+        const list = normalizeList(data.cases).filter(matches);
+        rows = append ? normalizeList(rows.concat(list)) : list;
+        renderRows(); renderSummary(data.summary); renderPriority(data.priority);
+        el('load-more-warnings').hidden = data.has_more !== true;
+      } catch (error) {
+        rows=[]; el('alerts-container').textContent='Unable to load cases. Click Refresh to retry.';
+        el('load-more-warnings').hidden=true;
+        el('warning-summary').textContent='Counts unavailable.';
+        el('priority-projects').textContent='Priority projects unavailable.';
+        el('warning-feedback').textContent=U.safeText(error?.message)+' Click Refresh to retry.';
+      }
     })().finally(() => { refreshFlight=null; controls(false); el('alerts-container').setAttribute('aria-busy','false'); });
     return refreshFlight;
   }
@@ -92,7 +95,7 @@
     el('alert-filters').querySelectorAll('button').forEach(b => {const selected=b.dataset.filter===active; b.setAttribute('aria-pressed',String(selected)); b.classList.toggle('bg-orange-500',selected); b.classList.toggle('text-white',selected);});
     el('warning-filter-help').textContent = filters.find(f => f[0]===active)[2].status
       ? 'One case per project. Actions move the entire case and its open signals into the selected workflow state.'
-      : 'Filters across open project cases. Each case retains its single workflow status.';
+      : 'Open cases grouped by their primary reason. Other contributing signals remain inside each case.';
   }
   el('alert-filters').innerHTML=filters.map(([key,label])=>`<button class="px-3 py-2 border rounded-lg" data-filter="${key}">${label}</button>`).join('');
   highlight();

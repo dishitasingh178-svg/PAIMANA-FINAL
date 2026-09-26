@@ -47,7 +47,10 @@ def get_priority(limit: int = Query(default=10, ge=1, le=100), db: Session = Dep
 
 @router.get("/summary")
 def get_summary(db: Session = Depends(get_db)):
-    cases = get_cases(db)
+    return case_summary(db, get_cases(db))
+
+
+def case_summary(db, cases):
     counts = {status.lower(): sum(c["workflow_status"] == status for c in cases)
               for status in ("NEW", "ACKNOWLEDGED", "UNDER_REVIEW", "RESOLVED", "DISMISSED")}
     return {**counts, "immediate": sum(c["priority_label"] == "IMMEDIATE" and c["workflow_status"] not in CLOSED for c in cases),
@@ -66,10 +69,35 @@ def list_cases(
 ):
     cases = [c for c in get_cases(db)
              if (c["workflow_status"] == status if status else include_closed or c["workflow_status"] not in CLOSED)
-             and (not classification or classification in c["alert_classifications"])
+             and (not classification or classification == c["dominant_classification"])
              and (not priority or c["priority_label"] == priority)
              and (not project_id or c["project_id"] == project_id)]
     return cases[offset:offset + limit]
+
+
+@router.get("/workspace")
+def warning_workspace(
+    status: Optional[AlertStatus] = None,
+    classification: Optional[Literal["PREDICTIVE", "DETERIORATION", "OBSERVED_ISSUE"]] = None,
+    priority: Optional[Literal["IMMEDIATE", "HIGH", "MEDIUM", "ROUTINE"]] = None,
+    project_id: Optional[str] = None,
+    limit: int = Query(default=50, ge=1, le=500), offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    # One context / percentile / aggregation for every panel in a refresh.
+    cases = get_cases(db)
+    filtered = [c for c in cases
+                if (c["workflow_status"] == status if status else c["workflow_status"] not in CLOSED)
+                and (not classification or c["dominant_classification"] == classification)
+                and (not priority or c["priority_label"] == priority)
+                and (not project_id or c["project_id"] == project_id)]
+    priority_fields = {"project_id", "project_name", "sector", "workflow_status", "priority_score",
+                       "priority_label", "risk_score", "risk_delta", "active_signal_count", "attention_reason",
+                       "financial_exposure_crore", "dominant_classification"}
+    return {"cases": filtered[offset:offset + limit], "has_more": offset + limit < len(filtered),
+            "summary": case_summary(db, cases),
+            "priority": [{k: v for k, v in c.items() if k in priority_fields}
+                         for c in cases if c["workflow_status"] not in CLOSED][:5]}
 
 
 @router.patch("/projects/{project_id}/status")

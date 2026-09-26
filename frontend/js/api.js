@@ -16,6 +16,7 @@ const API = {
   getHighRiskMapProjects: () => fetchAPI("/dashboard/ongoing-high-risk"),
   getRiskDistribution: () => fetchAPI("/dashboard/risk-distribution"),
   getAlerts: (filters = {}) => fetchAPI(`/alerts?${new URLSearchParams(filters)}`),
+  getWarningWorkspace: (filters = {}) => fetchAPI(`/alerts/workspace?${new URLSearchParams(filters)}`, {cache:'no-store', signal:AbortSignal.timeout(15000)}),
   getAlertCases: (filters = {}) => fetchAPI(`/alerts/cases?${new URLSearchParams(filters)}`, {cache:'no-store'}),
   updateProjectAlertStatus: (projectId, status, reviewNote) => fetchAPI(`/alerts/projects/${encodeURIComponent(projectId)}/status`, {
     method:'PATCH', body:JSON.stringify({status, ...(reviewNote === undefined ? {} : {review_note:reviewNote})})
