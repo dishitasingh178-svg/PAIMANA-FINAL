@@ -70,7 +70,6 @@
   // ------------------------------------------------------------------
   function detailHTML(item) {
     const closed = U.closed(item);
-    const others = item.alert_classifications.filter(c => c !== item.dominant_classification).map(c => U.classLabels[c]);
     const riskMonth = item.prediction_report_month || item.report_month;
     return `
       <div class="facts">
@@ -83,7 +82,7 @@
         ${section('Potential consequence', item.potential_consequence)}${section('Recommended investigation', item.recommended_investigation)}</div>
       <div class="d-grid mt-5">
         <section>
-          <h4 class="d-h">Contributing signals (${esc(fmt(item.signal_count))})${others.length ? ` · also ${esc(others.join(', '))}` : ''}</h4>
+          <h4 class="d-h">Contributing signals (${esc(fmt(item.signal_count))})</h4>
           <div>${item.underlying_signals.map(s => {
             const sm = U.splitMonth(s.what_changed);
             return `<div class="sig"><div class="pt-0.5">${badge(s.severity)}</div><div><p style="color:var(--pm-text);font-weight:600">${esc(U.typeLabel(s.alert_type))}${sm.month ? ` <span class="pm-updated">· report ${esc(month(sm.month))}</span>` : ''}</p><p class="mt-0.5" style="color:var(--pm-text-2)">${esc(sm.text || s.what_changed)}</p></div></div>`;
@@ -94,7 +93,6 @@
             <p class="pm-updated mt-2">Each metric is dated independently of the recorded trigger.</p>
             <div class="ev">${item.evidence.map(e => `<div><p style="color:var(--pm-text);font-weight:600">${esc(e.label)}</p><p class="pm-num mt-1" style="color:var(--pm-text-2)">${e.previous != null ? esc(e.previous) + ' → ' : ''}${esc(e.current)} ${esc(e.unit)}</p>${e.change != null ? `<p class="pm-num" style="color:var(--pm-muted)">Change: ${e.change > 0 ? '+' : ''}${fmt(e.change)}</p>` : ''}<p class="pm-updated mt-1">${esc(e.previous_report_month)} ${e.previous_report_month ? '→' : ''} ${esc(e.current_report_month)}</p></div>`).join('') || '<p class="d-p">Evidence unavailable.</p>'}</div>
           </details>
-          ${item.review_note ? `<div class="mt-5">${section('Officer note', item.review_note)}<p class="pm-updated mt-1">Updated: ${esc(U.date(item.status_updated_at))}</p></div>` : ''}
         </section>
       </div>
       <div class="mt-5 pt-4" style="border-top:1px solid var(--pm-line)">
@@ -114,6 +112,7 @@
     const open = expanded.has(item.project_id);
     const issue = U.splitMonth(item.what_changed);
     const t = when(item.triggered_at);
+    const others = item.alert_classifications.filter(c => c !== item.dominant_classification).map(c => U.classLabels[c]);
     const did = `case-${esc(item.project_id || Math.random().toString(36).slice(2))}`;
     return `<article class="case ${open ? 'is-open' : ''}" data-project-id="${esc(item.project_id)}" data-tier="${tierOf(item.severity)}" data-closed="${closed}">
       <div class="case-main">
@@ -125,7 +124,9 @@
           <p class="case-issue">${esc(issue.text || item.what_changed)}</p>
           <p class="case-why"><span>Trigger <b>${esc(U.classLabels[item.dominant_classification])}</b> · ${esc(U.typeLabel(item.dominant_alert_type || item.alert_type))}</span>
             <span>${esc(fmt(item.signal_count))} contributing signal${item.signal_count === 1 ? '' : 's'}</span>
-            ${issue.month || item.report_month ? `<span>Report ${esc(month(issue.month || item.report_month))}</span>` : ''}</p>
+            ${issue.month || item.report_month ? `<span>Report ${esc(month(issue.month || item.report_month))}</span>` : ''}
+            ${others.length ? `<span>Other signals: ${esc(others.join(', '))}</span>` : ''}</p>
+          ${item.review_note ? `<p class="case-why"><span><b>Officer Note:</b> ${esc(item.review_note)}</span><span>Updated ${esc(U.date(item.status_updated_at))}</span></p>` : ''}
         </div>
         <div class="case-side">
           <div><p class="score" title="Warning priority score (0–100)">${esc(fmt(item.priority_score))}</p><p class="score-lbl" data-p="${esc(item.priority_label)}">Priority · ${esc(humanize(item.priority_label).toLowerCase())}</p></div>
@@ -222,25 +223,33 @@
     }
   }
   function showError(message) {
-    const html = (t) => P ? P.stateHTML({kind:'error', title:t, message}) : `${t}. ${message}`;
-    el('alerts-container').innerHTML = html('Unable to load cases');
-    if (!loadedOnce) {
-      el('warning-summary').innerHTML = `<div class="col-span-full">${P ? P.stateHTML({kind:'error', title:'Counts unavailable', message, inline:true}) : 'Counts unavailable.'}</div>`;
-      el('priority-projects').innerHTML = P ? P.stateHTML({kind:'error', title:'Priority projects unavailable', message, inline:true}) : 'Priority projects unavailable.';
+    if (!P) {  // no design-system helpers: plain text only (never inject the message as HTML)
+      el('alerts-container').textContent = `Unable to load cases. ${message}`;
+      if (!loadedOnce) { el('warning-summary').textContent = 'Counts unavailable.'; el('priority-projects').textContent = 'Priority projects unavailable.'; }
+      return;
     }
-    document.querySelectorAll('[data-pm-retry]').forEach(b => b.addEventListener('click', () => { if (!mutating) refresh(); }, {once:true}));
+    el('alerts-container').innerHTML = P.stateHTML({kind:'error', title:'Unable to load cases', message});
+    if (!loadedOnce) {
+      el('warning-summary').innerHTML = `<div class="col-span-full">${P.stateHTML({kind:'error', title:'Counts unavailable', message, inline:true})}</div>`;
+      el('priority-projects').innerHTML = P.stateHTML({kind:'error', title:'Priority projects unavailable', message, inline:true});
+    }
+    if (typeof document.querySelectorAll === 'function') {
+      document.querySelectorAll('[data-pm-retry]').forEach(b => b.addEventListener('click', () => { if (!mutating) refresh(); }, {once:true}));
+    }
   }
   function setFeedback(text, kind = 'info') {
     const f = el('warning-feedback');
-    f.dataset.kind = kind;
+    if (f.dataset) f.dataset.kind = kind;
     f.textContent = text;
   }
 
   function controls(disabled) {
     const btn = el('refresh-warnings');
     btn.disabled = disabled;
-    btn.classList.toggle('spin', disabled);
-    btn.querySelector('[data-label]').textContent = disabled ? 'Refreshing…' : 'Refresh';
+    if (btn.classList) btn.classList.toggle('spin', disabled);
+    // Browsers update the label span; DOMs without querySelector get the label on the button itself.
+    const label = typeof btn.querySelector === 'function' ? btn.querySelector('[data-label]') : null;
+    (label || btn).textContent = disabled ? 'Refreshing…' : 'Refresh';
     el('load-more-warnings').disabled = disabled;
     el('alert-filters').querySelectorAll('button').forEach(b => b.disabled = disabled);
     el('warning-summary').querySelectorAll('button').forEach(b => b.disabled = disabled);
@@ -268,14 +277,19 @@
       } catch (error) {
         if (!append) rows = [];
         el('load-more-warnings').hidden = true;
-        showError(`${U.safeText(error?.message)} Retry, or use Refresh.`);
+        const message = `${U.safeText(error?.message)} Retry, or use Refresh.`;
+        showError(message);
+        setFeedback(message, 'error');
       }
     })().finally(() => { refreshFlight = null; controls(false); el('alerts-container').setAttribute('aria-busy','false'); });
     return refreshFlight;
   }
 
   function highlight() {
-    document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === active)));
+    // Optional DOM API: absent in lightweight DOMs (e.g. the Node test harness); real browsers always have it.
+    if (typeof document.querySelectorAll === 'function') {
+      document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === active)));
+    }
     el('warning-filter-help').textContent = filters.find(f => f[0] === active)[2].status
       ? 'One case per project. Actions move the entire case and its open signals into the selected workflow state.'
       : 'Open cases grouped by their primary reason. Other contributing signals remain inside each case.';
@@ -313,11 +327,13 @@
   }
 
   el('alerts-container').addEventListener('click', async event => {
-    if (event.target.closest('[data-clear-refine]')) { clearRefine(); return; }
-    const toggle = event.target.closest('[data-toggle]');
-    if (toggle) { toggleCase(toggle.closest('[data-project-id]')); return; }
-    const button = event.target.closest('[data-status]');
-    if (!button || mutating || refreshFlight) return;
+    const control = event.target.closest('[data-status], [data-toggle], [data-clear-refine]');
+    if (!control) return;
+    const data = control.dataset || {};
+    if ('clearRefine' in data) { clearRefine(); return; }
+    if ('toggle' in data) { toggleCase(control.closest('[data-project-id]')); return; }
+    const button = control;
+    if (!data.status || mutating || refreshFlight) return;
     const card = button.closest('[data-project-id]'), id = card.dataset.projectId;
     if (!id) return;
     mutating = true; controls(true); card.querySelectorAll('button').forEach(b => b.disabled = true);
