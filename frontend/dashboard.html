@@ -7,10 +7,10 @@
   <meta name="description" content="Live risk, cost and schedule state of India's monitored infrastructure portfolio.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'], mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'] } } } };
   </script>
   <script>
     if (localStorage.getItem('theme') === 'dark' ||
@@ -36,7 +36,9 @@
     /* Map */
     #map { height: 480px; }
     @media (max-width: 1023px) { #map { height: 380px; } }
-    .map-shell { position: relative; border-radius: 11px; overflow: hidden; border: 1px solid var(--pm-line); }
+    .map-shell { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--pm-line); }
+    .map-frame { position: relative; }   /* map + its overlays; the list panel sits outside on phones */
+    @media (max-width: 767px) { .map-shell { overflow: visible; border: 0; } .map-frame { border: 1px solid var(--pm-line); border-radius: 10px; overflow: hidden; } }
     .map-loading {
       position: absolute; inset: 0; z-index: 500; display: grid; place-items: center; pointer-events: none;
       background: color-mix(in srgb, var(--pm-surface-2) 70%, transparent); transition: opacity .4s var(--pm-ease);
@@ -44,7 +46,7 @@
     .map-loading.is-done { opacity: 0; }
     .pm-pin {
       --s: 26px; width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
-      border-radius: 50%; display: grid; place-items: center; font: 700 11px/1 Inter, sans-serif; color: #fff;
+      border-radius: 50%; display: grid; place-items: center; font: 600 11px/1 var(--pm-font-sans); color: #fff;
       background: var(--pm-tier-fill); border: 2px solid var(--pm-bg-elev);
       box-shadow: 0 0 0 4px color-mix(in srgb, var(--pm-tier-fill) 22%, transparent), 0 4px 12px -2px rgba(0,0,0,.35);
       transition: transform .18s var(--pm-ease), box-shadow .18s; cursor: pointer;
@@ -62,10 +64,60 @@
     .pm-pin { position: relative; }
     @keyframes pin-drop { from { opacity: 0; transform: translateY(-10px) scale(.6); } }
     @keyframes pin-ring { from { opacity: .7; transform: scale(1); } to { opacity: 0; transform: scale(2.1); } }
-    .hotspots { position: absolute; top: 12px; right: 12px; bottom: 12px; width: 236px; z-index: 450; display: flex; flex-direction: column; }
-    .hotspots-panel { background: color-mix(in srgb, var(--pm-bg-elev) 92%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      border: 1px solid var(--pm-line-strong); border-radius: 11px; box-shadow: var(--pm-shadow-pop); overflow: hidden; display: flex; flex-direction: column; max-height: 100%; }
-    @media (max-width: 767px) { .hotspots { position: static; width: auto; margin-top: 12px; } .hotspots-panel { max-height: 260px; } }
+    /* Floating list panel: draggable by its handle on ≥768px, a collapsible sheet below the map on phones */
+    .map-panel {
+      position: absolute; top: 12px; right: 12px; width: 252px; max-height: calc(100% - 24px); z-index: 450;
+      display: flex; flex-direction: column; background: var(--pm-bg-elev); border: 1px solid var(--pm-line-strong);
+      border-radius: 10px; box-shadow: var(--pm-shadow-pop); overflow: hidden; touch-action: auto;
+      transition: box-shadow .18s var(--pm-ease);
+    }
+    @media (max-width: 1023px) { .map-panel { width: 224px; } }
+    .map-panel.is-dragging { box-shadow: 0 22px 48px -18px rgba(0,0,0,.45), 0 0 0 1px var(--pm-accent-line); user-select: none; }
+    .map-panel-head { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 4px; border-bottom: 1px solid var(--pm-line); }
+    .drag-handle {
+      width: 26px; height: 30px; display: grid; place-items: center; flex: none; border-radius: 6px; color: var(--pm-faint);
+      cursor: grab; touch-action: none; transition: color .14s, background .14s;
+    }
+    .drag-handle:hover, .drag-handle:focus-visible { color: var(--pm-text); background: var(--pm-surface-hover); }
+    .map-panel.is-dragging .drag-handle { cursor: grabbing; color: var(--pm-accent); }
+    .seg { display: inline-flex; flex: 1; padding: 2px; border-radius: 8px; background: var(--pm-surface-hover); }
+    .seg button { flex: 1; height: 26px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--pm-muted); transition: all .15s var(--pm-ease); }
+    .seg button[aria-selected="true"] { background: var(--pm-bg-elev); color: var(--pm-text); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+    .panel-min { width: 30px; height: 30px; flex: none; }
+    .panel-min svg { transition: transform .2s var(--pm-ease); transform: rotate(90deg); }
+    .map-panel.is-collapsed .panel-min svg { transform: rotate(0deg); }
+    .map-panel-body { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+    .map-panel.is-collapsed .map-panel-body { display: none; }
+    @media (max-width: 767px) {
+      .map-panel { position: static; width: auto; max-height: none; margin-top: 12px; box-shadow: none; }
+      .map-panel-body { max-height: 300px; }
+      .drag-handle { display: none; }
+    }
+    .panel-note { padding: 8px 12px 10px; font-size: 11px; color: var(--pm-faint); line-height: 1.45; border-top: 1px solid var(--pm-line); }
+    .state-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; width: 100%; padding: 8px 12px; text-align: left; transition: background .14s; }
+    .state-row:hover, .state-row:focus-visible, .state-row.is-active { background: var(--pm-surface-hover); }
+    .state-row.is-active { box-shadow: inset 2px 0 0 var(--pm-accent); }
+    .state-row .nm { font-size: 12.5px; color: var(--pm-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .state-row .ct { font-size: 12.5px; font-weight: 600; color: var(--pm-text); font-variant-numeric: tabular-nums; }
+    .state-row .bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: var(--pm-surface-hover); overflow: hidden; }
+    .state-row .bar > span { display: block; height: 100%; background: var(--pm-accent); opacity: .7; }
+
+    /* State information card (hover / selection) */
+    .state-card {
+      position: absolute; left: 12px; bottom: 12px; z-index: 460; width: 264px; padding: 12px 14px 12px;
+      background: var(--pm-bg-elev); border: 1px solid var(--pm-line-strong); border-radius: 10px; box-shadow: var(--pm-shadow-pop);
+      pointer-events: none; transition: opacity .16s var(--pm-ease), transform .16s var(--pm-ease);
+    }
+    .state-card.is-hidden { opacity: 0; transform: translateY(4px); }
+    /* Informational only: never blocks panning or clicks on the map beneath it. */
+    .state-card .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 10px; }
+    .state-card .sc-v { font-size: 17px; font-weight: 600; color: var(--pm-text); font-variant-numeric: tabular-nums; line-height: 1.15; margin-top: 2px; }
+    .state-card .sc-l { font-size: 10.5px; color: var(--pm-muted); letter-spacing: .02em; }
+    @media (max-width: 767px) { .state-card { left: 8px; right: 8px; bottom: 8px; width: auto; } }
+    .legend-scale { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pm-muted); }
+    .legend-scale i { display: block; width: 44px; height: 8px; border-radius: 2px; border: 1px solid var(--pm-line-strong);
+      background: linear-gradient(90deg, color-mix(in srgb, var(--pm-accent) 6%, transparent), color-mix(in srgb, var(--pm-accent) 42%, transparent)); }
+    .leaflet-states-pane path { transition: fill-opacity .15s, stroke-width .15s; }
     .hotspot { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; text-align: left; font-size: 12.5px; color: var(--pm-text-2); transition: background .14s; }
     .hotspot:hover, .hotspot:focus-visible, .hotspot.is-active { background: var(--pm-surface-hover); color: var(--pm-text); }
     .hotspot-count { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--pm-text); }
@@ -160,20 +212,42 @@
             <div class="pm-card-head">
               <div>
                 <p class="pm-eyebrow">Geospatial risk</p>
-                <h2 id="map-title" class="pm-title mt-1">Top 100 ongoing projects by risk score</h2>
-                <p class="pm-sub">Grouped by location. Select a hotspot or pin to see its projects.</p>
+                <h2 id="map-title" class="pm-title mt-1">Where risk and ongoing work concentrate</h2>
+                <p class="pm-sub">Pins: the 100 highest-scoring projects (score ≥ 50), grouped by location. States: shaded by ongoing projects — hover, or pick one from the States list.</p>
               </div>
               <div id="map-legend" class="flex items-center gap-2 flex-wrap justify-end"></div>
             </div>
-            <div class="map-shell">
-              <div id="map" role="region" aria-label="Map of high-risk ongoing projects"></div>
-              <div id="map-loading" class="map-loading"><div class="pm-state"><div class="pm-skel" style="width:140px;height:10px"></div><p class="pm-state-msg">Loading project locations…</p></div></div>
-              <div class="hotspots"><div class="hotspots-panel">
-                <p class="pm-eyebrow px-3 pt-3 pb-2">Hotspots</p>
-                <div id="hotspots" class="overflow-y-auto pb-1" role="list"></div>
-              </div></div>
+            <div class="map-shell" id="map-shell">
+              <div class="map-frame">
+                <div id="map" role="region" aria-label="Map of high-risk projects and state boundaries"></div>
+                <div id="map-loading" class="map-loading"><div class="pm-state"><div class="pm-skel" style="width:140px;height:10px"></div><p class="pm-state-msg">Loading project locations…</p></div></div>
+                <div id="state-card" class="state-card is-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+              </div>
+              <section id="map-panel" class="map-panel" aria-label="Map lists">
+                <div class="map-panel-head">
+                  <button type="button" id="panel-handle" class="drag-handle" aria-label="Move this panel. Drag, or use arrow keys; Home resets its position." title="Drag to move · double-click to reset">
+                    <svg viewBox="0 0 12 18" width="10" height="16" aria-hidden="true" fill="currentColor"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="3" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="3" cy="15" r="1.5"/><circle cx="9" cy="15" r="1.5"/></svg>
+                  </button>
+                  <div class="seg" role="tablist" aria-label="Map list">
+                    <button type="button" role="tab" id="tab-projects" aria-selected="true" aria-controls="hotspots">Projects</button>
+                    <button type="button" role="tab" id="tab-states" aria-selected="false" aria-controls="state-list" tabindex="-1">States</button>
+                  </div>
+                  <button type="button" id="panel-collapse" class="pm-btn pm-btn-ghost pm-icon-btn panel-min" aria-expanded="true" aria-controls="panel-body" aria-label="Collapse list"><span data-icon="chevron-right" class="w-4 h-4"></span></button>
+                </div>
+                <div id="panel-body" class="map-panel-body">
+                  <div id="hotspots" role="tabpanel" aria-labelledby="tab-projects" class="pb-1"></div>
+                  <div id="state-list" role="tabpanel" aria-labelledby="tab-states" hidden></div>
+                </div>
+              </section>
             </div>
-            <p class="pm-sub mt-3">Positions are state centroids from the PAIMANA API; multi-state and unmapped projects appear at the national centre point.</p>
+            <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 mt-3">
+              <p class="pm-sub" style="margin:0">Pin positions are state centroids from the PAIMANA API; multi-state and unmapped projects appear at the national centre point.</p>
+              <div class="flex items-center gap-4 shrink-0">
+                <span class="legend-scale" aria-hidden="true">Ongoing projects <i></i> more</span>
+                <label class="flex items-center gap-2 text-[12px]" style="color:var(--pm-muted)"><input type="checkbox" id="toggle-states" checked> State layer</label>
+              </div>
+            </div>
+            <p id="state-foot" class="pm-updated mt-2" style="white-space:normal"></p>
           </section>
 
           <section class="pm-card pm-card-pad lg:col-span-4 flex flex-col pm-enter" style="--pm-delay:120ms" aria-labelledby="dist-title">
@@ -391,10 +465,15 @@
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
       document.getElementById('map').classList.add('pm-map');
+      // State polygons live in their own pane beneath overlays (400) and markers (600),
+      // so project pins always stay on top and clickable.
+      map.createPane('states').style.zIndex = 350;
+      map.getPane('states').classList.add('leaflet-states-pane');
       pinLayer = L.layerGroup().addTo(map);
+      map.on('click', () => selectState(null));
       map.on('focus', () => map.scrollWheelZoom.enable());
       map.on('blur', () => map.scrollWheelZoom.disable());
-      window.addEventListener('themeChanged', () => renderPins(false));
+      window.addEventListener('themeChanged', () => { renderPins(false); restyleStates(); });
       setTimeout(() => map.invalidateSize(), 250);
       return true;
     }
@@ -440,7 +519,7 @@
           title: `${g.name}: ${g.projects.length} projects`, alt: `${g.name}: ${g.projects.length} projects`, riseOnHover: true,
           zIndexOffset: g.critical * 10
         });
-        marker.bindPopup(popupHTML(g), { maxWidth: 300, minWidth: 260, autoPanPaddingTopLeft: [24, 24], autoPanPaddingBottomRight: [window.innerWidth >= 768 ? 270 : 24, 24] });
+        marker.bindPopup(popupHTML(g), { maxWidth: 300, minWidth: 260, autoPanPaddingTopLeft: [24, 24], autoPanPaddingBottomRight: [panelInset() + 8, 24] });
         marker.on('popupopen', () => markHotspot(g.key));
         marker.on('popupclose', () => markHotspot(null));
         g.marker = marker;
@@ -478,9 +557,8 @@
           groups = groupProjects(projects);
           renderPins(true);
           if (groups.length) {
-            const wide = window.innerWidth >= 768;
             map.fitBounds(L.latLngBounds(groups.map(g => [g.lat, g.lng])).pad(0.12), {
-              paddingTopLeft: [24, 24], paddingBottomRight: [wide ? 262 : 24, 24], maxZoom: 5.5, animate: false
+              paddingTopLeft: [24, 24], paddingBottomRight: [panelInset(), 24], maxZoom: 5.5, animate: false
             });
           }
           const crit = projects.filter(p => tier(p.status, p.risk_score) === 'CRITICAL').length;
@@ -488,7 +566,7 @@
             <span class="pm-tier" data-tier="CRITICAL">${icon(TIERS.CRITICAL.icon)}Critical <span class="pm-tier-score">${crit}</span></span>
             <span class="pm-tier" data-tier="ELEVATED">${icon(TIERS.ELEVATED.icon)}Elevated <span class="pm-tier-score">${projects.length - crit}</span></span>`;
           el.innerHTML = groups.map(g => `
-            <button type="button" class="hotspot" role="listitem" data-key="${g.key}" aria-label="${esc(g.name)}: ${g.projects.length} projects, ${g.critical} critical">
+            <button type="button" class="hotspot" data-key="${g.key}" aria-label="${esc(g.name)}: ${g.projects.length} projects, ${g.critical} critical">
               <span class="pm-tier-dot" data-tier="${g.tier}"></span>
               <span class="truncate">${esc(g.name)}</span>
               <span class="hotspot-count">${g.projects.length}</span>
@@ -558,6 +636,228 @@
       }
     });
 
+    // ------------------------------------------------------------------
+    // 3b. State layer — real boundaries + /analytics/state-summary
+    //     Boundaries: DataMeet (MIT), Survey of India based, pre-2019 (J&K includes Ladakh).
+    //     Every figure comes from the API; source state strings are matched to boundary
+    //     names with a spelling map only (no values are stored here).
+    // ------------------------------------------------------------------
+    const norm = (v) => String(v || '').toUpperCase().replace(/&/g, ' AND ').replace(/[^A-Z ]/g, ' ').replace(/\s+/g, ' ').trim();
+    const SPELLING = {
+      'CHHATISGARH': 'CHHATTISGARH', 'A AND N ISLANDS': 'ANDAMAN AND NICOBAR ISLANDS', 'D AND N HAVELI': 'DADRA AND NAGAR HAVELI',
+      'PONDICHERRY': 'PUDUCHERRY', 'NCT OF DELHI': 'DELHI', 'ORISSA': 'ODISHA', 'UTTARANCHAL': 'UTTARAKHAND',
+      'LADAKH': 'JAMMU AND KASHMIR'   // one pre-2019 boundary covers both UTs; figures are listed per UT
+    };
+    const titleCase = (v) => String(v || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\b(And|Of)\b/g, m => m.toLowerCase());
+    let statesLayer = null, stateAgg = new Map(), stateMeta = null, maxOngoing = 1, selectedState = null, hoverState = null;
+
+    function aggregateStates(geo, summary) {
+      const polygons = new Map(geo.features.map(f => [norm(f.properties.name), f.properties.name]));
+      const agg = new Map(), off = { multi: null, none: null, other: [] };
+      summary.data.forEach(row => {
+        if (row.state === null || row.state === undefined || !String(row.state).trim()) { off.none = row; return; }
+        const key0 = norm(row.state);
+        if (key0 === 'MULTI STATE') { off.multi = row; return; }
+        const key = SPELLING[key0] || key0;
+        if (!polygons.has(key)) { off.other.push(row); return; }
+        const a = agg.get(key) || { key, name: polygons.get(key), parts: [], projects: 0, ongoing: 0, ongoing_cost: 0, latest_cost: 0, high: 0, ongoing_high: 0, critical: 0 };
+        a.parts.push(row);
+        a.projects += row.projects; a.ongoing += row.ongoing; a.ongoing_cost += row.ongoing_latest_cost_crore; a.latest_cost += row.latest_cost_crore;
+        a.high += row.high_risk; a.ongoing_high += row.ongoing_high_risk; a.critical += row.critical;
+        agg.set(key, a);
+      });
+      return { agg, off, polygons };
+    }
+
+    function stateStyle(feature) {
+      const a = stateAgg.get(norm(feature.properties.name));
+      const k = norm(feature.properties.name);
+      const share = a ? Math.sqrt(a.ongoing / maxOngoing) : 0;
+      const active = k === selectedState, hot = k === hoverState;
+      return {
+        pane: 'states', color: active ? PM.cssVar('--pm-accent') : hot ? PM.cssVar('--pm-text') : PM.cssVar('--pm-line-strong'),
+        weight: active ? 2.2 : hot ? 1.6 : 0.8, opacity: active || hot ? 0.95 : 0.9,
+        fillColor: PM.cssVar('--pm-accent'), fillOpacity: (a ? 0.05 + 0.34 * share : 0.015) + (hot || active ? 0.1 : 0)
+      };
+    }
+    function restyleStates() { if (statesLayer) statesLayer.setStyle(stateStyle); }
+
+    function stateCardHTML(a, name) {
+      if (!a) return `<p class="pm-eyebrow">State / UT</p><p class="pm-title mt-1">${esc(name)}</p><p class="pm-sub mt-1">No projects recorded for this state in PAIMANA.</p>`;
+      const parts = a.parts.length > 1
+        ? `<p class="pm-updated mt-2" style="white-space:normal">${a.parts.map(r => `${esc(titleCase(r.state))}: ${fmt.int(r.ongoing)} ongoing of ${fmt.int(r.projects)}`).join(' · ')}</p>` : '';
+      return `<p class="pm-eyebrow">${a.parts.length > 1 ? 'States / UTs' : 'State / UT'}</p>
+        <p class="pm-title mt-1">${esc(a.parts.length > 1 ? a.parts.map(r => titleCase(r.state)).join(' · ') : a.name)}</p>
+        <div class="sc-grid">
+          <div><p class="sc-l">Ongoing projects</p><p class="sc-v">${fmt.int(a.ongoing)}</p><p class="pm-updated">of ${fmt.int(a.projects)} monitored</p></div>
+          <div><p class="sc-l">Latest cost · ongoing</p><p class="sc-v">${fmt.crore(a.ongoing_cost, 0)}</p><p class="pm-updated">all: ${fmt.crore(a.latest_cost, 0)}</p></div>
+          <div><p class="sc-l">High risk · ongoing</p><p class="sc-v">${fmt.int(a.ongoing_high)}</p><p class="pm-updated">score ≥ 50 · all: ${fmt.int(a.high)}</p></div>
+          <div><p class="sc-l">Critical</p><p class="sc-v">${fmt.int(a.critical)}</p><p class="pm-updated">score ≥ 75, all projects</p></div>
+        </div>${parts}`;
+    }
+    function showStateCard(key) {
+      const card = $('state-card');
+      const k = key || selectedState;
+      if (!k) { card.classList.add('is-hidden'); card.classList.remove('is-pinned'); return; }
+      const a = stateAgg.get(k);
+      card.innerHTML = stateCardHTML(a, a ? a.name : (stateMeta?.polygons.get(k) || k));
+      card.classList.remove('is-hidden');
+      card.classList.toggle('is-pinned', !key && !!selectedState);
+    }
+    function hover(key) { hoverState = key; restyleStates(); showStateCard(key); }
+    function selectState(key, { fly = false } = {}) {
+      selectedState = key && key === selectedState && !fly ? null : key;
+      restyleStates(); showStateCard(null);
+      document.querySelectorAll('.state-row').forEach(r => r.classList.toggle('is-active', r.dataset.key === selectedState));
+      if (fly && selectedState && statesLayer) {
+        const layer = statesLayer.getLayers().find(l => norm(l.feature.properties.name) === selectedState);
+        if (layer) {
+          const opts = { paddingTopLeft: [24, 24], paddingBottomRight: [panelInset(), 24], maxZoom: 6.5 };
+          PM.reducedMotion() ? map.fitBounds(layer.getBounds(), opts) : map.flyToBounds(layer.getBounds(), { ...opts, duration: 0.8 });
+        }
+      }
+    }
+
+    let geoPromise = null;
+    const loadGeo = () => (geoPromise ??= fetch('/data/india-states.json').then(r => { if (!r.ok) throw new Error('State boundaries could not be loaded.'); return r.json(); }).catch(e => { geoPromise = null; throw e; }));
+
+    function loadStates() {
+      return section($('state-list'), {
+        loader: () => Promise.all([loadGeo(), heavy(() => API.getStateSummary({ cache: 'no-store' }))]),
+        skeleton: skeleton.lines(8), errorTitle: 'State figures unavailable', inline: true,
+        isEmpty: ([, summary]) => !summary?.data?.length,
+        empty: { title: 'No state data' },
+        render: ([geo, summary], el) => {
+          stateMeta = aggregateStates(geo, summary);
+          stateAgg = stateMeta.agg;
+          maxOngoing = Math.max(1, ...[...stateAgg.values()].map(a => a.ongoing));
+          if (map && typeof L !== 'undefined') {
+            if (statesLayer) statesLayer.remove();
+            statesLayer = L.geoJSON(geo, {
+              pane: 'states', style: stateStyle,
+              onEachFeature: (f, layer) => {
+                const key = norm(f.properties.name);
+                layer.on({
+                  mouseover: () => hover(key), mouseout: () => hover(null),
+                  click: (e) => { L.DomEvent.stopPropagation(e); selectState(key); }
+                });
+              }
+            });
+            if ($('toggle-states').checked) statesLayer.addTo(map);
+          }
+          const rows = [...stateAgg.values()].sort((a, b) => b.ongoing - a.ongoing || b.projects - a.projects);
+          el.innerHTML = rows.map(a => `
+            <button type="button" class="state-row" data-key="${esc(a.key)}" aria-label="${esc(a.name)}: ${a.ongoing} ongoing projects, ${fmt.crore(a.ongoing_cost, 0)} latest cost of ongoing projects, ${a.ongoing_high} ongoing at high risk. Show on map.">
+              <span class="nm">${esc(a.parts.length > 1 ? a.parts.map(r => titleCase(r.state)).join(' · ') : a.name)}</span>
+              <span class="ct">${fmt.int(a.ongoing)}</span>
+              <span class="bar"><span style="width:${(a.ongoing / maxOngoing) * 100}%"></span></span>
+            </button>`).join('') +
+            `<p class="panel-note">Ongoing = ${esc(summary.ongoing_definition.charAt(0).toLowerCase() + summary.ongoing_definition.slice(1))} As of ${esc(fmt.date(summary.as_of))}.</p>`;
+          el.querySelectorAll('.state-row').forEach(b => {
+            b.addEventListener('click', () => selectState(b.dataset.key, { fly: true }));
+            b.addEventListener('mouseenter', () => hover(b.dataset.key));
+            b.addEventListener('mouseleave', () => hover(null));
+            b.addEventListener('focus', () => hover(b.dataset.key));
+            b.addEventListener('blur', () => hover(null));
+          });
+          const off = stateMeta.off, bits = [];
+          if (off.multi) bits.push(`multi-state ${fmt.int(off.multi.projects)} projects (${fmt.int(off.multi.ongoing)} ongoing)`);
+          if (off.none) bits.push(`state not available ${fmt.int(off.none.projects)} (${fmt.int(off.none.ongoing)} ongoing)`);
+          if (off.other.length) bits.push(`${off.other.length} unrecognised state value${off.other.length > 1 ? 's' : ''} (${fmt.int(off.other.reduce((t, r) => t + r.projects, 0))} projects)`);
+          $('state-foot').textContent = `Not shaded on the map: ${bits.join(' · ') || 'none'}. State boundaries: DataMeet (MIT), Survey of India based, pre-2019 — Jammu & Kashmir's outline includes Ladakh; their figures are listed separately.`;
+          console.log(`[PAIMANA] state layer: ${stateAgg.size} states/UTs shaded from /analytics/state-summary (${summary.data.length} source values).`);
+        }
+      });
+    }
+    $('toggle-states').addEventListener('change', (e) => {
+      if (!statesLayer || !map) return;
+      if (e.target.checked) statesLayer.addTo(map); else { statesLayer.remove(); selectState(null); hover(null); }
+    });
+
+    // ------------------------------------------------------------------
+    // 3c. Map list panel: tabs, collapse, drag (Pointer Events, handle only)
+    // ------------------------------------------------------------------
+    const panel = $('map-panel'), handle = $('panel-handle'), shell = $('map-shell');
+    const floating = () => window.innerWidth >= 768;
+    function panelInset() {
+      if (!floating() || !panel) return 24;
+      const sr = shell.getBoundingClientRect(), pr = panel.getBoundingClientRect();
+      // Only reserve space when the panel sits on the right half of the map.
+      return pr.left - sr.left > sr.width / 2 ? Math.round(sr.right - pr.left + 12) : 24;
+    }
+    const tabs = [$('tab-projects'), $('tab-states')];
+    function selectTab(i, focus = false) {
+      tabs.forEach((t, j) => { t.setAttribute('aria-selected', String(i === j)); t.tabIndex = i === j ? 0 : -1; });
+      $('hotspots').hidden = i !== 0; $('state-list').hidden = i !== 1;
+      if (focus) tabs[i].focus();
+    }
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => selectTab(i));
+      t.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); selectTab(i ? 0 : 1, true); } });
+    });
+    $('panel-collapse').addEventListener('click', (e) => {
+      const collapsed = panel.classList.toggle('is-collapsed');
+      e.currentTarget.setAttribute('aria-expanded', String(!collapsed));
+      e.currentTarget.setAttribute('aria-label', collapsed ? 'Expand list' : 'Collapse list');
+    });
+
+    const POS_KEY = 'pm.dashboard.panel';
+    function clampPanel(x, y) {
+      const m = 8, sw = shell.clientWidth, sh = shell.clientHeight;
+      return [Math.min(Math.max(m, x), sw - panel.offsetWidth - m), Math.min(Math.max(m, y), Math.max(m, sh - panel.offsetHeight - m))];
+    }
+    function placePanel(x, y, save = false) {
+      [x, y] = clampPanel(x, y);
+      Object.assign(panel.style, { left: `${x}px`, top: `${y}px`, right: 'auto' });
+      if (save) { try { localStorage.setItem(POS_KEY, JSON.stringify({ x: x / shell.clientWidth, y })); } catch (_) {} }
+    }
+    function resetPanel() {
+      Object.assign(panel.style, { left: '', top: '', right: '' });
+      try { localStorage.removeItem(POS_KEY); } catch (_) {}
+    }
+    let drag = null;
+    handle.addEventListener('pointerdown', (e) => {
+      if (!floating() || e.button !== 0) return;
+      e.preventDefault(); e.stopPropagation();
+      handle.setPointerCapture(e.pointerId);
+      drag = { id: e.pointerId, x: e.clientX, y: e.clientY, left: panel.offsetLeft, top: panel.offsetTop };
+      panel.classList.add('is-dragging');
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      placePanel(drag.left + e.clientX - drag.x, drag.top + e.clientY - drag.y);
+    });
+    const endDrag = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      handle.releasePointerCapture(e.pointerId);
+      placePanel(panel.offsetLeft, panel.offsetTop, true);
+      panel.classList.remove('is-dragging');
+      drag = null;
+    };
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
+    handle.addEventListener('dblclick', resetPanel);
+    handle.addEventListener('keydown', (e) => {
+      if (!floating()) return;
+      const step = e.shiftKey ? 48 : 16, d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+      if (d) { e.preventDefault(); placePanel(panel.offsetLeft + d[0], panel.offsetTop + d[1], true); }
+      else if (e.key === 'Home') { e.preventDefault(); resetPanel(); }
+    });
+    // Escape closes an open map popup even when focus is outside the map (e.g. on the hotspot list).
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && map && map._popup && map.hasLayer(map._popup)) { map.closePopup(); e.stopPropagation(); }
+    });
+    // Nothing inside the panel reaches the map (no accidental pan/zoom/click-through).
+    if (typeof L !== 'undefined') { L.DomEvent.disableClickPropagation(panel); L.DomEvent.disableScrollPropagation(panel); }
+    try {
+      const saved = JSON.parse(localStorage.getItem(POS_KEY) || 'null');
+      if (saved && floating()) requestAnimationFrame(() => placePanel(saved.x * shell.clientWidth, saved.y));
+    } catch (_) {}
+    window.addEventListener('resize', PM.debounce(() => {
+      if (!floating()) { Object.assign(panel.style, { left: '', top: '', right: '' }); return; }
+      if (panel.style.left) placePanel(panel.offsetLeft, panel.offsetTop);
+    }, 150));
+
     function lazy(el, fn) {
       if (!('IntersectionObserver' in window)) return fn();
       const io = new IntersectionObserver((entries) => { if (entries.some(e => e.isIntersecting)) { io.disconnect(); fn(); } }, { rootMargin: '200px' });
@@ -568,7 +868,8 @@
     // Boot: primary sections in parallel, secondary on approach
     // ------------------------------------------------------------------
     function loadAll() {
-      return Promise.allSettled([loadKPIs(), loadDistribution(), loadMap(), loadAlerts()]);
+      // Lane order for heavy calls: KPIs → map pins → state layer → warnings.
+      return Promise.allSettled([loadKPIs(), loadDistribution(), loadMap(), loadStates(), loadAlerts()]);
     }
     loadAll();
     lazy($('sectors'), loadSectors);

@@ -226,7 +226,7 @@
       grid: cssVar('--pm-chart-grid'), tick: cssVar('--pm-chart-tick'), text: cssVar('--pm-text'),
       muted: cssVar('--pm-muted'), surface: cssVar('--pm-bg-elev'), line: cssVar('--pm-line-strong'),
       accent: cssVar('--pm-accent'), info: cssVar('--pm-info'),
-      font: { family: 'Inter, system-ui, sans-serif', size: 11.5 }
+      font: { family: '"IBM Plex Sans", system-ui, sans-serif', size: 11.5 }
     };
   }
   function chartTooltip() {

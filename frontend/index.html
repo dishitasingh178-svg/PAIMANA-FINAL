@@ -8,10 +8,11 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'], mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'] } } } };
   </script>
   <script>
     if (localStorage.getItem('theme') === 'dark' ||
@@ -23,132 +24,182 @@
   </script>
   <link rel="stylesheet" href="/css/paimana.css">
   <style>
-    html { scroll-behavior: smooth; scroll-padding-top: 76px; }
-    body.pm-app { min-height: 100vh; overflow-x: hidden; }
+    /* Native scrolling is the baseline. Lenis (loaded by js/landing-motion.js) takes over only
+       when the motion libraries load and the visitor has not asked for reduced motion. */
+    html { scroll-padding-top: 64px; } /* = top bar height; Lenis reads it too */
+    @media (prefers-reduced-motion: no-preference) { html:not(.lenis) { scroll-behavior: smooth; } }
+    /* lenis@1.3.26/dist/lenis.css, inlined (plus the scroll-behavior reset Lenis needs) */
+    html.lenis, html.lenis body { height: auto; }
+    html.lenis { scroll-behavior: auto !important; }
+    .lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+    .lenis.lenis-smooth iframe { pointer-events: none; }
+
+    body.pm-site { min-height: 100vh; overflow-x: clip; }
     .wrap { max-width: 1200px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
     @media (min-width: 768px) { .wrap { padding-left: 32px; padding-right: 32px; } }
 
     /* ---------- Top bar ---------- */
     .topbar {
       position: fixed; inset: 0 0 auto 0; z-index: 40; height: 64px; border-bottom: 1px solid transparent;
-      background: color-mix(in srgb, var(--pm-bg) 88%, transparent);
-      backdrop-filter: saturate(140%) blur(12px); -webkit-backdrop-filter: saturate(140%) blur(12px);
-      transition: border-color .2s var(--pm-ease);
+      background: var(--pm-bg); transition: border-color .2s var(--pm-ease);
     }
     .topbar.is-scrolled { border-bottom-color: var(--pm-line); }
-    .topnav a { font-size: 13px; font-weight: 550; color: var(--pm-muted); text-decoration: none; padding: 6px 10px; border-radius: 8px; transition: color .15s, background .15s; }
-    .topnav a:hover { color: var(--pm-text); background: var(--pm-surface-hover); }
-    .mobile-menu { position: absolute; top: 64px; left: 0; right: 0; background: var(--pm-bg-elev); border-bottom: 1px solid var(--pm-line); box-shadow: var(--pm-shadow-pop); }
-    .mobile-menu a { display: block; padding: 12px 16px; font-size: 14px; font-weight: 550; color: var(--pm-text-2); text-decoration: none; border-top: 1px solid var(--pm-line); }
+    .topnav a { position: relative; font-size: 13px; font-weight: 500; color: var(--pm-muted); text-decoration: none; padding: 6px 10px; border-radius: 7px; transition: color .15s; }
+    .topnav a:hover, .topnav a[aria-current="true"] { color: var(--pm-text); }
+    .topnav a[aria-current="true"]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 1px; background: var(--pm-text); }
+    .mobile-menu { position: absolute; top: 64px; left: 0; right: 0; background: var(--pm-bg-elev); border-bottom: 1px solid var(--pm-line); box-shadow: var(--pm-shadow-pop); max-height: calc(100vh - 64px); overflow-y: auto; }
+    .mobile-menu a { display: block; padding: 13px 16px; font-size: 14px; font-weight: 500; color: var(--pm-text-2); text-decoration: none; border-top: 1px solid var(--pm-line); }
     .mobile-menu a:hover { background: var(--pm-surface-hover); }
+    .mobile-menu a .n { font-family: var(--pm-font-mono); font-size: 11px; color: var(--pm-faint); margin-right: 10px; }
+
+    /* ---------- Type ---------- */
+    .step-no { display: flex; align-items: center; gap: 10px; font-family: var(--pm-font-mono); font-size: 11.5px; font-weight: 500; letter-spacing: .04em; color: var(--pm-muted); }
+    .step-no b { font-weight: 600; color: var(--pm-text); }
+    .step-no::after { content: ""; flex: 0 0 40px; height: 1px; background: var(--pm-line-strong); }
+    .story-title { font-size: clamp(26px, 3.1vw, 38px); line-height: 1.14; font-weight: 600; letter-spacing: -.022em; color: var(--pm-text); text-wrap: balance; }
+    .story-body { font-size: 16px; line-height: 1.7; color: var(--pm-text-2); max-width: 62ch; }
 
     /* ---------- Hero ---------- */
     .hero { padding-top: 112px; padding-bottom: 72px; border-bottom: 1px solid var(--pm-line); }
-    @media (min-width: 1024px) { .hero { padding-top: 136px; padding-bottom: 96px; } }
-    .hero-title { font-size: clamp(34px, 4.4vw, 52px); line-height: 1.05; font-weight: 750; letter-spacing: -.032em; color: var(--pm-text); }
-    .hero-title .soft { color: var(--pm-muted); }
-    .hero-lede { font-size: 16.5px; line-height: 1.65; color: var(--pm-text-2); max-width: 56ch; }
-    @media (min-width: 768px) { .hero-lede { font-size: 17.5px; } }
+    @media (min-width: 1024px) { .hero { padding-top: 144px; padding-bottom: 104px; } }
+    .hero-title { font-size: clamp(36px, 4.7vw, 58px); line-height: 1.03; font-weight: 600; letter-spacing: -.034em; color: var(--pm-text); text-wrap: balance; }
+    .hero-title .soft { color: var(--pm-faint); }
+    .hero-lede { font-size: 16.5px; line-height: 1.65; color: var(--pm-text-2); max-width: 54ch; }
+    @media (min-width: 768px) { .hero-lede { font-size: 18px; } }
     .pm-btn-lg { height: 44px; padding: 0 18px; font-size: 14px; border-radius: 10px; }
+    .hero-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--pm-line); }
+    .hero-meta > div { padding: 14px 16px 0 0; min-width: 0; }
+    .hero-meta > div + div { padding-left: 16px; border-left: 1px solid var(--pm-line); }
+    .hero-meta dt { font-family: var(--pm-font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--pm-faint); }
+    .hero-meta dd { font-size: 13px; line-height: 1.45; color: var(--pm-text-2); margin-top: 5px; }
+    @media (max-width: 639px) {
+      .hero-meta { grid-template-columns: 1fr; }
+      .hero-meta > div, .hero-meta > div + div { padding: 12px 0; border-left: 0; }
+      .hero-meta > div + div { border-top: 1px solid var(--pm-line); }
+    }
 
     .live-kpi { padding: 16px 18px; min-width: 0; }
     .live-kpi:nth-child(odd) { border-right: 1px solid var(--pm-line); }
     .live-kpi:nth-child(-n+2) { border-bottom: 1px solid var(--pm-line); }
     .live-kpi .pm-kpi-value { font-size: 28px; }
+    @media (max-width: 400px) { .live-kpi { padding: 14px 14px; } .live-kpi .pm-kpi-value { font-size: 24px; } }
 
     /* Tier distribution bar (real counts from /dashboard/risk-distribution) */
-    .tierbar { display: flex; height: 14px; border-radius: 5px; overflow: hidden; background: var(--pm-surface-hover); }
-    .tierbar > span { display: block; height: 100%; width: 0; background: var(--pm-tier-fill); transition: width .8s var(--pm-ease-out); transition-delay: var(--d, 0ms); }
+    .tierbar { display: flex; height: 12px; border-radius: 4px; overflow: hidden; background: var(--pm-surface-hover); }
+    .tierbar > span { display: block; height: 100%; background: var(--pm-tier-fill); }
     .tierbar > span + span { box-shadow: -2px 0 0 var(--pm-surface); }
+    @media (prefers-reduced-motion: no-preference) { .tierbar { animation: bar-in .9s var(--pm-ease-out) both; } }
+    @keyframes bar-in { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
     .tier-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
-    
 
     /* ---------- Story sections ---------- */
-    .story { padding: 72px 0; border-bottom: 1px solid var(--pm-line); }
-    @media (min-width: 1024px) { .story { padding: 96px 0; } }
-    .step-no { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--pm-accent); }
-    .story-title { font-size: clamp(26px, 3.2vw, 36px); line-height: 1.15; font-weight: 720; letter-spacing: -.024em; color: var(--pm-text); }
-    .story-body { font-size: 15.5px; line-height: 1.7; color: var(--pm-text-2); max-width: 60ch; }
+    .story { padding: 80px 0; border-bottom: 1px solid var(--pm-line); }
+    @media (min-width: 1024px) { .story { padding: 112px 0; } }
 
-    .fact { padding: 18px 0; border-top: 1px solid var(--pm-line); display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: baseline; }
-    .fact:last-child { border-bottom: 1px solid var(--pm-line); }
-    @media (max-width: 520px) { .fact { grid-template-columns: 1fr; gap: 4px; } }
-    .fact-value { font-size: 30px; font-weight: 750; letter-spacing: -.025em; color: var(--pm-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .fact-text { font-size: 14px; line-height: 1.55; color: var(--pm-text-2); }
+    .fact { padding: 20px 0; border-top: 1px solid var(--pm-line); display: grid; grid-template-columns: 190px 1fr; gap: 24px; align-items: baseline; }
+    .fact:last-of-type { border-bottom: 1px solid var(--pm-line); }
+    @media (max-width: 560px) { .fact { grid-template-columns: 1fr; gap: 4px; } }
+    .fact-value { font-size: 34px; font-weight: 600; letter-spacing: -.03em; color: var(--pm-text); font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.1; }
+    .fact-text { font-size: 14.5px; line-height: 1.55; color: var(--pm-text-2); }
 
-    /* Pipeline: nodes light up in order, once, when scrolled into view */
-    .pipe { display: grid; grid-template-columns: 1fr; gap: 0; counter-reset: stage; }
+    /* Pipeline. Baseline: nodes light once in view (.is-in, set by the page script).
+       With the motion library: .js-pipe, stages light as the section is scrolled (.is-on). */
+    .pipe-status { font-family: var(--pm-font-mono); font-size: 11.5px; color: var(--pm-muted); min-height: 1.5em; }
+    .pipe { display: grid; grid-template-columns: 1fr; gap: 0; }
     @media (min-width: 1024px) { .pipe { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-    .stage { position: relative; padding: 0 0 26px 56px; }
-    @media (min-width: 1024px) { .stage { padding: 0 14px 0 0; } }
+    .stage { position: relative; padding: 0 0 28px 58px; }
+    @media (min-width: 1024px) { .stage { padding: 0 16px 0 0; } }
     .stage-icon {
-      position: absolute; left: 0; top: 0; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+      position: absolute; left: 0; top: 0; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center;
       background: var(--pm-surface); border: 1px solid var(--pm-line-strong); color: var(--pm-muted);
       transition: color .35s var(--pm-ease), border-color .35s var(--pm-ease), background .35s var(--pm-ease);
-      transition-delay: calc(var(--i) * 260ms);
+      transition-delay: calc(var(--i) * 240ms);
     }
-    @media (min-width: 1024px) { .stage-icon { position: relative; margin-bottom: 18px; } }
+    @media (min-width: 1024px) { .stage-icon { position: relative; margin-bottom: 20px; } }
     .stage-icon svg { width: 18px; height: 18px; }
-    .stage-link { position: absolute; background: var(--pm-line-strong); overflow: hidden; }
-    .stage-link::after { content: ""; position: absolute; inset: 0; background: var(--pm-accent); transform-origin: left top; transition: transform .26s linear; transition-delay: calc(var(--i) * 260ms + 180ms); }
-    /* vertical connector (mobile) */
-    .stage-link { left: 19.5px; top: 44px; bottom: 4px; width: 1px; }
-    .stage-link::after { transform: scaleY(0); }
+    .stage-link { position: absolute; background: var(--pm-line-strong); overflow: hidden; left: 19.5px; top: 44px; bottom: 4px; width: 1px; }
+    .stage-link > i { position: absolute; inset: 0; background: var(--pm-accent); transform-origin: left top; transform: scaleY(0); transition: transform .24s linear; transition-delay: calc(var(--i) * 240ms + 160ms); }
     @media (min-width: 1024px) {
       .stage-link { left: 48px; right: 10px; top: 19.5px; bottom: auto; width: auto; height: 1px; }
-      .stage-link::after { transform: scaleX(0); }
+      .stage-link > i { transform: scaleX(0); }
     }
     .stage:last-child .stage-link { display: none; }
-    .pipe.is-in .stage-icon { color: var(--pm-accent); border-color: var(--pm-accent-line); background: var(--pm-accent-soft); }
-    .pipe.is-in .stage-link::after { transform: none; }
-    .stage-title { font-size: 14px; font-weight: 650; color: var(--pm-text); }
-    .stage-desc { font-size: 12.5px; line-height: 1.55; color: var(--pm-muted); margin-top: 4px; }
-    .stage-tag { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--pm-faint); margin-bottom: 4px; }
+    .pipe.is-in .stage-icon, .stage.is-on .stage-icon { color: var(--pm-accent); border-color: var(--pm-accent-line); background: var(--pm-accent-soft); }
+    .pipe.is-in .stage-link > i { transform: none; }
+    .pipe.js-pipe .stage-icon { transition-delay: 0ms; }
+    .pipe.js-pipe .stage-link > i { transition: none; }
+    .stage-title { font-size: 14.5px; font-weight: 600; color: var(--pm-text); }
+    .stage-desc { font-size: 13px; line-height: 1.55; color: var(--pm-muted); margin-top: 4px; }
+    .stage-tag { font-family: var(--pm-font-mono); font-size: 10.5px; letter-spacing: .04em; color: var(--pm-faint); margin-bottom: 6px; }
 
-    /* Model weights */
-    .weights { display: flex; height: 36px; border-radius: 9px; overflow: hidden; border: 1px solid var(--pm-line); }
-    .weights > div { display: flex; align-items: center; padding: 0 12px; font-size: 12px; font-weight: 650; color: var(--pm-text); white-space: nowrap; overflow: hidden; }
-    .weights > div + div { border-left: 1px solid var(--pm-line); }
-    .w-cost { flex: 40; background: var(--pm-accent-soft); }
-    .w-sched { flex: 40; background: color-mix(in srgb, var(--pm-info) 10%, transparent); }
-    .w-cox { flex: 20; background: var(--pm-surface-hover); }
-    .model-weight { font-size: 32px; font-weight: 750; letter-spacing: -.03em; color: var(--pm-text); font-variant-numeric: tabular-nums; line-height: 1; }
-    .formula { font-size: 13px; color: var(--pm-text-2); background: var(--pm-surface-2); border: 1px solid var(--pm-line); border-radius: 10px; padding: 12px 14px; overflow-x: auto; white-space: nowrap; }
+    /* Model weights: neutral ink steps, colour stays reserved for risk tiers */
+    .weights { display: flex; height: 40px; border-radius: 8px; overflow: hidden; border: 1px solid var(--pm-line-strong); }
+    .weights > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 12px; font-size: 12.5px; font-weight: 600; color: var(--pm-text); white-space: nowrap; overflow: hidden; min-width: 0; }
+    .weights > div span { font-family: var(--pm-font-mono); font-weight: 500; color: var(--pm-muted); }
+    .weights > div + div { border-left: 1px solid var(--pm-line-strong); }
+    .w-cost { flex: 40; background: color-mix(in srgb, var(--pm-text) 9%, var(--pm-surface)); }
+    .w-sched { flex: 40; background: color-mix(in srgb, var(--pm-text) 5%, var(--pm-surface)); }
+    .w-cox { flex: 20; background: var(--pm-surface); }
+    @media (max-width: 480px) { .weights > div span { display: none; } .weights > div { justify-content: center; padding: 0 6px; font-size: 11.5px; } }
+    .model-weight { font-size: 36px; font-weight: 600; letter-spacing: -.03em; color: var(--pm-text); font-variant-numeric: tabular-nums; line-height: 1; }
+    .formula { font-size: 13px; color: var(--pm-text-2); background: var(--pm-surface-2); border: 1px solid var(--pm-line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; white-space: nowrap; }
 
     /* Tier cards */
-    .tier-card { border-top: 3px solid var(--pm-tier-fill); }
-    .tier-count { font-size: 28px; font-weight: 750; letter-spacing: -.025em; color: var(--pm-text); font-variant-numeric: tabular-nums; }
+    .tier-card { border-top: 2px solid var(--pm-tier-fill); }
+    .tier-count { font-size: 30px; font-weight: 600; letter-spacing: -.025em; color: var(--pm-text); font-variant-numeric: tabular-nums; }
+
+    /* Top states (from /analytics/state-summary) */
+    .st-row { display: grid; grid-template-columns: 24px minmax(0, 1.3fr) minmax(0, 1.6fr) 84px 118px; gap: 16px; align-items: center; padding: 11px 20px; border-top: 1px solid var(--pm-line); font-size: 13px; }
+    .st-row.is-head { border-top: 0; padding-top: 12px; padding-bottom: 10px; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--pm-muted); background: var(--pm-surface-2); }
+    .st-rank { font-family: var(--pm-font-mono); font-size: 11.5px; color: var(--pm-faint); }
+    .st-name { color: var(--pm-text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .st-bar { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .st-bar > span { flex: 1; height: 6px; border-radius: 99px; background: var(--pm-surface-hover); overflow: hidden; }
+    .st-bar > span > i { display: block; height: 100%; border-radius: inherit; background: var(--pm-text-2); opacity: .55; transform-origin: left center; }
+    .st-bar b, .st-num { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--pm-text); }
+    .st-bar b { width: 32px; text-align: right; }
+    .st-num { text-align: right; }
+    .st-num.is-muted { color: var(--pm-text-2); font-weight: 500; }
+    @media (max-width: 767px) {
+      .st-row { grid-template-columns: 20px minmax(0, 1fr) 64px; gap: 12px; padding: 11px 16px; }
+      .st-row .st-bar { grid-column: 2 / 4; grid-row: 2; }
+      .st-row .st-cost { display: none; }
+      .st-row.is-head .st-bar-h { display: none; }
+    }
 
     /* Warning anatomy */
-    .anatomy dt { font-size: 12px; font-weight: 650; color: var(--pm-text); }
-    .anatomy dd { font-size: 12.5px; color: var(--pm-muted); line-height: 1.55; margin: 2px 0 0; }
-    .anatomy > div { padding: 12px 0; border-top: 1px solid var(--pm-line); display: grid; grid-template-columns: 170px 1fr; gap: 16px; }
+    .anatomy dt { font-size: 12.5px; font-weight: 600; color: var(--pm-text); }
+    .anatomy dd { font-size: 13px; color: var(--pm-muted); line-height: 1.55; margin: 2px 0 0; }
+    .anatomy > div { padding: 13px 0; border-top: 1px solid var(--pm-line); display: grid; grid-template-columns: 180px 1fr; gap: 16px; }
     .anatomy > div:first-child { border-top: 0; padding-top: 0; }
-    @media (max-width: 520px) { .anatomy > div { grid-template-columns: 1fr; gap: 2px; } }
+    @media (max-width: 520px) { .anatomy > div { grid-template-columns: 1fr; gap: 3px; } }
     .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-    .flow span.st { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border-radius: 6px; background: var(--pm-surface-hover); color: var(--pm-text-2); }
+    .flow span.st { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 3px 7px; border-radius: 5px; background: var(--pm-surface-hover); color: var(--pm-text-2); }
     .flow svg { width: 12px; height: 12px; color: var(--pm-faint); }
 
     /* Entry points */
-    .entry { display: flex; flex-direction: column; gap: 10px; padding: 20px; text-decoration: none; color: inherit; transition: border-color .15s var(--pm-ease), background .15s var(--pm-ease), transform .15s var(--pm-ease); }
+    .entry { display: flex; flex-direction: column; gap: 10px; padding: 20px; text-decoration: none; color: inherit; min-height: 168px; transition: border-color .15s var(--pm-ease), background .15s var(--pm-ease); }
     .entry:hover { border-color: var(--pm-line-strong); background: var(--pm-surface-2); }
-    .entry:hover .entry-go { color: var(--pm-accent); transform: translateX(2px); }
+    .entry:hover .entry-go { color: var(--pm-text); transform: translateX(3px); }
     .entry-go { transition: transform .15s var(--pm-ease), color .15s; color: var(--pm-faint); }
-    .entry-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--pm-surface-hover); color: var(--pm-text-2); }
+    .entry-icon { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; background: var(--pm-surface-hover); color: var(--pm-text-2); }
     .entry-icon svg { width: 18px; height: 18px; }
-    .entry.is-primary { border-color: var(--pm-accent-line); }
-    .entry.is-primary .entry-icon { background: var(--pm-accent-soft); color: var(--pm-accent); }
+    .entry.is-primary { background: var(--pm-ink); border-color: transparent; color: var(--pm-ink-text); }
+    .entry.is-primary .pm-title { color: var(--pm-ink-text); }
+    .entry.is-primary .pm-sub { color: color-mix(in srgb, var(--pm-ink-text) 70%, transparent); }
+    .entry.is-primary .entry-icon { background: color-mix(in srgb, var(--pm-ink-text) 12%, transparent); color: var(--pm-ink-text); }
+    .entry.is-primary .entry-go, .entry.is-primary:hover .entry-go { color: var(--pm-ink-text); }
+    .entry.is-primary:hover { background: var(--pm-ink); opacity: .93; }
 
     @media (max-width: 639px) { .topbar .pm-brand-name small { display: none; } }
     .skel-inline { display: inline-block; vertical-align: middle; height: .8em; border-radius: 6px; }
     @media (prefers-reduced-motion: reduce) {
-      .stage-icon, .stage-link::after { transition: none !important; }
-      .tierbar > span { transition: none !important; }
+      .stage-icon, .stage-link > i { transition: none !important; }
     }
   </style>
 </head>
 
-<body class="pm-app antialiased">
+<body class="pm-site antialiased">
   <a href="#main" class="pm-skip">Skip to content</a>
 
   <!-- ================= Top bar ================= -->
@@ -158,12 +209,12 @@
         <span class="pm-brand-mark"><span data-icon="shield-alert" class="w-[17px] h-[17px]"></span></span>
         <span class="pm-brand-name">PAIMANA<small class="hidden sm:block">Infrastructure intelligence</small></span>
       </a>
-      <nav class="topnav hidden lg:flex items-center gap-1" aria-label="Page sections">
+      <nav class="topnav hidden lg:flex items-center gap-0.5" aria-label="Page sections">
         <a href="#problem">Problem</a>
-        <a href="#platform">Platform</a>
+        <a href="#platform">Pipeline</a>
         <a href="#models">Models</a>
-        <a href="#tiers">Risk tiers</a>
         <a href="#warnings">Early warning</a>
+        <a href="#tiers">Portfolio</a>
         <a href="#explore">Explore</a>
       </nav>
       <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -182,23 +233,23 @@
       </div>
     </div>
     <nav id="mobile-menu" class="mobile-menu lg:hidden" aria-label="Page sections" hidden>
-      <a href="#problem">Problem</a>
-      <a href="#platform">Platform</a>
-      <a href="#models">Models</a>
-      <a href="#tiers">Risk tiers</a>
-      <a href="#warnings">Early warning</a>
-      <a href="#explore">Explore</a>
+      <a href="#problem"><span class="n">01</span>Problem</a>
+      <a href="#platform"><span class="n">02</span>Pipeline</a>
+      <a href="#models"><span class="n">03</span>Models</a>
+      <a href="#warnings"><span class="n">04</span>Early warning</a>
+      <a href="#tiers"><span class="n">05</span>Portfolio</a>
+      <a href="#explore"><span class="n">06</span>Explore</a>
       <a href="login.html">Admin login</a>
     </nav>
   </header>
 
   <main id="main">
     <!-- ================= Hero ================= -->
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="wrap grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
-        <div class="lg:col-span-7 pm-enter lg:pt-6">
-          <p class="pm-eyebrow">Predictive monitoring · Public infrastructure</p>
-          <h1 id="hero-title" class="hero-title mt-4">Early warning for India's infrastructure portfolio<span class="soft">.</span></h1>
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="wrap grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-start">
+        <div class="lg:col-span-7 pm-enter lg:pt-4">
+          <p class="step-no"><b>PAIMANA</b> Predictive monitoring · Public infrastructure</p>
+          <h1 id="hero-title" class="hero-title mt-5">Early warning for India's infrastructure portfolio<span class="soft">.</span></h1>
           <p class="hero-lede mt-6">
             PAIMANA reads the official monthly flash reports into one project database, scores every project for
             cost, schedule and lifecycle risk, and raises prioritised warnings, so reviews start where risk is building.
@@ -208,10 +259,15 @@
             <a href="projects.html" class="pm-btn pm-btn-lg">Browse projects</a>
             <a href="ai-assistant.html" class="pm-btn pm-btn-ghost pm-btn-lg"><span data-icon="bot" class="w-4 h-4"></span>Ask the assistant</a>
           </div>
+          <dl class="hero-meta mt-12">
+            <div><dt>Source</dt><dd>Official monthly project flash reports</dd></div>
+            <div><dt>Models</dt><dd>Cost and schedule XGBoost, Cox survival</dd></div>
+            <div><dt>Output</dt><dd>Composite 0–100 score, four risk tiers</dd></div>
+          </dl>
         </div>
 
         <!-- Live figures: /dashboard/summary + /dashboard/risk-distribution -->
-        <div class="lg:col-span-5 pm-enter" style="--pm-delay:80ms">
+        <div class="lg:col-span-5 pm-enter" style="--pm-delay:80ms" id="live-panel">
           <div class="pm-card" aria-labelledby="live-title">
             <div class="px-5 pt-4 pb-3 flex items-center justify-between gap-3" style="border-bottom:1px solid var(--pm-line)">
               <p id="live-title" class="pm-eyebrow">Live portfolio</p>
@@ -233,26 +289,26 @@
 
     <!-- ================= 01 Problem ================= -->
     <section id="problem" class="story" aria-labelledby="problem-title">
-      <div class="wrap grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div class="lg:col-span-5 pm-reveal">
-          <p class="step-no">01 · The problem</p>
-          <h2 id="problem-title" class="story-title mt-3">A large portfolio, running late and over budget, and the signals arrive too late.</h2>
+      <div class="wrap grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
+        <div class="lg:col-span-5" data-reveal>
+          <p class="step-no"><b>01</b> The monitoring problem</p>
+          <h2 id="problem-title" class="story-title mt-4">A large portfolio, running late and over budget, and the signals arrive too late.</h2>
           <p class="story-body mt-5">
             Central infrastructure projects are reported once a month in long PDF flash reports. By the time a
             cost revision or a slipped commissioning date is noticed in those tables, the overrun has usually
             already happened. Reviewers need to know which projects are drifting now.
           </p>
         </div>
-        <div class="lg:col-span-7 pm-reveal" style="--pm-delay:80ms">
-          <div class="fact">
+        <div class="lg:col-span-7 lg:pt-2" id="facts">
+          <div class="fact" data-reveal>
             <p class="fact-value" id="fact-delayed"><span class="pm-skel skel-inline" style="width:110px"></span></p>
             <p class="fact-text" id="fact-delayed-text">projects are behind their original commissioning schedule.</p>
           </div>
-          <div class="fact">
+          <div class="fact" data-reveal>
             <p class="fact-value" id="fact-high"><span class="pm-skel skel-inline" style="width:90px"></span></p>
             <p class="fact-text" id="fact-high-text">projects score 50 or more on the composite risk scale (Elevated or Critical).</p>
           </div>
-          <div class="fact">
+          <div class="fact" data-reveal>
             <p class="fact-value" id="fact-cost"><span class="pm-skel skel-inline" style="width:130px"></span></p>
             <p class="fact-text" id="fact-cost-text">sanctioned cost across all monitored projects, in lakh crore.</p>
           </div>
@@ -261,57 +317,58 @@
       </div>
     </section>
 
-    <!-- ================= 02 Platform pipeline ================= -->
+    <!-- ================= 02 Intelligence pipeline ================= -->
     <section id="platform" class="story" aria-labelledby="platform-title">
       <div class="wrap">
-        <div class="max-w-3xl pm-reveal">
-          <p class="step-no">02 · The PAIMANA solution</p>
-          <h2 id="platform-title" class="story-title mt-3">From the monthly flash report to a scored, searchable project database.</h2>
+        <div class="max-w-3xl" data-reveal>
+          <p class="step-no"><b>02</b> The intelligence pipeline</p>
+          <h2 id="platform-title" class="story-title mt-4">From the monthly flash report to a scored, searchable project database.</h2>
           <p class="story-body mt-5">
             An administrator uploads each official flash report. PAIMANA extracts every project row, stores it as a
             dated snapshot, and runs the risk models on it straight away, so the portfolio view is current the moment a report lands.
           </p>
         </div>
-        <ol class="pipe mt-12" id="pipe" aria-label="PAIMANA processing pipeline">
+        <p class="pipe-status mt-10 lg:mt-12" id="pipe-status" aria-hidden="true"></p>
+        <ol class="pipe mt-4" id="pipe" aria-label="PAIMANA processing pipeline">
           <li class="stage" style="--i:0">
-            <span class="stage-link" aria-hidden="true"></span>
+            <span class="stage-link" aria-hidden="true"><i></i></span>
             <div class="stage-icon" data-x-icon="file-text"></div>
-            <p class="stage-tag">Input</p>
+            <p class="stage-tag">01 · Input</p>
             <p class="stage-title">Flash report PDF</p>
             <p class="stage-desc">The official monthly project flash report, uploaded by an administrator.</p>
           </li>
           <li class="stage" style="--i:1">
-            <span class="stage-link" aria-hidden="true"></span>
+            <span class="stage-link" aria-hidden="true"><i></i></span>
             <div class="stage-icon" data-x-icon="scan-text"></div>
-            <p class="stage-tag">Extraction</p>
+            <p class="stage-tag">02 · Extraction</p>
             <p class="stage-title">Tables to fields</p>
             <p class="stage-desc">Project, cost, schedule and milestone columns are parsed and normalised.</p>
           </li>
           <li class="stage" style="--i:2">
-            <span class="stage-link" aria-hidden="true"></span>
+            <span class="stage-link" aria-hidden="true"><i></i></span>
             <div class="stage-icon" data-x-icon="database"></div>
-            <p class="stage-tag">Database</p>
+            <p class="stage-tag">03 · Database</p>
             <p class="stage-title">Project snapshots</p>
             <p class="stage-desc">Each report month becomes a stored update for every project it covers.</p>
           </li>
           <li class="stage" style="--i:3">
-            <span class="stage-link" aria-hidden="true"></span>
+            <span class="stage-link" aria-hidden="true"><i></i></span>
             <div class="stage-icon" data-x-icon="cpu"></div>
-            <p class="stage-tag">Machine learning</p>
+            <p class="stage-tag">04 · Machine learning</p>
             <p class="stage-title">Three risk models</p>
             <p class="stage-desc">Cost and schedule XGBoost models plus a Cox survival model score each project.</p>
           </li>
           <li class="stage" style="--i:4">
-            <span class="stage-link" aria-hidden="true"></span>
+            <span class="stage-link" aria-hidden="true"><i></i></span>
             <div class="stage-icon" data-x-icon="gauge"></div>
-            <p class="stage-tag">Risk</p>
+            <p class="stage-tag">05 · Risk</p>
             <p class="stage-title">Composite 0–100</p>
             <p class="stage-desc">Scores combine into one composite and a Low, Watch, Elevated or Critical tier.</p>
           </li>
           <li class="stage" style="--i:5">
-            <span class="stage-link" aria-hidden="true"></span>
+            <span class="stage-link" aria-hidden="true"><i></i></span>
             <div class="stage-icon" data-x-icon="bell"></div>
-            <p class="stage-tag">Alerts</p>
+            <p class="stage-tag">06 · Alerts</p>
             <p class="stage-title">Early warnings</p>
             <p class="stage-desc">The warning engine raises prioritised signals for review.</p>
           </li>
@@ -319,39 +376,39 @@
       </div>
     </section>
 
-    <!-- ================= 03 Predictive intelligence ================= -->
+    <!-- ================= 03 Risk, cost and schedule intelligence ================= -->
     <section id="models" class="story" aria-labelledby="models-title">
       <div class="wrap">
-        <div class="max-w-3xl pm-reveal">
-          <p class="step-no">03 · Predictive intelligence</p>
-          <h2 id="models-title" class="story-title mt-3">Three models, one composite risk score.</h2>
+        <div class="max-w-3xl" data-reveal>
+          <p class="step-no"><b>03</b> Risk, cost and schedule intelligence</p>
+          <h2 id="models-title" class="story-title mt-4">Three models, one composite risk score.</h2>
           <p class="story-body mt-5">
             Each project is scored for the two failures that matter most, cost overrun and delay, plus how its
             completion risk evolves over its lifecycle. The weighted result is a single 0–100 score that can be compared across the whole portfolio.
           </p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10">
-          <article class="pm-card pm-card-pad pm-reveal">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12" id="model-cards">
+          <article class="pm-card pm-card-pad" data-reveal>
             <p class="model-weight">40<span class="pm-kpi-unit">%</span></p>
-            <h3 class="pm-title mt-4">Cost XGBoost</h3>
+            <h3 class="pm-title mt-5">Cost XGBoost</h3>
             <p class="pm-sub" style="font-size:13px">Probability that the project's cost overruns its sanctioned estimate.</p>
           </article>
-          <article class="pm-card pm-card-pad pm-reveal" style="--pm-delay:70ms">
+          <article class="pm-card pm-card-pad" data-reveal>
             <p class="model-weight">40<span class="pm-kpi-unit">%</span></p>
-            <h3 class="pm-title mt-4">Schedule XGBoost</h3>
+            <h3 class="pm-title mt-5">Schedule XGBoost</h3>
             <p class="pm-sub" style="font-size:13px">Probability that commissioning slips past the originally scheduled date.</p>
           </article>
-          <article class="pm-card pm-card-pad pm-reveal" style="--pm-delay:140ms">
+          <article class="pm-card pm-card-pad" data-reveal>
             <p class="model-weight">20<span class="pm-kpi-unit">%</span></p>
-            <h3 class="pm-title mt-4">Cox survival model</h3>
+            <h3 class="pm-title mt-5">Cox survival model</h3>
             <p class="pm-sub" style="font-size:13px">Lifecycle hazard: how the risk of not completing on time changes as the project ages.</p>
           </article>
         </div>
-        <div class="mt-6 space-y-3 pm-reveal">
-          <div class="weights" role="img" aria-label="Composite weights: cost 40 percent, schedule 40 percent, survival 20 percent">
-            <div class="w-cost">Cost · 40%</div>
-            <div class="w-sched">Schedule · 40%</div>
-            <div class="w-cox">Cox · 20%</div>
+        <div class="mt-6 space-y-3" data-reveal>
+          <div class="weights" id="weights" role="img" aria-label="Composite weights: cost 40 percent, schedule 40 percent, survival 20 percent">
+            <div class="w-cost">Cost <span>40%</span></div>
+            <div class="w-sched">Schedule <span>40%</span></div>
+            <div class="w-cox">Cox <span>20%</span></div>
           </div>
           <p class="formula pm-mono">composite = 0.40 × P(cost overrun) + 0.40 × P(delay) + 0.20 × survival risk  →  0–100</p>
           <p class="pm-sub">On each project page, SHAP values show which inputs drove the cost and schedule predictions.</p>
@@ -359,37 +416,22 @@
       </div>
     </section>
 
-    <!-- ================= 04 Risk detection ================= -->
-    <section id="tiers" class="story" aria-labelledby="tiers-title">
-      <div class="wrap">
-        <div class="max-w-3xl pm-reveal">
-          <p class="step-no">04 · Risk detection</p>
-          <h2 id="tiers-title" class="story-title mt-3">Four tiers that say how much attention a project needs.</h2>
-          <p class="story-body mt-5">
-            The composite score places every project in one of four bands. Counts below are the current portfolio,
-            taken from each project's latest prediction.
-          </p>
-        </div>
-        <div id="tier-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10"></div>
-      </div>
-    </section>
-
-    <!-- ================= 05 Early warning ================= -->
+    <!-- ================= 04 Early warning ================= -->
     <section id="warnings" class="story" aria-labelledby="warnings-title">
-      <div class="wrap grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div class="lg:col-span-5 pm-reveal">
-          <p class="step-no">05 · Early warning</p>
-          <h2 id="warnings-title" class="story-title mt-3">Signals, ranked by priority, with the reason attached.</h2>
+      <div class="wrap grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
+        <div class="lg:col-span-5" data-reveal>
+          <p class="step-no"><b>04</b> Early warning system</p>
+          <h2 id="warnings-title" class="story-title mt-4">Signals, ranked by priority, with the reason attached.</h2>
           <p class="story-body mt-5">
             When a new report moves a project's score or crosses a tier, the early-warning engine raises a signal.
             Each one says what changed, why it was flagged and what to look at first, and it stays open until a reviewer acts on it.
           </p>
           <a href="early-warnings.html" class="pm-btn mt-7">Open the warning center <span data-icon="arrow-right" class="w-4 h-4"></span></a>
         </div>
-        <div class="lg:col-span-7 pm-reveal" style="--pm-delay:80ms">
-          <div class="pm-card pm-card-pad">
+        <div class="lg:col-span-7">
+          <div class="pm-card pm-card-pad" data-reveal="scale">
             <p class="pm-eyebrow mb-4">What every warning carries</p>
-            <dl class="anatomy">
+            <dl class="anatomy" id="anatomy">
               <div><dt>Severity</dt><dd><span class="inline-flex flex-wrap gap-1.5" id="sev-badges"></span></dd></div>
               <div><dt>Priority score</dt><dd>0–100 with a priority label, so the queue can be worked from the top.</dd></div>
               <div><dt>What changed</dt><dd>The movement between report months that triggered the signal.</dd></div>
@@ -409,53 +451,83 @@
       </div>
     </section>
 
-    <!-- ================= 06 Actionable dashboard ================= -->
+    <!-- ================= 05 Portfolio intelligence ================= -->
+    <section id="tiers" class="story" aria-labelledby="tiers-title">
+      <div class="wrap">
+        <div class="max-w-3xl" data-reveal>
+          <p class="step-no"><b>05</b> Portfolio-level intelligence</p>
+          <h2 id="tiers-title" class="story-title mt-4">Four tiers that say how much attention a project needs.</h2>
+          <p class="story-body mt-5">
+            The composite score places every project in one of four bands. Counts below are the current portfolio,
+            taken from each project's latest prediction, followed by where ongoing projects are concentrated.
+          </p>
+        </div>
+        <div id="tier-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12"></div>
+
+        <div class="pm-card mt-6 overflow-hidden" data-reveal="scale" aria-labelledby="states-title">
+          <div class="px-5 md:px-6 pt-5 pb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <div>
+              <h3 id="states-title" class="pm-title">Top states by ongoing projects</h3>
+              <p class="pm-sub">Ongoing count, ongoing projects scored Elevated or Critical, and their latest reported cost.</p>
+            </div>
+            <p class="pm-updated" id="states-asof"></p>
+          </div>
+          <div id="states" aria-live="polite"></div>
+          <div class="px-5 md:px-6 py-3 flex flex-wrap items-center justify-between gap-3" style="border-top:1px solid var(--pm-line)">
+            <p class="pm-updated" id="states-note" style="white-space:normal;max-width:78ch;line-height:1.5"></p>
+            <a href="risk-analytics.html" class="pm-btn pm-btn-ghost pm-btn-sm">State and sector analytics <span data-icon="arrow-right" class="w-3.5 h-3.5"></span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 06 Call to action ================= -->
     <section id="explore" class="story" style="border-bottom:0" aria-labelledby="explore-title">
       <div class="wrap">
-        <div class="max-w-3xl pm-reveal">
-          <p class="step-no">06 · Actionable dashboard</p>
-          <h2 id="explore-title" class="story-title mt-3">Start from the portfolio, drill into a project.</h2>
+        <div class="max-w-3xl" data-reveal>
+          <p class="step-no"><b>06</b> Actionable dashboard</p>
+          <h2 id="explore-title" class="story-title mt-4">Start from the portfolio, drill into a project.</h2>
           <p class="story-body mt-5">Every view reads the same live database, so a number on the dashboard leads to the projects and warnings behind it.</p>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-10">
-          <a href="dashboard.html" class="pm-card entry is-primary pm-reveal" data-dashboard-link>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-12" id="entries">
+          <a href="dashboard.html" class="pm-card entry is-primary" data-dashboard-link data-reveal>
             <span class="entry-icon"><span data-icon="layout-dashboard" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Portfolio dashboard</span>
             <span class="pm-sub" style="margin:0">Key figures, risk map, tier distribution and priority warnings.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
-          <a href="projects.html" class="pm-card entry pm-reveal" style="--pm-delay:50ms">
+          <a href="projects.html" class="pm-card entry" data-reveal>
             <span class="entry-icon"><span data-icon="folder-kanban" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Projects</span>
             <span class="pm-sub" style="margin:0">Search by name, agency or sector and open any project's risk profile.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
-          <a href="early-warnings.html" class="pm-card entry pm-reveal" style="--pm-delay:100ms">
+          <a href="early-warnings.html" class="pm-card entry" data-reveal>
             <span class="entry-icon"><span data-icon="bell" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Early warnings</span>
             <span class="pm-sub" style="margin:0">The prioritised signal queue with review status.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
-          <a href="risk-analytics.html" class="pm-card entry pm-reveal" style="--pm-delay:150ms">
+          <a href="risk-analytics.html" class="pm-card entry" data-reveal>
             <span class="entry-icon"><span data-icon="chart-line" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Risk analytics</span>
             <span class="pm-sub" style="margin:0">Sector and state breakdowns and the portfolio risk trend.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
-          <a href="ai-assistant.html" class="pm-card entry pm-reveal" style="--pm-delay:200ms">
+          <a href="ai-assistant.html" class="pm-card entry" data-reveal>
             <span class="entry-icon"><span data-icon="bot" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">AI assistant</span>
             <span class="pm-sub" style="margin:0">Ask questions in plain language; answers come from PAIMANA's database tools.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
           <!-- Upload is admin-only: admins go straight to add-project, everyone else to login -->
-          <a href="add-project.html" class="pm-card entry pm-reveal" style="--pm-delay:250ms;display:none" data-role="admin">
+          <a href="add-project.html" class="pm-card entry" style="display:none" data-role="admin" data-reveal>
             <span class="entry-icon"><span data-icon="file-up" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Upload a flash report</span>
             <span class="pm-sub" style="margin:0">Add the latest monthly PDF and follow it through extraction, prediction and alerts.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
-          <a href="login.html" class="pm-card entry pm-reveal" style="--pm-delay:250ms" data-role="user">
+          <a href="login.html" class="pm-card entry" data-role="user" data-reveal>
             <span class="entry-icon"><span data-icon="file-up" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Upload a flash report</span>
             <span class="pm-sub" style="margin:0">Administrators sign in to add the latest monthly PDF.</span>
@@ -482,6 +554,8 @@
     'use strict';
     const { esc, fmt, num, icon, TIERS, tierBadge, countUp } = PM;
     const $ = (id) => document.getElementById(id);
+    // Tells js/landing-motion.js (if it loaded) that new real content exists; it never gates rendering.
+    const announce = (root) => document.dispatchEvent(new CustomEvent('pm:content', { detail: { root } }));
     PM.hydrateIcons();
 
     // Icons not in the shared set (lucide paths, same stroke style)
@@ -507,20 +581,40 @@
     const onScroll = () => bar.classList.toggle('is-scrolled', window.scrollY > 8);
     addEventListener('scroll', onScroll, { passive: true }); onScroll();
     const menuBtn = $('menu-btn'), menu = $('mobile-menu');
-    const setMenu = (open) => { menu.hidden = !open; menuBtn.setAttribute('aria-expanded', String(open)); menuBtn.setAttribute('aria-label', open ? 'Close section menu' : 'Open section menu'); };
+    const setMenu = (open) => {
+      if (menu.hidden === !open) return;
+      menu.hidden = !open; menuBtn.setAttribute('aria-expanded', String(open)); menuBtn.setAttribute('aria-label', open ? 'Close section menu' : 'Open section menu');
+      document.dispatchEvent(new CustomEvent('pm:menu', { detail: { open } }));
+    };
     menuBtn.addEventListener('click', () => setMenu(menu.hidden));
     menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
     addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { setMenu(false); menuBtn.focus(); } });
     document.addEventListener('click', (e) => { if (!bar.contains(e.target)) setMenu(false); });
 
+    // Current section in the top nav (works with or without the motion libraries)
+    const navLinks = [...document.querySelectorAll('.topnav a[href^="#"]')];
+    if ('IntersectionObserver' in window) {
+      const seen = new Map();
+      const sio = new IntersectionObserver((entries) => {
+        entries.forEach(e => seen.set(e.target.id, e.isIntersecting));
+        const current = navLinks.map(a => a.hash.slice(1)).filter(id => seen.get(id)).pop();
+        navLinks.forEach(a => a.toggleAttribute('aria-current', false));
+        const hit = navLinks.find(a => a.hash === `#${current}`);
+        if (hit) hit.setAttribute('aria-current', 'true');
+      }, { rootMargin: '-40% 0px -55% 0px' });
+      navLinks.forEach(a => { const s = document.getElementById(a.hash.slice(1)); if (s) sio.observe(s); });
+    }
+
     // ---------------- Severity chips in the warning anatomy (labels only) ----------------
     $('sev-badges').innerHTML = ['WATCH', 'ELEVATED', 'CRITICAL'].map(t => tierBadge(t, null, { showScore: false })).join('');
 
-    // ---------------- Pipeline: play once when it scrolls into view ----------------
+    // ---------------- Pipeline baseline: light once in view ----------------
+    // js/landing-motion.js adds .js-pipe and drives the stages from scroll instead.
     const pipe = $('pipe');
+    const lightPipe = () => { if (!pipe.classList.contains('js-pipe')) pipe.classList.add('is-in'); };
     if (PM.reducedMotion() || !('IntersectionObserver' in window)) pipe.classList.add('is-in');
     else {
-      const io = new IntersectionObserver((es) => { if (es.some(e => e.isIntersecting)) { pipe.classList.add('is-in'); io.disconnect(); } }, { threshold: 0.35 });
+      const io = new IntersectionObserver((es) => { if (es.some(e => e.isIntersecting)) { lightPipe(); io.disconnect(); } }, { threshold: 0.35 });
       io.observe(pipe);
     }
 
@@ -540,7 +634,8 @@
     function renderSummary(s) {
       const total = num(s.total_projects) || 0;
       const share = (v) => total && num(v) !== null ? `${((num(v) / total) * 100).toFixed(1)}%` : null;
-      if (!summaryShown) {
+      const first = !summaryShown;
+      if (first) {
         $('live-kpis').innerHTML =
           kpiCell('k-total', 'Projects monitored', 'In the PAIMANA database') +
           kpiCell('k-high', 'High risk', 'Composite score ≥ 50') +
@@ -569,6 +664,7 @@
         : 'sanctioned cost across all monitored projects, in lakh crore.';
       $('fact-note').textContent = 'Live figures from the PAIMANA database.';
       PM.markUpdated($('live-updated'));
+      if (first) announce($('facts'));
     }
     function summaryError(err) {
       console.warn('[PAIMANA] live figures unavailable:', err);
@@ -595,6 +691,7 @@
       } finally {
         summaryBusy = false;
         $('live-kpis').removeAttribute('aria-busy');
+        if (initial) startStates();
       }
     }
     loadSummary(true);
@@ -615,7 +712,7 @@
       $('tier-total').textContent = `${fmt.int(total)} scored`;
       $('live-tiers').innerHTML = `
         <div class="tierbar" role="img" aria-label="${ORDER.map((t, i) => `${TIERS[t].label} ${fmt.int(values[i])}`).join(', ')}">
-          ${ORDER.map((t, i) => `<span data-tier="${t}" data-w="${pct(values[i])}" style="--d:${i * 160}ms" title="${TIERS[t].label}: ${fmt.int(values[i])}"></span>`).join('')}
+          ${ORDER.map((t, i) => `<span data-tier="${t}" style="width:${pct(values[i])}%" title="${TIERS[t].label}: ${fmt.int(values[i])}"></span>`).join('')}
         </div>
         <ul class="tier-legend mt-3">${ORDER.map((t, i) => `
           <li class="flex items-center gap-2 min-w-0" data-tier="${t}">
@@ -623,22 +720,20 @@
             <span class="text-[12.5px] truncate" style="color:var(--pm-text-2)">${TIERS[t].label}</span>
             <span class="text-[12.5px] ml-auto tabular-nums font-semibold" style="color:var(--pm-text)">${fmt.int(values[i])}</span>
           </li>`).join('')}</ul>`;
-      const segs = $('live-tiers').querySelectorAll('.tierbar > span');
-      requestAnimationFrame(() => requestAnimationFrame(() => segs.forEach(s => { s.style.width = `${s.dataset.w}%`; })));
 
       $('tier-cards').innerHTML = ORDER.map((t, i) => `
-        <article class="pm-card pm-card-pad tier-card pm-reveal" data-tier="${t}" style="--pm-delay:${i * 60}ms">
+        <article class="pm-card pm-card-pad tier-card" data-tier="${t}" data-reveal>
           <div class="flex items-center justify-between gap-2">${tierBadge(t, null, { showScore: false })}<span class="pm-updated">Score ${TIERS[t].range}</span></div>
           <p class="tier-count mt-4" data-count="${values[i]}">0</p>
           <p class="pm-updated">${pct(values[i]).toFixed(1)}% of scored projects</p>
           <p class="pm-sub mt-3" style="font-size:13px">${MEANING[t]}</p>
         </article>`).join('');
-      PM.reveal($('tier-cards'));
       // count up when the cards come into view
       const cards = $('tier-cards');
       const run = () => cards.querySelectorAll('[data-count]').forEach(el => countUp(el, el.dataset.count));
       if (PM.reducedMotion() || !('IntersectionObserver' in window)) run();
       else { const io = new IntersectionObserver((es) => { if (es.some(e => e.isIntersecting)) { io.disconnect(); run(); } }, { threshold: 0.2 }); io.observe(cards); }
+      announce(cards);
     }
     function tiersError(err) {
       $('tier-total').textContent = '';
@@ -648,7 +743,7 @@
       document.querySelectorAll('#live-tiers [data-pm-retry], #tier-cards [data-pm-retry]').forEach(b => b.addEventListener('click', retry, { once: true }));
     }
     async function loadTiers() {
-      $('live-tiers').innerHTML = `<div class="pm-skel" style="height:14px"></div><div class="tier-legend mt-3">${'<div class="pm-skel pm-skel-line" style="width:80%"></div>'.repeat(4)}</div>`;
+      $('live-tiers').innerHTML = `<div class="pm-skel" style="height:12px"></div><div class="tier-legend mt-3">${'<div class="pm-skel pm-skel-line" style="width:80%"></div>'.repeat(4)}</div>`;
       $('tier-cards').innerHTML = ORDER.map(() => `<div class="pm-card pm-card-pad"><div class="pm-skel" style="height:22px;width:90px"></div><div class="pm-skel pm-skel-kpi"></div>${PM.skeleton.lines(2)}</div>`).join('');
       try {
         const d = await API.getRiskDistribution({ cache: 'no-store' });
@@ -661,7 +756,59 @@
       } catch (err) { tiersError(err); }
     }
     loadTiers();
+
+    // ---------------- Top states: /analytics/state-summary (loaded as the section approaches) ----------------
+    const TOP_N = 8;
+    // Source reports occasionally put non-state text in the state column (e.g. ". 04/1997 836.26 - 1").
+    const validState = (s) => typeof s === 'string' && /^[A-Za-z][A-Za-z&.,()\s-]*$/.test(s.trim());
+    const titleCase = (s) => s.trim().toLowerCase().replace(/\b([a-z])/g, (m) => m.toUpperCase()).replace(/\bMulti State\b/, 'Multi-state');
+    const stateSkeleton = () => PM.skeleton.lines(8);
+    function renderStates(res, el) {
+      const rows = Array.isArray(res?.data) ? res.data : [];
+      const valid = rows.filter(r => validState(r.state));
+      const excluded = rows.length - valid.length;
+      const top = valid.filter(r => num(r.ongoing) > 0).sort((a, b) => num(b.ongoing) - num(a.ongoing)).slice(0, TOP_N);
+      const max = Math.max(1, ...top.map(r => num(r.ongoing) || 0));
+      el.innerHTML = `
+        <div class="st-row is-head" aria-hidden="true"><span>#</span><span>State</span><span class="st-bar-h">Ongoing projects</span><span class="st-num">High risk</span><span class="st-num st-cost">Latest cost</span></div>
+        <ol aria-label="Top states by ongoing projects">${top.map((r, i) => `
+          <li class="st-row">
+            <span class="st-rank">${String(i + 1).padStart(2, '0')}</span>
+            <span class="st-name" title="${esc(r.state)}">${esc(titleCase(r.state))}</span>
+            <span class="st-bar"><span><i data-bar style="width:${((num(r.ongoing) || 0) / max) * 100}%"></i></span><b>${fmt.int(r.ongoing)}</b><span class="pm-sr-only"> ongoing projects</span></span>
+            <span class="st-num"><span class="pm-sr-only">Ongoing high risk: </span>${fmt.int(r.ongoing_high_risk)}</span>
+            <span class="st-num is-muted st-cost"><span class="pm-sr-only">Ongoing latest cost: </span>${fmt.crore(r.ongoing_latest_cost_crore, 0)}</span>
+          </li>`).join('')}</ol>`;
+      $('states-asof').textContent = res?.as_of ? `As of ${fmt.date(res.as_of)}` : '';
+      $('states-note').textContent = [
+        res?.ongoing_definition ? `Ongoing: ${res.ongoing_definition}` : '',
+        'High risk: ongoing projects whose latest composite score is 50 or more.',
+        excluded ? `${fmt.int(excluded)} source ${excluded === 1 ? 'row' : 'rows'} without a usable state name (not recorded or malformed in the flash reports) ${excluded === 1 ? 'is' : 'are'} not ranked.` : ''
+      ].filter(Boolean).join(' ');
+      announce(el);
+    }
+    const loadStates = () => PM.section($('states'), {
+      loader: () => fetchAPI('/analytics/state-summary', { headers: { Accept: 'application/json' } }),
+      render: renderStates,
+      skeleton: `<div class="px-5 md:px-6 pb-4">${stateSkeleton()}</div>`,
+      isEmpty: (res) => !(Array.isArray(res?.data) && res.data.some(r => validState(r.state) && num(r.ongoing) > 0)),
+      empty: { title: 'No ongoing projects by state', message: 'State figures appear once flash reports with state data have been ingested.' },
+      errorTitle: 'State figures unavailable'
+    });
+    $('states').innerHTML = `<div class="px-5 md:px-6 pb-4">${stateSkeleton()}</div>`;
+    // Starts when the section approaches or once the slow /dashboard/summary request has settled,
+    // whichever comes first, so the two do not compete on the single backend worker.
+    let statesStarted = false;
+    const startStates = () => { if (statesStarted) return; statesStarted = true; loadStates(); };
+    if ('IntersectionObserver' in window) {
+      const lio = new IntersectionObserver((es) => { if (es.some(e => e.isIntersecting)) { lio.disconnect(); startStates(); } }, { rootMargin: '900px 0px' });
+      lio.observe($('states'));
+      setTimeout(startStates, 8000);
+    } else startStates();
   })();
   </script>
+  <!-- Motion layer: loads GSAP + ScrollTrigger + Lenis without blocking parsing, paint or the data requests above.
+       If any of it fails to load, the page stays fully readable with native scrolling. -->
+  <script src="js/landing-motion.js" defer></script>
 </body>
 </html>
