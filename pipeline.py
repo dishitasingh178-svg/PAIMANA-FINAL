@@ -118,6 +118,9 @@ def load_and_validate_csv(path: Path):
 
     df = pd.read_csv(path)
 
+    # Ignore pandas-generated index columns from CSV exports.
+    df = df.loc[:, ~df.columns.astype(str).str.match(r"^Unnamed:")]
+
     missing = [c for c in REQUIRED if c not in df.columns]
     if missing:
         raise ValueError(f"Input is missing required columns: {missing}")
@@ -218,14 +221,10 @@ def copy_to_temp_table(
 
     try:
         column_sql = ", ".join(columns)
-        cursor.copy_expert(
-            f"""
-            COPY {temp_table_name} ({column_sql})
-            FROM STDIN
-            WITH (FORMAT CSV, NULL '\\N')
-            """,
-            buffer,
-        )
+        with cursor.copy(
+            f"COPY {temp_table_name} ({column_sql}) FROM STDIN WITH (FORMAT CSV, NULL '\\N')"
+        ) as copy:
+            copy.write(buffer.getvalue())
     finally:
         cursor.close()
 

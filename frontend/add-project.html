@@ -627,6 +627,39 @@
         </div>
 
 
+        <!-- Live Processing Pipeline (driven by SSE job events) -->
+        <div
+          id="pdfPipeline"
+          class="hidden mt-5 rounded-xl border border-slate-200 dark:border-[#1E293B] bg-slate-50 dark:bg-[#0F1522] p-4 sm:p-5">
+
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <p id="pdfPipelineMessage" class="text-sm font-medium text-slate-900 dark:text-white truncate">
+              Uploading PDF...
+            </p>
+            <span id="pdfPipelinePercent" class="text-xs font-semibold tabular-nums text-orange-500 shrink-0">0%</span>
+          </div>
+
+          <div class="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+            <div id="pdfPipelineBar" class="h-full w-0 rounded-full bg-orange-500 transition-all duration-300"></div>
+          </div>
+
+          <p id="pdfPipelineJob" class="text-[11px] text-slate-400 dark:text-slate-500 mt-2 font-mono"></p>
+
+          <ol id="pdfStages" class="mt-4 space-y-3"></ol>
+
+          <details class="mt-4 group" open>
+            <summary class="cursor-pointer text-xs font-semibold text-slate-500 dark:text-slate-400 select-none">
+              Live activity log
+            </summary>
+            <div
+              id="pdfLog"
+              class="mt-2 max-h-48 overflow-y-auto rounded-lg bg-slate-900 text-slate-300 font-mono text-[11px] leading-5 p-3">
+            </div>
+          </details>
+
+        </div>
+
+
         <!-- PDF Import Result -->
         <div
           id="pdfResult"
@@ -818,6 +851,282 @@
       document.getElementById('pdfResultText');
 
 
+    const pdfPipeline =
+      document.getElementById('pdfPipeline');
+
+    const pdfPipelineMessage =
+      document.getElementById('pdfPipelineMessage');
+
+    const pdfPipelinePercent =
+      document.getElementById('pdfPipelinePercent');
+
+    const pdfPipelineBar =
+      document.getElementById('pdfPipelineBar');
+
+    const pdfPipelineJob =
+      document.getElementById('pdfPipelineJob');
+
+    const pdfStages =
+      document.getElementById('pdfStages');
+
+    const pdfLog =
+      document.getElementById('pdfLog');
+
+
+    // Local mirror of the job's stages, rebuilt from SSE events.
+    let pipelineStages = {};
+
+
+    function setStatusBanner(kind, text) {
+
+      const styles = {
+        info: 'bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400',
+        success: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+        error: 'bg-red-500/10 border border-red-500/20 text-red-500'
+      };
+
+      pdfStatus.className =
+        `mt-5 rounded-lg p-4 text-sm ${styles[kind]}`;
+
+      pdfStatus.textContent = text;
+
+      pdfStatus.classList.remove('hidden');
+
+    }
+
+
+    function stageIcon(status) {
+
+      const icon = document.createElement('span');
+
+      const base =
+        'mt-0.5 w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold';
+
+      if (status === 'running') {
+        icon.className =
+          'mt-0.5 w-5 h-5 shrink-0 rounded-full border-2 border-orange-500 border-t-transparent animate-spin';
+      } else if (status === 'done') {
+        icon.className = `${base} bg-emerald-500 text-white`;
+        icon.textContent = '✓';
+      } else if (status === 'failed') {
+        icon.className = `${base} bg-red-500 text-white`;
+        icon.textContent = '✕';
+      } else if (status === 'skipped') {
+        icon.className = `${base} bg-slate-200 dark:bg-slate-700 text-slate-500`;
+        icon.textContent = '–';
+      } else {
+        icon.className =
+          `${base} border-2 border-slate-300 dark:border-slate-600`;
+      }
+
+      return icon;
+
+    }
+
+
+    function renderStages() {
+
+      pdfStages.innerHTML = '';
+
+      Object.values(pipelineStages).forEach(stage => {
+
+        const item = document.createElement('li');
+        item.className = 'flex gap-3';
+
+        item.appendChild(stageIcon(stage.status));
+
+        const body = document.createElement('div');
+        body.className = 'min-w-0 flex-1';
+
+        const title = document.createElement('p');
+        title.className =
+          stage.status === 'pending'
+            ? 'text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500'
+            : 'text-xs font-semibold uppercase tracking-wide text-slate-900 dark:text-white';
+        title.textContent = stage.label;
+        body.appendChild(title);
+
+        if (stage.message && stage.status !== 'pending') {
+          const message = document.createElement('p');
+          message.className = 'text-xs text-slate-500 dark:text-slate-400 mt-0.5 break-words';
+          message.textContent = stage.message;
+          body.appendChild(message);
+        }
+
+        if (stage.status === 'running' && stage.progress > 0 && stage.progress < 1) {
+          const track = document.createElement('div');
+          track.className = 'mt-1.5 h-1 w-full max-w-xs rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden';
+          const fill = document.createElement('div');
+          fill.className = 'h-full bg-orange-400 transition-all duration-300';
+          fill.style.width = `${Math.round(stage.progress * 100)}%`;
+          track.appendChild(fill);
+          body.appendChild(track);
+        }
+
+        if (stage.details.length && stage.status !== 'pending') {
+          const list = document.createElement('ul');
+          list.className = 'mt-1 space-y-0.5';
+          stage.details.forEach(detail => {
+            const row = document.createElement('li');
+            row.className = 'text-[11px] text-slate-500 dark:text-slate-400';
+            row.textContent = `• ${detail}`;
+            list.appendChild(row);
+          });
+          body.appendChild(list);
+        }
+
+        item.appendChild(body);
+        pdfStages.appendChild(item);
+
+      });
+
+    }
+
+
+    function appendLog(event) {
+
+      const time = new Date((event.timestamp || Date.now() / 1000) * 1000)
+        .toLocaleTimeString([], { hour12: false });
+
+      const line = document.createElement('div');
+
+      line.className =
+        event.type === 'job_failed' ? 'text-red-400'
+          : event.type === 'job_completed' || event.type === 'stage_completed' ? 'text-emerald-400'
+            : '';
+
+      line.textContent =
+        `${time}  ${(event.stage || 'job').padEnd(11)} ${event.message || event.type}`;
+
+      const pinned =
+        pdfLog.scrollTop + pdfLog.clientHeight >= pdfLog.scrollHeight - 8;
+
+      pdfLog.appendChild(line);
+
+      if (pinned) pdfLog.scrollTop = pdfLog.scrollHeight;
+
+    }
+
+
+    function setOverallProgress(percent, message) {
+
+      const value = Math.max(0, Math.min(100, percent || 0));
+
+      pdfPipelineBar.style.width = `${value}%`;
+
+      pdfPipelinePercent.textContent = `${Math.round(value)}%`;
+
+      if (message) pdfPipelineMessage.textContent = message;
+
+    }
+
+
+    // Apply one SSE event to the local stage mirror.
+    function applyJobEvent(event) {
+
+      const stage = event.stage && pipelineStages[event.stage];
+
+      if (stage) {
+
+        if (event.stage_status) {
+          stage.status = event.stage_status;
+          if (event.stage_status === 'done' || event.stage_status === 'skipped') stage.progress = 1;
+        }
+
+        if (event.stage_progress !== undefined) stage.progress = event.stage_progress;
+
+        if (event.message) stage.message = event.message;
+
+        if (event.detail) stage.details.push(event.detail);
+
+      }
+
+      if (event.type === 'job_failed') {
+        Object.values(pipelineStages)
+          .filter(s => s.status === 'running')
+          .forEach(s => { s.status = 'failed'; });
+      }
+
+      setOverallProgress(event.progress, event.message);
+
+      appendLog(event);
+
+      renderStages();
+
+    }
+
+
+    function renderPdfResult(result) {
+
+      pdfResult.classList.remove('hidden');
+
+      pdfResultText.innerHTML = '';
+
+      const values = [
+        ['Projects found', result.projects_found],
+        ['New projects', result.projects_created],
+        ['Existing projects updated', result.projects_updated],
+        ['Monthly updates added', result.updates_created],
+        ['Monthly updates updated', result.updates_updated],
+        ['Predictions generated', result.predictions_generated],
+        ['Early-warning alerts raised', result.alerts_created],
+        ['Errors', result.errors?.length || 0]
+      ];
+
+      values.forEach(([label, value]) => {
+
+        const row = document.createElement('p');
+
+        row.textContent = `${label}: ${value ?? 0}`;
+
+        pdfResultText.appendChild(row);
+
+      });
+
+      if (result.errors && result.errors.length > 0) {
+
+        const errorHeading = document.createElement('p');
+
+        errorHeading.className = 'font-semibold text-red-500 mt-4';
+
+        errorHeading.textContent = 'Import errors:';
+
+        pdfResultText.appendChild(errorHeading);
+
+        result.errors.forEach(error => {
+
+          const errorRow = document.createElement('p');
+
+          errorRow.className = 'text-red-500';
+
+          errorRow.textContent =
+            `Page ${error.page ?? '—'}: ${error.reason}`;
+
+          pdfResultText.appendChild(errorRow);
+
+        });
+
+      }
+
+    }
+
+
+    // Resolves with the final job snapshot once the job completes or fails.
+    function followJob(jobId) {
+
+      return new Promise((resolve, reject) => {
+
+        window.API.streamJob(jobId, {
+          onEvent: applyJobEvent,
+          onDone: resolve,
+          onError: reject
+        });
+
+      });
+
+    }
+
+
     uploadPdfBtn.addEventListener(
       'click',
       async function () {
@@ -835,10 +1144,6 @@
         }
 
 
-        // -------------------------------------------------------
-        // Button state
-        // -------------------------------------------------------
-
         const originalText =
           uploadPdfBtn.innerHTML;
 
@@ -850,119 +1155,70 @@
           </span>
         `;
 
-
-        // -------------------------------------------------------
-        // Status
-        // -------------------------------------------------------
-
-        pdfStatus.className =
-          'mt-5 rounded-lg p-4 text-sm bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400';
-
-        pdfStatus.textContent =
-          'Uploading and extracting project information...';
-
-        pdfStatus.classList.remove('hidden');
+        pdfStatus.classList.add('hidden');
 
         pdfResult.classList.add('hidden');
+
+        pipelineStages = {};
+
+        pdfStages.innerHTML = '';
+
+        pdfLog.innerHTML = '';
+
+        pdfPipelineJob.textContent = '';
+
+        setOverallProgress(0, `Uploading ${file.name}...`);
+
+        pdfPipeline.classList.remove('hidden');
 
 
         try {
 
-          const result =
+          const upload =
             await window.API.uploadProjectPDF(file);
 
+          pdfPipelineJob.textContent = `Job ${upload.job_id}`;
 
-          // -----------------------------------------------------
-          // Success
-          // -----------------------------------------------------
+          // Seed the stage list from the backend so both sides agree on it.
+          const snapshot =
+            await window.API.getJob(upload.job_id);
 
-          pdfStatus.className =
-            'mt-5 rounded-lg p-4 text-sm bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400';
-
-          pdfStatus.textContent =
-            'PDF processing completed successfully.';
-
-
-          pdfResult.classList.remove('hidden');
-
-
-          pdfResultText.innerHTML = '';
-
-
-          const values = [
-            ['Projects found', result.projects_found],
-            ['New projects', result.projects_created],
-            ['Existing projects updated', result.projects_updated],
-            ['Monthly updates added', result.updates_created],
-            ['Monthly updates updated', result.updates_updated],
-            ['Errors', result.errors?.length || 0]
-          ];
-
-
-          values.forEach(([label, value]) => {
-
-            const row =
-              document.createElement('p');
-
-            row.textContent =
-              `${label}: ${value ?? 0}`;
-
-            pdfResultText.appendChild(row);
-
+          snapshot.stages.forEach(stage => {
+            pipelineStages[stage.key] = {
+              ...stage,
+              status: 'pending',
+              progress: 0,
+              message: null,
+              details: []
+            };
           });
 
+          renderStages();
 
-          if (
-            result.errors &&
-            result.errors.length > 0
-          ) {
+          const job =
+            await followJob(upload.job_id);
 
-            const errorHeading =
-              document.createElement('p');
 
-            errorHeading.className =
-              'font-semibold text-red-500 mt-4';
+          if (job.status === 'failed') {
 
-            errorHeading.textContent =
-              'Import errors:';
-
-            pdfResultText.appendChild(
-              errorHeading
+            setStatusBanner(
+              'error',
+              job.error || 'PDF processing failed.'
             );
 
-
-            result.errors.forEach(error => {
-
-              const errorRow =
-                document.createElement('p');
-
-              errorRow.className =
-                'text-red-500';
-
-              errorRow.textContent =
-                `Page ${error.page}: ${error.reason}`;
-
-              pdfResultText.appendChild(
-                errorRow
-              );
-
-            });
+            return;
 
           }
 
 
-          const predictionMessage =
-            document.createElement('p');
+          setOverallProgress(100, 'Processing complete');
 
-          predictionMessage.className =
-            'mt-4 text-slate-500 dark:text-slate-400';
-
-          predictionMessage.textContent =
-            'Predictions are being generated in the background.';
-
-          pdfResultText.appendChild(
-            predictionMessage
+          setStatusBanner(
+            'success',
+            'PDF processed: records ingested, predictions and early warnings generated.'
           );
+
+          renderPdfResult(job.result || {});
 
 
           // Clear selected file
@@ -980,13 +1236,11 @@
             error
           );
 
-
-          pdfStatus.className =
-            'mt-5 rounded-lg p-4 text-sm bg-red-500/10 border border-red-500/20 text-red-500';
-
-          pdfStatus.textContent =
+          setStatusBanner(
+            'error',
             error.message ||
-            'PDF upload failed. Please try again.';
+            'PDF upload failed. Please try again.'
+          );
 
         } finally {
 

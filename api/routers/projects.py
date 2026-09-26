@@ -1,20 +1,18 @@
 from datetime import date
 import os
-import re
 import tempfile
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from typing import List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Session
 
 from database import get_db
 from api.models.models import Project, ProjectUpdate, Prediction
-from api.services.pdf_extractor import extract_pdf
-from api.services.project_ingestion import ingest_project_record, ingest_project_records
-from api.services.prediction_service import generate_predictions_for_pairs
+from api.services.project_ingestion import ingest_project_record
+from api.services.job_manager import PDF_STAGES, create_job, submit_job
+from api.services.pdf_pipeline import PDF_MAX_BYTES, run_pdf_job
 
 from api.ml.feature_engineering import build_feature_snapshot
 import ml_package.predictor as predictor
@@ -22,43 +20,8 @@ import ml_package.predictor as predictor
 router = APIRouter(prefix="/api/v1/projects", tags=["Projects"])
 
 
-PDF_MAX_BYTES = 25 * 1024 * 1024
-PDF_MAX_PAGES = 250
-PDF_PARSE_TIMEOUT_SECONDS = 60
 _pdf_upload_lock = __import__("threading").Lock()
 _pdf_last_upload_at = 0.0
-
-
-def _validate_pdf_signature(path):
-    with open(path, "rb") as handle:
-        return handle.read(5) == b"%PDF-"
-
-
-def _extract_pdf_with_timeout(path):
-    executor = ThreadPoolExecutor(max_workers=1)
-    future = executor.submit(extract_pdf, path)
-    try:
-        return future.result(timeout=PDF_PARSE_TIMEOUT_SECONDS)
-    except FutureTimeoutError:
-        future.cancel()
-        raise
-    finally:
-        executor.shutdown(wait=False, cancel_futures=True)
-
-
-def _format_extraction_errors(errors):
-    formatted = []
-    for error in errors or []:
-        text = str(error)
-        match = re.match(r"page\s+(\d+),\s*serial\s+(\d+):\s*(.*)", text, re.I)
-        if match:
-            formatted.append({
-                "page": int(match.group(1)),
-                "reason": f"Serial {match.group(2)}: {match.group(3)}",
-            })
-        else:
-            formatted.append({"page": None, "reason": text})
-    return formatted
 
 
 class ProjectListItem(BaseModel):
@@ -183,12 +146,15 @@ def _risk_from_prediction(pred: Optional[Prediction]):
     )
 
 
-@router.post("/upload-pdf")
+@router.post("/upload-pdf", status_code=202)
 def upload_project_pdf(
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    db: Session = Depends(get_db),
 ):
+    """Store the upload and hand it to a background job.
+
+    Validation, extraction, ingestion, predictions and early warnings all
+    run in the job; follow them at GET /api/v1/jobs/{job_id}/events.
+    """
     global _pdf_last_upload_at
 
     import time
@@ -199,13 +165,13 @@ def upload_project_pdf(
         _pdf_last_upload_at = now
 
     temp_path = None
+    handed_off = False
     try:
-        if file.content_type not in {None, "application/pdf", "application/octet-stream"}:
-            raise HTTPException(status_code=415, detail="Only PDF files are accepted.")
-
         fd, temp_path = tempfile.mkstemp(prefix="paimana_pdf_", suffix=".pdf")
         os.close(fd)
 
+        # The body has to be read while the request is open, so the size
+        # limit is enforced here; everything else is checked in the job.
         total = 0
         with open(temp_path, "wb") as out:
             while True:
@@ -220,60 +186,29 @@ def upload_project_pdf(
         if total == 0:
             raise HTTPException(400, detail="The uploaded PDF is empty.")
 
-        if not _validate_pdf_signature(temp_path):
-            raise HTTPException(status_code=415, detail="The uploaded file is not a valid PDF document.")
-
-        import fitz
-        try:
-            doc = fitz.open(temp_path)
-            page_count = doc.page_count
-            doc.close()
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=f"The PDF could not be opened: {exc}")
-
-        if page_count == 0:
-            raise HTTPException(status_code=400, detail="The uploaded PDF contains no pages.")
-        if page_count > PDF_MAX_PAGES:
-            raise HTTPException(status_code=413, detail=f"PDF exceeds the {PDF_MAX_PAGES}-page limit.")
-
-        try:
-            records, pages, extraction_errors = _extract_pdf_with_timeout(temp_path)
-        except FutureTimeoutError:
-            raise HTTPException(status_code=408, detail="PDF parsing timed out.")
-        except Exception as exc:
-            raise HTTPException(status_code=400, detail=f"PDF extraction failed: {exc}")
-
-        if not records and not extraction_errors:
-            raise HTTPException(status_code=422, detail="No project records were extracted from the PDF.")
-
-        result = ingest_project_records(db, records)
-        result["errors"] = _format_extraction_errors(extraction_errors) + result["errors"]
-
-        try:
-            db.commit()
-        except Exception as exc:
-            db.rollback()
-            raise HTTPException(status_code=500, detail=f"Database ingestion failed: {exc}")
-
-        affected_pairs = result.pop("affected_pairs")
-        if affected_pairs:
-            background_tasks.add_task(generate_predictions_for_pairs, affected_pairs)
+        filename = os.path.basename(file.filename or "upload.pdf")
+        job_id = create_job("pdf_upload", PDF_STAGES, {
+            "filename": filename,
+            "size_bytes": total,
+        })
+        submit_job(job_id, run_pdf_job, temp_path, filename, file.content_type, total)
+        handed_off = True
 
         return {
             "success": True,
-            "projects_found": result["projects_found"],
-            "projects_created": result["projects_created"],
-            "projects_updated": result["projects_updated"],
-            "updates_created": result["updates_created"],
-            "updates_updated": result["updates_updated"],
-            "errors": result["errors"],
+            "job_id": job_id,
+            "status": "queued",
+            "filename": filename,
+            "status_url": f"/api/v1/jobs/{job_id}",
+            "events_url": f"/api/v1/jobs/{job_id}/events",
         }
     finally:
         try:
             file.file.close()
         except Exception:
             pass
-        if temp_path and os.path.exists(temp_path):
+        # Once handed off, the job owns (and deletes) the temp file.
+        if not handed_off and temp_path and os.path.exists(temp_path):
             try:
                 os.remove(temp_path)
             except OSError:

@@ -25,6 +25,7 @@ from api.routers import (
     analytics,
     alerts,
     assistant,
+    jobs,
 )
 
 import ml_package.predictor as predictor
@@ -96,6 +97,7 @@ app.include_router(dashboard.router)
 app.include_router(analytics.router)
 app.include_router(alerts.router)
 app.include_router(assistant.router)
+app.include_router(jobs.router)
 
 
 # 3. Static Assets

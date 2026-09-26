@@ -219,7 +219,9 @@ def parse_block(block, serial, sector, report_month_value, source_file, page_no)
     return None
 
 
-def extract_pdf(pdf_path):
+def extract_pdf(pdf_path, progress_callback=None):
+    """progress_callback(event, **info) is optional and only observes; it
+    never influences the parsing rules above."""
     pdf_path = Path(pdf_path)
     doc = fitz.open(pdf_path)
     pages = find_section_pages(doc)
@@ -231,7 +233,11 @@ def extract_pdf(pdf_path):
     rows, errors = [], []
     current_sector = ''
 
-    for pi in pages:
+    if progress_callback:
+        progress_callback('section_found', pages=pages, report_month=month,
+                          total_pages=len(doc))
+
+    for page_index, pi in enumerate(pages):
         lines = [x.strip() for x in doc[pi].get_text('text').splitlines()]
         i = 0
         while i < len(lines):
@@ -295,6 +301,10 @@ def extract_pdf(pdf_path):
                     i = j
                     continue
             i += 1
+
+        if progress_callback:
+            progress_callback('page_done', done=page_index + 1, total=len(pages),
+                              page_no=pi + 1, records=len(rows), errors=len(errors))
 
     doc.close()
     return rows, pages, errors

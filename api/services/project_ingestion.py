@@ -6,7 +6,7 @@ persistence so Project and ProjectUpdate are created/updated consistently.
 
 import re
 from datetime import date, datetime
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable, Optional
 
 from sqlalchemy.orm import Session
 
@@ -214,7 +214,11 @@ def ingest_project_record(db: Session, record: Dict[str, Any]) -> Dict[str, Any]
     }
 
 
-def ingest_project_records(db: Session, records: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
+def ingest_project_records(
+    db: Session,
+    records: Iterable[Dict[str, Any]],
+    progress_callback: Optional[Callable[[int, int, Dict[str, Any]], None]] = None,
+) -> Dict[str, Any]:
     records = list(records)
     result = {
         "projects_found": len(records),
@@ -226,7 +230,7 @@ def ingest_project_records(db: Session, records: Iterable[Dict[str, Any]]) -> Di
         "affected_pairs": [],
     }
 
-    for record in records:
+    for index, record in enumerate(records, start=1):
         page = record.get("source_page")
         try:
             # A savepoint keeps one malformed record from rolling back the
@@ -252,6 +256,9 @@ def ingest_project_records(db: Session, records: Iterable[Dict[str, Any]]) -> Di
                 "page": page,
                 "reason": str(exc),
             })
+
+        if progress_callback:
+            progress_callback(index, len(records), result)
 
     # Keep prediction work deterministic and duplicate-free.
     result["affected_pairs"] = sorted(set(result["affected_pairs"]))
