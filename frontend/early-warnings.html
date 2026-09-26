@@ -381,10 +381,10 @@
 
     <div class="w-full px-4 sm:px-5 lg:px-7 xl:px-8 py-5 lg:py-6 space-y-5">
 
-      <div id="warning-summary" class="grid grid-cols-2 xl:grid-cols-4 gap-3" aria-live="polite"></div>
+      <div id="warning-summary" class="grid grid-cols-2 xl:grid-cols-3 gap-3" aria-live="polite"></div>
       <section class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] rounded-xl p-5">
         <div class="flex flex-wrap justify-between gap-3 mb-4"><div><h2 class="font-bold text-lg">Projects Requiring Immediate Attention</h2>
-        <p class="text-xs text-slate-500 mt-1">Top five projects with open warnings, ordered by priority. A project stays here until all its warnings are resolved or dismissed.</p></div>
+        <p class="text-xs text-slate-500 mt-1">Top five projects with open warnings, ordered by priority. Acknowledged and Under Review cases retain their status here. Resolve or Dismiss closes the entire case.</p></div>
         <button id="refresh-warnings" class="px-3 py-2 border rounded-lg text-sm">Refresh</button></div>
         <div id="priority-projects" class="space-y-3">Loading priority projects...</div>
       </section>
@@ -399,10 +399,11 @@
 
   <!-- Use the global theme script so you don't need inline toggle logic! -->
   <script src="js/theme.js"></script>
-  <script src="js/api.js"></script>
+  <script src="js/api.js?v=cases-2"></script>
+  <script src="js/warning-ui.js?v=cases-2"></script>
   <script src="js/auth.js"></script>
   <script src="js/animations.js"></script>
 
-  <script src="js/early-warnings.js"></script>
+  <script src="js/early-warnings.js?v=cases-2"></script>
 </body>
 </html>

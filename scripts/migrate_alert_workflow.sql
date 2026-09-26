@@ -5,6 +5,7 @@ ALTER TABLE alerts ADD COLUMN IF NOT EXISTS acknowledged_at TIMESTAMP WITH TIME 
 ALTER TABLE alerts ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE alerts ADD COLUMN IF NOT EXISTS dismissed_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE alerts ADD COLUMN IF NOT EXISTS review_note TEXT;
+ALTER TABLE alerts ADD COLUMN IF NOT EXISTS evidence_updated_at TIMESTAMP WITH TIME ZONE;
 UPDATE alerts SET status = CASE WHEN is_resolved IS TRUE THEN 'RESOLVED' ELSE 'NEW' END WHERE status IS NULL OR (is_resolved IS TRUE AND status <> 'RESOLVED');
 UPDATE alerts SET is_resolved = (status = 'RESOLVED') WHERE is_resolved IS DISTINCT FROM (status = 'RESOLVED');
 UPDATE alerts SET status_updated_at = COALESCE(triggered_at, CURRENT_TIMESTAMP) WHERE status_updated_at IS NULL;

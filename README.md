@@ -1223,12 +1223,14 @@ alert is not a claim that its condition was re-triggered this month. Rule cost b
 retain the engine's existing revised/anticipated/original preference, distinct from
 financial exposure's requested anticipated/revised/original preference.
 
-Unresolved alerts deduplicate by project and type, including dismissed rows. A higher
-severity reopens the existing row as NEW and preserves its note and workflow timestamps.
+Unresolved signals deduplicate by project and type, including dismissed rows. Higher
+severity preserves an acknowledged/under-review project workflow; a dismissed condition
+can reopen as New when it escalates.
 Same/lower severity preserves the original message and review state; latest risk
 increases of at least 10 points are surfaced in the derived explanation. Resolved
-conditions may generate a new alert on a later run. Existing duplicate rows are retained
-for safety; the top project list groups them. No full event-history table is added.
+conditions may generate a new alert when evidence changes; unchanged resolved signals
+are not recreated on replay. Existing duplicate rows are retained as contributing signals;
+all operational queues and counters group one case per project. No full event-history table is added.
 All five statuses are accepted; reopening is supported. `is_resolved` is true only
 for RESOLVED. Dashboard and assistant active queries also exclude DISMISSED.
 
@@ -1248,3 +1250,13 @@ The verification database is isolated from deployment. No production credentials
 model artifacts, synthetic demo records or external APIs were added. Example priority
 92 is not forced: actual project data determines whether any IMMEDIATE projects exist.
 Deploying the live site and recording a submission video remain deployment/demo steps.
+
+
+### Project-case corrective release
+
+The Early Warning Center defaults to **New**, with exclusive project workflow queues.
+Use `GET /api/v1/alerts/cases` and `PATCH /api/v1/alerts/projects/{project_id}/status`
+for operational cases; the raw-alert endpoint above remains backward compatible.
+Summary counts are distinct projects. Actions transition all open signals and save
+the officer note transactionally. See [the corrective validation report](EARLY_WARNING_VALIDATION.md)
+for current test results, real-data counts, deployment commands and known blockers.

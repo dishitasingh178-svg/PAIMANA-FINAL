@@ -78,6 +78,7 @@ class Alert(Base):
     resolved_at = Column(DateTime(timezone=True))
     dismissed_at = Column(DateTime(timezone=True))
     review_note = Column(Text)
+    evidence_updated_at = Column(DateTime(timezone=True))
     triggered_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
     project = relationship("Project", back_populates="alerts")

@@ -1,6 +1,9 @@
 services:
   paimana-api:
-    build: .
+    build:
+      context: .
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
     container_name: paimana-api
     restart: unless-stopped
     env_file:

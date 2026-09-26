@@ -906,33 +906,42 @@ def _save_alert_if_new(
     candidate: CandidateAlert,
 ) -> Optional[Alert]:
 
-    existing = (
-        db.query(Alert)
-        .filter(
-            Alert.project_id == project_id,
-            Alert.alert_type == candidate.alert_type,
-            Alert.is_resolved.is_(False),
-        )
-        .order_by(Alert.triggered_at.asc(), Alert.alert_id.asc())
-        .with_for_update()
-        .first()
-    )
+    from api.services.alert_priority import CLOSED, effective_status
+
+    project_alerts = db.query(Alert).filter(Alert.project_id == project_id).order_by(
+        Alert.triggered_at.asc(), Alert.alert_id.asc()
+    ).with_for_update().all()
+    existing = next((a for a in project_alerts if a.alert_type == candidate.alert_type
+                     and effective_status(a) != "RESOLVED"), None)
+    reviewed = [a for a in project_alerts if effective_status(a) in {"ACKNOWLEDGED", "UNDER_REVIEW"}]
+    workflow = max(reviewed, key=lambda a: (a.status_updated_at.isoformat() if a.status_updated_at else "", a.alert_id), default=None)
+    now = datetime.now(timezone.utc)
 
     if existing:
         rank = {"WATCH": 40, "ELEVATED": 70, "CRITICAL": 100}
         if rank.get(candidate.severity, 0) > rank.get(existing.severity, 0):
             existing.severity = candidate.severity
             existing.message = candidate.message
-            existing.status = "NEW"
-            existing.status_updated_at = datetime.now(timezone.utc)
-        # Dismissed warnings stay suppressed unless severity escalates.
+            existing.evidence_updated_at = now
+            if effective_status(existing) in CLOSED:
+                existing.status = effective_status(workflow) if workflow else "NEW"
+                existing.status_updated_at = workflow.status_updated_at if workflow else now
+            # Officer review state and note survive genuine escalation.
         return None
 
+    # Re-running the same already-closed signal is not new evidence.
+    if any(a.alert_type == candidate.alert_type and a.message == candidate.message
+           and a.severity == candidate.severity for a in project_alerts):
+        return None
     alert = Alert(
         project_id=project_id,
         alert_type=candidate.alert_type,
         severity=candidate.severity,
         message=candidate.message,
+        status=effective_status(workflow) if workflow else "NEW",
+        review_note=workflow.review_note if workflow else None,
+        status_updated_at=workflow.status_updated_at if workflow else now,
+        evidence_updated_at=now,
     )
 
     db.add(alert)

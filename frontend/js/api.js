@@ -16,8 +16,12 @@ const API = {
   getHighRiskMapProjects: () => fetchAPI("/dashboard/ongoing-high-risk"),
   getRiskDistribution: () => fetchAPI("/dashboard/risk-distribution"),
   getAlerts: (filters = {}) => fetchAPI(`/alerts?${new URLSearchParams(filters)}`),
-  getPriorityAlerts: (limit = 10) => fetchAPI(`/alerts/priority?limit=${limit}`),
-  getAlertSummary: () => fetchAPI("/alerts/summary"),
+  getAlertCases: (filters = {}) => fetchAPI(`/alerts/cases?${new URLSearchParams(filters)}`, {cache:'no-store'}),
+  updateProjectAlertStatus: (projectId, status, reviewNote) => fetchAPI(`/alerts/projects/${encodeURIComponent(projectId)}/status`, {
+    method:'PATCH', body:JSON.stringify({status, ...(reviewNote === undefined ? {} : {review_note:reviewNote})})
+  }),
+  getPriorityAlerts: (limit = 10) => fetchAPI(`/alerts/priority?limit=${limit}`, {cache:'no-store'}),
+  getAlertSummary: () => fetchAPI("/alerts/summary", {cache:'no-store'}),
   updateAlertStatus: (alertId, status, reviewNote) => fetchAPI(`/alerts/${encodeURIComponent(alertId)}/status`, {
     method: "PATCH", body: JSON.stringify({status, ...(reviewNote === undefined ? {} : {review_note: reviewNote})})
   }),
