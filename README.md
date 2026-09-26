@@ -14,7 +14,7 @@ The repository currently contains two main application layers:
 The repository is structured as an integration/prototype layer. Several frontend screens are already designed and contain API integration hooks, while a number of backend endpoints currently return placeholder/empty responses. The trained ML artifacts and database implementation are **not present in this repository snapshot**.
 
 ---
-#Deployed link : https://65.1.139.1:8443/
+# Deployed link : https://65.1.139.1:8443/
 ---
 # 🎯 Problem
 
