@@ -19,7 +19,7 @@ import ml_package.predictor as predictor
 
 
 PDF_MAX_BYTES = 25 * 1024 * 1024
-PDF_MAX_PAGES = 250
+PDF_MAX_PAGES = 400
 PDF_PARSE_TIMEOUT_SECONDS = 60
 ACCEPTED_CONTENT_TYPES = {None, "application/pdf", "application/octet-stream"}
 
@@ -137,8 +137,14 @@ def _extract(reporter, temp_path):
     except Exception as exc:
         raise PipelineError(f"PDF extraction failed: {exc}")
 
-    if not records and not extraction_errors:
-        raise PipelineError("No project records were extracted from the PDF.")
+    if not records:
+        # e.g. "Target project-detail section was not found": nothing to ingest,
+        # so don't let the job end as a success.
+        reason = "; ".join(str(e) for e in extraction_errors[:3])
+        raise PipelineError(
+            "No project records were extracted from the PDF"
+            + (f" ({reason})." if reason else ".")
+        )
 
     reporter.stage_completed(
         "extracting",
