@@ -1,1067 +1,635 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PAIMANA AI - Intelligence Assistant</title>
-
+  <title>AI Assistant · PAIMANA</title>
+  <meta name="description" content="Ask questions about the PAIMANA project portfolio in plain language. Answers are grounded in PAIMANA database tools.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif']
-          }
-        }
-      }
-    };
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };
   </script>
-
-  <!-- Prevent Flash of Unstyled Content -->
   <script>
-    if (
-      localStorage.getItem('theme') === 'dark' ||
-      (!('theme' in localStorage) &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches)
-    ) {
+    if (localStorage.getItem('theme') === 'dark' ||
+      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
   </script>
-
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="css/custom.css">
-
-<style>
-/* =========================================================
-   PAIMANA AI VISUAL MOTION LAYER
-   Sidebar/navigation intentionally untouched.
-   Chatbot/API/data logic intentionally untouched.
-   Moving radar intentionally omitted.
-   ========================================================= */
-
-:root {
-  --paimana-signal: #38BDF8;
-  --paimana-orange: #F97316;
-  --paimana-orange-glow: rgba(249,115,22,.32);
-  --paimana-ease: cubic-bezier(.16,1,.3,1);
-}
-
-/* ---------- Main/header entrance ---------- */
-
-main {
-  animation: paimana-main-in .6s var(--paimana-ease) both;
-}
-
-main > header {
-  position: relative;
-  z-index: 20;
-  animation: paimana-header-in .55s var(--paimana-ease) .08s both;
-}
-
-main > header > div:first-child {
-  animation: paimana-text-in .6s var(--paimana-ease) .15s both;
-}
-
-main > header > div:last-child {
-  animation: paimana-tools-in .55s var(--paimana-ease) .2s both;
-}
-
-/* Connected badge */
-main > header span {
-  position: relative;
-  overflow: hidden;
-}
-
-main > header span::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 -70%;
-  width: 55%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255,255,255,.28),
-    transparent
-  );
-  animation: paimana-badge-sweep 4.5s ease-in-out infinite;
-}
-
-main > header span i[data-lucide="database"] {
-  animation: paimana-database-pulse 2s ease-in-out infinite;
-}
-
-/* ---------- Welcome screen ---------- */
-
-#welcome-screen {
-  animation: paimana-welcome-in .7s var(--paimana-ease) .12s both;
-}
-
-#welcome-screen > div:first-child {
-  position: relative;
-  animation: paimana-icon-in .7s var(--paimana-ease) .12s both;
-}
-
-#welcome-screen > div:first-child::before {
-  content: "";
-  position: absolute;
-  inset: -10px;
-  border-radius: 20px;
-  border: 1px solid var(--paimana-orange-glow);
-  animation: paimana-ring-breathe 3s ease-in-out infinite;
-  pointer-events: none;
-}
-
-#welcome-screen h2 {
-  animation: paimana-text-in .65s var(--paimana-ease) .22s both;
-}
-
-#welcome-screen > p {
-  animation: paimana-text-in .65s var(--paimana-ease) .3s both;
-}
-
-/* ---------- Suggestion chips ---------- */
-
-#welcome-screen > div:last-child {
-  animation: paimana-text-in .65s var(--paimana-ease) .36s both;
-}
-
-#welcome-screen > div:last-child button {
-  position: relative;
-  overflow: hidden;
-  transition:
-    transform .22s var(--paimana-ease),
-    border-color .2s ease,
-    box-shadow .2s ease;
-  animation: paimana-chip-in .5s var(--paimana-ease) both;
-}
-
-#welcome-screen > div:last-child button:nth-child(1) {
-  animation-delay: .38s;
-}
-
-#welcome-screen > div:last-child button:nth-child(2) {
-  animation-delay: .45s;
-}
-
-#welcome-screen > div:last-child button:nth-child(3) {
-  animation-delay: .52s;
-}
-
-#welcome-screen > div:last-child button::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: -75%;
-  width: 45%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255,255,255,.16),
-    transparent
-  );
-  transform: skewX(-18deg);
-}
-
-#welcome-screen > div:last-child button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px -12px var(--paimana-orange-glow);
-}
-
-#welcome-screen > div:last-child button:hover::after {
-  animation: paimana-chip-shine .7s ease;
-}
-
-/* ---------- Input area ---------- */
-
-main > div:last-child {
-  animation: paimana-input-in .65s var(--paimana-ease) .18s both;
-}
-
-main > div:last-child > div {
-  position: relative;
-}
-
-main > div:last-child > div::before {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: 14px;
-  padding: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--paimana-signal),
-    var(--paimana-orange),
-    var(--paimana-signal)
-  );
-  background-size: 200% 100%;
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .25s ease;
-  animation: paimana-gradient-shift 3s linear infinite;
-}
-
-main > div:last-child > div:focus-within::before {
-  opacity: 1;
-}
-
-#chat-input {
-  transition:
-    border-color .25s ease,
-    box-shadow .25s ease,
-    transform .2s var(--paimana-ease);
-}
-
-#chat-input:focus {
-  transform: translateY(-1px);
-  box-shadow:
-    0 8px 28px rgba(0,0,0,.12),
-    0 0 0 1px rgba(249,115,22,.12);
-}
-
-#send-button {
-  transition:
-    transform .2s var(--paimana-ease),
-    background-color .2s ease,
-    box-shadow .2s ease;
-}
-
-#send-button:hover:not(:disabled) {
-  transform: translateY(-1px) scale(1.04);
-  box-shadow: 0 8px 20px -8px var(--paimana-orange-glow);
-}
-
-#send-button:active:not(:disabled) {
-  transform: scale(.92);
-}
-
-/* ---------- Header controls ---------- */
-
-#clear-chat,
-#theme-toggle {
-  transition:
-    transform .2s var(--paimana-ease),
-    background-color .2s ease,
-    color .2s ease;
-}
-
-#clear-chat:hover,
-#theme-toggle:hover {
-  transform: translateY(-2px);
-}
-
-#clear-chat:active,
-#theme-toggle:active {
-  transform: scale(.9);
-}
-
-#clear-chat:hover i {
-  animation: paimana-spin-once .5s ease;
-}
-
-/* ---------- Messages ----------
-   These apply to elements created by your existing JS.
-   No message/chatbot JS is changed.
-   ---------- */
-
-#chat-viewport > div:not(#welcome-screen) {
-  animation: paimana-message-in .38s var(--paimana-ease) both;
-}
-
-#chat-viewport > div:not(#welcome-screen) > div {
-  transition:
-    transform .2s var(--paimana-ease),
-    box-shadow .2s ease;
-}
-
-#chat-viewport > div:not(#welcome-screen):hover > div:last-child {
-  box-shadow: 0 10px 30px rgba(0,0,0,.08);
-}
-
-/* Bot avatar glow */
-#chat-viewport > div:not(#welcome-screen)
-  > div:first-child:has(i[data-lucide="bot"]) {
-  position: relative;
-}
-
-#chat-viewport > div:not(#welcome-screen)
-  > div:first-child:has(i[data-lucide="bot"])::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border-radius: 10px;
-  background: var(--paimana-orange-glow);
-  filter: blur(6px);
-  opacity: .45;
-  z-index: -1;
-}
-
-/* Existing typing dots */
-#chat-viewport .animate-bounce {
-  animation-duration: 1.2s;
-}
-
-/* ---------- Keyframes ---------- */
-
-@keyframes paimana-main-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes paimana-header-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes paimana-tools-in {
-  from {
-    opacity: 0;
-    transform: translateX(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes paimana-text-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes paimana-welcome-in {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes paimana-icon-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes paimana-chip-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes paimana-message-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(.985);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes paimana-input-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes paimana-ring-breathe {
-  0%, 100% {
-    transform: scale(.96);
-    opacity: .45;
-  }
-  50% {
-    transform: scale(1.08);
-    opacity: 1;
-  }
-}
-
-@keyframes paimana-badge-sweep {
-  0%, 55% { transform: translateX(0); }
-  75%, 100% { transform: translateX(360%); }
-}
-
-@keyframes paimana-database-pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: .8;
-  }
-  50% {
-    transform: scale(1.15);
-    opacity: 1;
-  }
-}
-
-@keyframes paimana-chip-shine {
-  from {
-    transform: translateX(0) skewX(-18deg);
-  }
-  to {
-    transform: translateX(360%) skewX(-18deg);
-  }
-}
-
-@keyframes paimana-gradient-shift {
-  to { background-position: -200% 0; }
-}
-
-@keyframes paimana-spin-once {
-  to { transform: rotate(-180deg); }
-}
-
-/* ---------- Reduced motion ---------- */
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: .001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .001ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-</style>
-
+  <link rel="stylesheet" href="/css/custom.css">
+  <link rel="stylesheet" href="/css/paimana.css">
+  <style>
+    .chat-col { max-width: 860px; margin: 0 auto; }
+
+    /* Welcome + starter prompts */
+    .welcome-mark { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: var(--pm-accent); background: var(--pm-accent-soft); box-shadow: inset 0 0 0 1px var(--pm-accent-line); }
+    .welcome-mark svg { width: 22px; height: 22px; }
+    .starter {
+      display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left; padding: 13px 14px; border-radius: 11px;
+      border: 1px solid var(--pm-line); background: var(--pm-surface); transition: border-color .15s var(--pm-ease), background .15s var(--pm-ease);
+    }
+    .starter:hover { border-color: var(--pm-line-strong); background: var(--pm-surface-2); }
+    .starter-k { font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--pm-faint); }
+    .starter-q { font-size: 13px; font-weight: 550; color: var(--pm-text); line-height: 1.45; }
+    .cap-list li { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; color: var(--pm-text-2); }
+    .cap-list li::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--pm-faint); flex: none; transform: translateY(-2px); }
+
+    /* Messages */
+    .msg { display: flex; gap: 12px; }
+    .msg-user { justify-content: flex-end; }
+    .msg-user .bubble {
+      max-width: min(620px, 88%); padding: 10px 14px; border-radius: 14px 14px 4px 14px; font-size: 13.5px; line-height: 1.55;
+      background: var(--pm-accent-soft); color: var(--pm-text); box-shadow: inset 0 0 0 1px var(--pm-accent-line); white-space: pre-wrap; word-break: break-word;
+    }
+    .avatar { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; flex: none; margin-top: 2px; color: var(--pm-accent); background: var(--pm-accent-soft); box-shadow: inset 0 0 0 1px var(--pm-accent-line); }
+    .avatar svg { width: 16px; height: 16px; }
+    .msg-bot .body { flex: 1; min-width: 0; }
+    .answer { font-size: 14px; line-height: 1.7; color: var(--pm-text-2); word-break: break-word; }
+    .answer p + p, .answer p + ul, .answer ul + p, .answer p + ol, .answer ol + p { margin-top: 10px; }
+    .answer strong { color: var(--pm-text); font-weight: 650; }
+    .answer ul { list-style: disc; padding-left: 20px; }
+    .answer ol { list-style: decimal; padding-left: 22px; }
+    .answer li { margin: 3px 0; }
+    .answer li::marker { color: var(--pm-faint); }
+    .answer code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; padding: 1px 5px; border-radius: 5px; background: var(--pm-surface-hover); color: var(--pm-text); }
+    .answer h4 { font-size: 13.5px; font-weight: 700; color: var(--pm-text); margin-top: 12px; }
+
+    .msg-meta { font-size: 11px; color: var(--pm-faint); margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+    .tool-chip { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--pm-surface-hover); color: var(--pm-muted); font-size: 11px; font-weight: 600; }
+
+    /* Structured results */
+    .data-block { margin-top: 14px; }
+    .data-block .pm-card { overflow: hidden; }
+    .data-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--pm-line); }
+    .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (min-width: 640px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .tile { padding: 12px 16px; border-right: 1px solid var(--pm-line); border-bottom: 1px solid var(--pm-line); min-width: 0; }
+    .tile-v { font-size: 20px; font-weight: 720; color: var(--pm-text); letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tiles-wrap { margin: 0 -1px -1px 0; }
+    .pm-table.compact thead th { padding: 8px 14px; position: static; }
+    .pm-table.compact tbody td { padding: 9px 14px; font-size: 12.5px; }
+    .pm-table a.plink, .data-block a.plink { color: var(--pm-text); font-weight: 600; text-decoration: underline; text-decoration-color: var(--pm-line-strong); text-underline-offset: 3px; }
+    .data-block a.plink:hover { color: var(--pm-accent); text-decoration-color: currentColor; }
+    .pm-table thead th.num-cell { text-align: right; }
+    .num-cell { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .tierbar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--pm-surface-hover); }
+    .tierbar > span { display: block; height: 100%; background: var(--pm-tier-fill); }
+    .tierbar > span + span { box-shadow: -2px 0 0 var(--pm-surface); }
+
+    details.tech summary { cursor: pointer; font-size: 11.5px; font-weight: 600; color: var(--pm-muted); list-style: none; display: inline-flex; align-items: center; gap: 6px; padding: 3px 6px; margin-left: -6px; border-radius: 6px; }
+    details.tech summary::-webkit-details-marker { display: none; }
+    details.tech summary:hover { color: var(--pm-text); background: var(--pm-surface-hover); }
+    details.tech summary svg { width: 12px; height: 12px; transition: transform .15s var(--pm-ease); }
+    details.tech[open] summary svg { transform: rotate(90deg); }
+    details.tech pre { margin-top: 8px; max-height: 320px; overflow: auto; padding: 12px; border-radius: 9px; background: var(--pm-surface-2); border: 1px solid var(--pm-line); font-size: 11px; line-height: 1.5; color: var(--pm-text-2); white-space: pre-wrap; word-break: break-word; }
+
+    /* Waiting state: honest status text, no fake progress */
+    .working { display: flex; align-items: center; gap: 10px; padding: 10px 0; font-size: 13px; color: var(--pm-text-2); }
+    .working-dots { display: inline-flex; gap: 4px; }
+    .working-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--pm-accent); opacity: .35; animation: pm-dot 1.2s ease-in-out infinite; }
+    .working-dots span:nth-child(2) { animation-delay: .15s; }
+    .working-dots span:nth-child(3) { animation-delay: .3s; }
+    @keyframes pm-dot { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+    .working-text { transition: opacity .2s var(--pm-ease); }
+    .working-text.is-swapping { opacity: 0; }
+
+    /* Error card */
+    .err { border: 1px solid color-mix(in srgb, var(--pm-critical) 30%, var(--pm-line)); background: var(--pm-critical-bg); border-radius: 12px; padding: 14px 16px; }
+    .err-title { font-size: 13.5px; font-weight: 650; color: var(--pm-text); display: flex; gap: 8px; align-items: center; }
+    .err-title svg { width: 16px; height: 16px; color: var(--pm-critical); flex: none; }
+    .err-msg { font-size: 12.5px; color: var(--pm-text-2); margin-top: 4px; line-height: 1.55; }
+
+    /* Composer */
+    .dock { border-top: 1px solid var(--pm-line); background: color-mix(in srgb, var(--pm-bg) 92%, transparent); }
+    .composer { display: flex; align-items: flex-end; gap: 8px; padding: 8px; border-radius: 14px; border: 1px solid var(--pm-line-strong); background: var(--pm-surface); transition: border-color .15s, box-shadow .15s; }
+    .composer:focus-within { border-color: var(--pm-accent); box-shadow: 0 0 0 3px var(--pm-accent-soft); }
+    .composer textarea { flex: 1; resize: none; border: 0; outline: none; background: transparent; color: var(--pm-text); font-size: 14px; line-height: 1.5; padding: 7px 8px; max-height: 180px; min-height: 36px; }
+    .composer textarea::placeholder { color: var(--pm-faint); }
+    .composer textarea:focus-visible { outline: none; }
+    kbd { font-family: inherit; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--pm-line-strong); color: var(--pm-muted); }
+    @media (prefers-reduced-motion: reduce) { .working-dots span { animation: none; opacity: .8; } }
+  </style>
 </head>
 
-<body
-  class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200 overflow-hidden">
+<body class="pm-app flex min-h-screen antialiased">
+  <a href="#chat-input" class="pm-skip">Skip to question box</a>
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden"></div>
+  <aside id="sidebar" data-pm-shell
+    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 flex flex-col justify-between p-4 shrink-0 overflow-y-auto"></aside>
 
-  <!-- ================= SIDEBAR ================= -->
-  <aside
-    class="w-64 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200">
-    <div>
-
-      <div class="flex items-center gap-3 mb-10 pl-2">
-        <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
-          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+  <main id="main" class="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
+    <header class="pm-header shrink-0">
+      <div class="flex items-center gap-3 min-w-0">
+        <button id="sidebar-toggle" type="button" class="lg:hidden pm-btn pm-btn-ghost pm-icon-btn -ml-2" aria-label="Open navigation">
+          <span data-icon="menu" class="w-5 h-5"></span>
+        </button>
+        <div class="min-w-0">
+          <p class="pm-eyebrow">Analyze</p>
+          <h1 class="pm-page-title truncate">AI Assistant</h1>
         </div>
-
-        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
-          PAIMANA AI
-        </span>
       </div>
-
-      <nav class="space-y-1 text-sm font-medium">
-
-        <a href="dashboard.html"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-          Overview
-        </a>
-
-        <a href="projects.html"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="folder-kanban" class="w-4 h-4"></i>
-          Projects
-        </a>
-
-        <a href="add-project.html"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i>
-          Add Project
-        </a>
-
-        <a href="risk-analytics.html"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="line-chart" class="w-4 h-4"></i>
-          Risk Analytics
-        </a>
-
-        <a href="early-warnings.html"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-800/50 transition">
-          <i data-lucide="bell" class="w-4 h-4"></i>
-          Early Warnings
-        </a>
-
-        <!-- Active State -->
-        <a href="ai-assistant.html"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
-          <i data-lucide="bot" class="w-4 h-4"></i>
-          AI Assistant
-        </a>
-
-      </nav>
-    </div>
-  </aside>
-
-
-  <!-- ================= MAIN CONTENT ================= -->
-  <main class="flex-1 flex flex-col h-screen">
-
-    <!-- Header -->
-    <header
-      class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-8 flex items-center justify-between bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 shrink-0 transition-colors duration-200">
-
-      <div>
-        <h1 class="text-xl font-bold text-slate-900 dark:text-white">
-          PAIMANA Intelligence
-        </h1>
-
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Ask natural language questions about India's infrastructure projects.
-        </p>
-      </div>
-
-      <div class="flex items-center gap-3">
-
-        <span
-          class="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-          <i data-lucide="database" class="w-3 h-3"></i>
-          PAIMANA DATA CONNECTED
-        </span>
-
-        <button id="clear-chat" title="Clear conversation"
-          class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-          <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="pm-updated hidden md:inline">Answers use PAIMANA database tools</span>
+        <button id="clear-chat" type="button" class="pm-btn pm-btn-sm" aria-label="Start a new conversation">
+          <span data-x-icon="rotate-ccw" class="w-3.5 h-3.5 inline-block"></span><span class="hidden sm:inline">New conversation</span>
         </button>
-
-        <button id="theme-toggle"
-          class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-          <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
-          <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
+        <button id="theme-toggle" type="button" class="pm-btn pm-btn-ghost pm-icon-btn" aria-label="Toggle theme">
+          <span id="theme-dark-icon" data-icon="moon" class="w-4 h-4 hidden"></span>
+          <span id="theme-light-icon" data-icon="sun" class="w-4 h-4 hidden"></span>
         </button>
-
       </div>
     </header>
 
+    <!-- ================= Conversation ================= -->
+    <div id="chat-viewport" class="flex-1 overflow-y-auto">
+      <div class="chat-col px-4 md:px-8 py-6 md:py-10">
 
-    <!-- ================= CHAT VIEWPORT ================= -->
-    <div id="chat-viewport" class="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
+        <section id="welcome-screen" class="pm-enter" aria-labelledby="welcome-title">
+          <div class="welcome-mark"><span data-icon="bot"></span></div>
+          <h2 id="welcome-title" class="mt-5 text-[24px] md:text-[28px] font-bold tracking-tight" style="color:var(--pm-text);letter-spacing:-.02em">Ask about the infrastructure portfolio</h2>
+          <p class="mt-2 text-[14px] leading-relaxed max-w-[62ch]" style="color:var(--pm-text-2)">
+            The assistant answers by querying the PAIMANA database: project records, monthly updates, the latest
+            model predictions, alerts, and sector, state and trend analytics. Figures it cites come from those lookups.
+          </p>
 
-      <!-- Welcome Screen -->
-      <div id="welcome-screen" class="text-center py-10 max-w-2xl mx-auto space-y-4">
+          <p class="pm-eyebrow mt-8 mb-3">Try a question</p>
+          <div id="starters" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <button type="button" class="starter" data-q="Give me a portfolio risk summary"><span class="starter-k">Portfolio</span><span class="starter-q">Give me a portfolio risk summary</span></button>
+            <button type="button" class="starter" data-q="Which projects are currently at critical risk?"><span class="starter-k">Critical projects</span><span class="starter-q">Which projects are currently at critical risk?</span></button>
+            <button type="button" class="starter" data-q="Which sectors have the most critical projects?"><span class="starter-k">Sectors</span><span class="starter-q">Which sectors have the most critical projects?</span></button>
+            <button type="button" class="starter" data-q="Tell me about project 120100067"><span class="starter-k">One project</span><span class="starter-q">Tell me about project 120100067</span></button>
+            <button type="button" class="starter" data-q="What alerts have been raised for project 120100067?"><span class="starter-k">Alerts</span><span class="starter-q">What alerts have been raised for project 120100067?</span></button>
+            <button type="button" class="starter" data-q="How has the average portfolio risk score changed over recent report months?"><span class="starter-k">Trends</span><span class="starter-q">How has the average portfolio risk score changed over recent report months?</span></button>
+          </div>
 
-        <div
-          class="w-16 h-16 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center mx-auto mb-6">
-          <i data-lucide="bot" class="w-8 h-8"></i>
-        </div>
+          <div class="mt-8 pt-6 grid grid-cols-1 sm:grid-cols-2 gap-6" style="border-top:1px solid var(--pm-line)">
+            <div>
+              <p class="pm-title">What it can look up</p>
+              <ul class="cap-list mt-2 space-y-1.5">
+                <li>Search projects by name, sector, agency or state</li>
+                <li>A project's details, monthly updates and risk history</li>
+                <li>Latest prediction: cost, schedule and survival risk</li>
+                <li>Alerts raised for a project</li>
+                <li>Portfolio summary, critical projects, sector and state statistics, risk trends</li>
+              </ul>
+            </div>
+            <div>
+              <p class="pm-title">Good to know</p>
+              <ul class="cap-list mt-2 space-y-1.5">
+                <li>Follow-up questions keep the context of this conversation</li>
+                <li>The conversation stays in this browser tab and is not saved</li>
+                <li>Answers can take up to a minute when several lookups are needed</li>
+                <li>Verify critical financial figures against the official flash reports</li>
+              </ul>
+            </div>
+          </div>
+        </section>
 
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
-          Ask anything about India's infrastructure portfolio
-        </h2>
+        <div id="messages" class="space-y-7" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation"></div>
+      </div>
+    </div>
 
-        <p class="text-sm text-slate-500 dark:text-slate-400">
-          I’m connected to the PAIMANA database. I can answer questions about projects,
-          predictions, delays, alerts, risk trends, sectors, states and portfolio-level risk.
+    <!-- ================= Composer ================= -->
+    <div class="dock shrink-0 px-4 md:px-8 pt-3 pb-4">
+      <div class="chat-col">
+        <form id="composer-form" class="composer" autocomplete="off">
+          <label for="chat-input" class="pm-sr-only">Ask a question about PAIMANA projects</label>
+          <textarea id="chat-input" rows="1" placeholder="Ask about projects, risk, delays or costs…" aria-describedby="composer-hint"></textarea>
+          <button id="stop-button" type="button" class="pm-btn pm-icon-btn hidden" aria-label="Stop waiting for this answer" title="Stop">
+            <span data-x-icon="square" class="w-3.5 h-3.5 inline-block"></span>
+          </button>
+          <button id="send-button" type="submit" class="pm-btn pm-btn-primary pm-icon-btn" aria-label="Send question" title="Send">
+            <span data-x-icon="send" class="w-4 h-4 inline-block"></span>
+          </button>
+        </form>
+        <p id="composer-hint" class="mt-2 text-[11px] flex flex-wrap justify-between gap-2" style="color:var(--pm-faint)">
+          <span><kbd>Enter</kbd> to send · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</span>
+          <span>PAIMANA AI can make mistakes. Verify critical financial data against official reports.</span>
         </p>
-
-        <div class="flex flex-wrap justify-center gap-3 pt-6">
-
-          <button onclick="fillQuery(this.innerText)"
-            class="px-4 py-2 rounded-full border border-slate-200 dark:border-[#1E293B] bg-white dark:bg-[#121826] text-xs font-medium hover:border-orange-500 transition-colors shadow-sm text-slate-700 dark:text-slate-300">
-            Show me all Railway projects with critical risk
-          </button>
-
-          <button onclick="fillQuery(this.innerText)"
-            class="px-4 py-2 rounded-full border border-slate-200 dark:border-[#1E293B] bg-white dark:bg-[#121826] text-xs font-medium hover:border-orange-500 transition-colors shadow-sm text-slate-700 dark:text-slate-300">
-            Tell me about project 120100067
-          </button>
-
-          <button onclick="fillQuery(this.innerText)"
-            class="px-4 py-2 rounded-full border border-slate-200 dark:border-[#1E293B] bg-white dark:bg-[#121826] text-xs font-medium hover:border-orange-500 transition-colors shadow-sm text-slate-700 dark:text-slate-300">
-            Give me a portfolio risk summary
-          </button>
-
-        </div>
       </div>
-
     </div>
-
-
-    <!-- ================= INPUT AREA ================= -->
-    <div
-      class="p-6 bg-slate-50/90 dark:bg-[#0A0E17]/90 backdrop-blur border-t border-slate-200 dark:border-[#1E293B] shrink-0">
-
-      <div class="max-w-4xl mx-auto relative flex items-center">
-
-        <input id="chat-input" type="text" autocomplete="off"
-          placeholder="Ask about a project, risk, delay, cost or portfolio..."
-          class="w-full bg-white dark:bg-[#121826] border border-slate-300 dark:border-[#1E293B] rounded-xl pl-5 pr-14 py-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-colors shadow-sm">
-
-        <button id="send-button" onclick="sendMessage()"
-          class="absolute right-3 p-2.5 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-
-          <i data-lucide="send" class="w-4 h-4"></i>
-
-        </button>
-
-      </div>
-
-      <p class="text-center text-[10px] text-slate-500 mt-3">
-        PAIMANA AI can make mistakes. Verify critical financial data against official MoSPI reports.
-      </p>
-
-    </div>
-
   </main>
 
-
-  <!-- Existing shared scripts -->
-  <script src="js/theme.js"></script>
   <script src="js/api.js"></script>
-
-  <!-- ================= CHATBOT LOGIC ================= -->
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/theme.js"></script>
   <script>
+  (() => {
+    'use strict';
+    const { esc, fmt, num, icon, tierBadge } = PM;
+    const $ = (id) => document.getElementById(id);
+    PM.hydrateIcons();
 
-    lucide.createIcons();
+    const EXTRA = {
+      'send': '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+      'rotate-ccw': '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+      'square': '<rect width="14" height="14" x="5" y="5" rx="2"/>'
+    };
+    const xicon = (name, cls = '') => EXTRA[name]
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="${cls}">${EXTRA[name]}</svg>` : icon(name, cls);
+    document.querySelectorAll('[data-x-icon]').forEach(el => { el.innerHTML = xicon(el.dataset.xIcon, 'w-full h-full'); el.setAttribute('aria-hidden', 'true'); });
 
-    const inputField = document.getElementById('chat-input');
-    const chatViewport = document.getElementById('chat-viewport');
-    const sendButton = document.getElementById('send-button');
-    const clearChatButton = document.getElementById('clear-chat');
-    const welcomeScreen = document.getElementById('welcome-screen');
-
-
-    /*
-     * IMPORTANT:
-     *
-     * Local development:
-     *   frontend = localhost:5500
-     *   backend  = 127.0.0.1:8000
-     *
-     * Production:
-     *   frontend and backend are behind the same Nginx origin.
-     *
-     * Therefore we only use the explicit backend URL locally.
-     * Production continues using the existing same-origin API path.
-     */
-    const PAIMANA_ASSISTANT_API_BASE_URL =
-      (window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1')
-        ? 'http://127.0.0.1:8000'
-        : window.location.origin;
-
-    const ASSISTANT_ENDPOINT =
-      `${PAIMANA_ASSISTANT_API_BASE_URL}/api/v1/assistant`;
-
+    const inputField = $('chat-input');
+    const chatViewport = $('chat-viewport');
+    const messages = $('messages');
+    const sendButton = $('send-button');
+    const stopButton = $('stop-button');
+    const clearChatButton = $('clear-chat');
+    const welcomeScreen = $('welcome-screen');
 
     /*
-     * Conversation history is kept only in browser memory.
-     *
-     * It is NOT stored in PostgreSQL.
-     * It does NOT change the backend schema.
+     * Local development (frontend on a dev server such as localhost:5500, backend on 127.0.0.1:8000)
+     * uses the explicit backend URL. When the page is served by the PAIMANA nginx (same origin as
+     * the API, e.g. localhost:8443 in Docker, or production) the same-origin path is used.
      */
+    const onLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const servedByApiOrigin = ['', '80', '443', '8443'].includes(window.location.port);
+    const PAIMANA_ASSISTANT_API_BASE_URL = (onLocalHost && !servedByApiOrigin) ? 'http://127.0.0.1:8000' : window.location.origin;
+    const ASSISTANT_ENDPOINT = `${PAIMANA_ASSISTANT_API_BASE_URL}/api/v1/assistant`;
+    const REQUEST_TIMEOUT_MS = 120000;
+
+    // Conversation history is kept only in browser memory (not stored server-side).
     let conversationHistory = [];
-
     let isSending = false;
+    let controller = null;
+    let conversationId = 0;
 
-
-    // --------------------------------------------------
-    // Suggested query
-    // --------------------------------------------------
-
+    // ------------------------------------------------------------------
+    // Composer
+    // ------------------------------------------------------------------
     function fillQuery(text) {
       inputField.value = text;
+      autosize();
       inputField.focus();
+      inputField.setSelectionRange(text.length, text.length);
+    }
+    window.fillQuery = fillQuery;
+    $('starters').addEventListener('click', (e) => { const b = e.target.closest('[data-q]'); if (b) fillQuery(b.dataset.q); });
+
+    function autosize() { inputField.style.height = 'auto'; inputField.style.height = `${Math.min(inputField.scrollHeight, 180)}px`; }
+    inputField.addEventListener('input', autosize);
+    inputField.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); sendMessage(); }
+      if (event.key === 'Escape' && isSending) stopWaiting();
+    });
+    $('composer-form').addEventListener('submit', (e) => { e.preventDefault(); sendMessage(); });
+    stopButton.addEventListener('click', stopWaiting);
+    function stopWaiting() { if (controller) controller.abort(new DOMException('Stopped by user', 'AbortError')); }
+
+    function setSending(on) {
+      isSending = on;
+      sendButton.disabled = on;
+      inputField.setAttribute('aria-busy', String(on));
+      stopButton.classList.toggle('hidden', !on);
+      sendButton.classList.toggle('hidden', on);
     }
 
-
-    // --------------------------------------------------
-    // Enter key
-    // --------------------------------------------------
-
-    inputField.addEventListener('keydown', function (event) {
-
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        sendMessage();
-      }
-
-    });
-
-
-    // --------------------------------------------------
-    // Clear conversation
-    // --------------------------------------------------
-
-    clearChatButton.addEventListener('click', function () {
-
+    clearChatButton.addEventListener('click', () => {
+      if (controller) controller.abort(new DOMException('Conversation cleared', 'AbortError'));
+      conversationId += 1;
       conversationHistory = [];
-
-      chatViewport.innerHTML = '';
-
-      chatViewport.appendChild(createWelcomeScreen());
-
-      lucide.createIcons();
-
+      messages.innerHTML = '';
+      welcomeScreen.hidden = false;
+      setSending(false);
+      inputField.value = ''; autosize();
+      inputField.focus();
     });
 
+    // ------------------------------------------------------------------
+    // Messages
+    // ------------------------------------------------------------------
+    const scrollToEnd = () => chatViewport.scrollTo({ top: chatViewport.scrollHeight, behavior: PM.reducedMotion() ? 'auto' : 'smooth' });
 
-    function createWelcomeScreen() {
-
-      const wrapper = document.createElement('div');
-
-      wrapper.id = 'welcome-screen';
-
-      wrapper.className =
-        'text-center py-10 max-w-2xl mx-auto space-y-4';
-
-      wrapper.innerHTML = `
-        <div class="w-16 h-16 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center mx-auto mb-6">
-          <i data-lucide="bot" class="w-8 h-8"></i>
-        </div>
-
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
-          Ask anything about India's infrastructure portfolio
-        </h2>
-
-        <p class="text-sm text-slate-500 dark:text-slate-400">
-          I’m connected to the PAIMANA database. I can answer questions about projects,
-          predictions, delays, alerts, risk trends, sectors, states and portfolio-level risk.
-        </p>
-      `;
-
-      return wrapper;
+    function appendUser(text) {
+      const el = document.createElement('div');
+      el.className = 'msg msg-user pm-pop-in';
+      el.innerHTML = `<p class="pm-sr-only">You asked:</p><div class="bubble">${esc(text)}</div>`;
+      messages.appendChild(el);
+      scrollToEnd();
+      return el;
+    }
+    function appendBot() {
+      const el = document.createElement('div');
+      el.className = 'msg msg-bot pm-pop-in';
+      el.innerHTML = `<div class="avatar" aria-hidden="true">${icon('bot')}</div><div class="body"><p class="pm-sr-only">PAIMANA assistant:</p><div class="content"></div></div>`;
+      messages.appendChild(el);
+      scrollToEnd();
+      return el;
     }
 
+    // Status text rotates while the request is open. It describes what the
+    // server is doing in general terms; it is not a progress measurement.
+    function startWorking(el, query) {
+      const lookup = /\b[A-Z]?\d{6,}\b/i.test(query) || /\bproject\b/i.test(query);
+      const steps = [
+        'Understanding your question…',
+        lookup ? 'Analyzing project data…' : 'Retrieving portfolio risk information…',
+        lookup ? 'Retrieving portfolio risk information…' : 'Analyzing project data…',
+        'Preparing analysis…'
+      ];
+      const content = el.querySelector('.content');
+      content.innerHTML = `<div class="working" role="status"><span class="working-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="working-text" aria-live="off">${steps[0]}</span><span class="pm-updated" data-elapsed aria-hidden="true"></span></div>`;
+      const text = content.querySelector('.working-text');
+      const elapsed = content.querySelector('[data-elapsed]');
+      const t0 = Date.now();
+      let i = 0;
+      const rotate = setInterval(() => {
+        if (i >= steps.length - 1) return;
+        i += 1;
+        text.classList.add('is-swapping');
+        setTimeout(() => { text.textContent = steps[i]; text.classList.remove('is-swapping'); }, 200);
+      }, 2600);
+      const tick = setInterval(() => {
+        const s = Math.round((Date.now() - t0) / 1000);
+        elapsed.textContent = s >= 3 ? `${s}s` : '';
+        if (s === 25) text.textContent = 'Still working. Questions that need several lookups can take up to a minute.';
+      }, 1000);
+      return () => { clearInterval(rotate); clearInterval(tick); };
+    }
 
-    // --------------------------------------------------
-    // Send message
-    // --------------------------------------------------
+    // ------------------------------------------------------------------
+    // Send
+    // ------------------------------------------------------------------
+    async function sendMessage(retryQuery = null) {
+      const query = retryQuery ?? inputField.value.trim();
+      if (!query || isSending) return;
+      const convo = conversationId;
+      setSending(true);
+      welcomeScreen.hidden = true;
+      if (retryQuery === null) { appendUser(query); inputField.value = ''; autosize(); }
 
-    async function sendMessage() {
-
-      const query = inputField.value.trim();
-
-      if (!query || isSending) {
-        return;
-      }
-
-      isSending = true;
-
-      sendButton.disabled = true;
-
-      inputField.disabled = true;
-
-
-      // Hide welcome screen after first message
-
-      if (welcomeScreen) {
-        welcomeScreen.style.display = 'none';
-      }
-
-
-      // Show user message
-
-      appendMessage('user', escapeHtml(query));
-
-      inputField.value = '';
-
-
-      // Add typing indicator
-
-      const typingId = 'typing-' + Date.now();
-
-      appendMessage(
-        'bot',
-        `
-          <div class="flex gap-1 items-center">
-            <span class="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"></span>
-            <span class="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"
-                  style="animation-delay:0.2s"></span>
-            <span class="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"
-                  style="animation-delay:0.4s"></span>
-          </div>
-        `,
-        typingId
-      );
-
+      const botEl = appendBot();
+      const stop = startWorking(botEl, query);
+      controller = new AbortController();
+      const signal = AbortSignal.any ? AbortSignal.any([controller.signal, AbortSignal.timeout(REQUEST_TIMEOUT_MS)]) : controller.signal;
 
       try {
-
-        /*
-         * Send the previous conversation to the backend.
-         * This allows questions such as:
-         *
-         * "Tell me about project 120100067"
-         * "What about its cost risk?"
-         */
-
-        const response = await fetch(ASSISTANT_ENDPOINT, {
-
-          method: 'POST',
-
-          headers: {
-            'Content-Type': 'application/json'
-          },
-
-          body: JSON.stringify({
-
-            query: query,
-
-            voice: false,
-
-            conversation_history: conversationHistory
-
-          })
-
-        });
-
+        let response;
+        try {
+          // Previous turns are sent so follow-ups ("what about its cost risk?") keep context.
+          response = await fetch(ASSISTANT_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query, voice: false, conversation_history: conversationHistory }),
+            signal
+          });
+        } catch (err) {
+          if (controller.signal.aborted) throw Object.assign(new Error('stopped'), { kind: 'stopped' });
+          if (err.name === 'TimeoutError' || err.name === 'AbortError') throw Object.assign(new Error('timeout'), { kind: 'timeout' });
+          throw Object.assign(new Error(err.message || 'Network error'), { kind: 'network' });
+        }
 
         if (!response.ok) {
-
-          let errorMessage = `Backend returned HTTP ${response.status}`;
-
-          try {
-
-            const errorData = await response.json();
-
-            if (errorData.detail) {
-              errorMessage = errorData.detail;
-            }
-
-          } catch (_) {
-            // Ignore JSON parsing failure
-          }
-
-          throw new Error(errorMessage);
-
+          let detail = '';
+          try { const d = await response.json(); detail = typeof d.detail === 'string' ? d.detail : (d.detail ? JSON.stringify(d.detail) : ''); } catch (_) {}
+          throw Object.assign(new Error(detail || `Backend returned HTTP ${response.status}`), { kind: 'http', status: response.status, detail });
         }
-
 
         const data = await response.json();
-
-
-        // Remove typing indicator
-
-        const typingElement = document.getElementById(typingId);
-
-        if (typingElement) {
-          typingElement.remove();
+        if (convo !== conversationId) return;
+        const sd = data.structured_data || {};
+        if (sd.success === false) {
+          throw Object.assign(new Error(data.answer_text || 'The assistant could not answer.'), { kind: 'llm', detail: sd.error, data });
         }
 
-
-        const answer =
-          data.answer_text ||
-          'No answer was returned by PAIMANA AI.';
-
-
-        // Add assistant response to browser conversation
-
-        conversationHistory.push({
-          role: 'user',
-          content: query
-        });
-
-        conversationHistory.push({
-          role: 'assistant',
-          content: answer
-        });
-
-
-        // Display response
-
-        appendMessage(
-          'bot',
-          formatAnswer(answer)
-        );
-
-
+        const answer = data.answer_text || 'No answer was returned by PAIMANA AI.';
+        conversationHistory.push({ role: 'user', content: query });
+        conversationHistory.push({ role: 'assistant', content: answer });
+        stop();
+        renderAnswer(botEl, data, answer);
       } catch (error) {
-
-        console.error('Chat API Error:', error);
-
-
-        const typingElement = document.getElementById(typingId);
-
-        if (typingElement) {
-          typingElement.remove();
-        }
-
-
-        appendMessage(
-          'bot',
-          `
-            <div class="text-red-500">
-              <div class="font-semibold mb-1">
-                Unable to connect to PAIMANA AI.
-              </div>
-
-              <div class="text-xs opacity-80">
-                ${escapeHtml(error.message || 'Unknown error')}
-              </div>
-            </div>
-          `
-        );
-
+        stop();
+        if (convo !== conversationId) return;
+        if (!error.kind && controller?.signal.aborted) error.kind = 'stopped';
+        else if (!error.kind && (error.name === 'TimeoutError' || error.name === 'AbortError')) error.kind = 'timeout';
+        (error.kind === 'llm' || error.kind === 'stopped' ? console.info : console.warn)('[PAIMANA] assistant request did not complete:', error.message);
+        renderError(botEl, error, query);
       } finally {
-
-        isSending = false;
-
-        sendButton.disabled = false;
-
-        inputField.disabled = false;
-
-        inputField.focus();
-
+        controller = null;
+        if (convo === conversationId) {
+          setSending(false);
+          inputField.focus();
+        }
       }
-
     }
 
-
-    // --------------------------------------------------
-    // Append message
-    // --------------------------------------------------
-
-    function appendMessage(sender, content, id = null) {
-
-      const wrapperDiv = document.createElement('div');
-
-      wrapperDiv.className =
-        `flex gap-4 ${sender === 'user'
-          ? 'justify-end'
-          : 'justify-start'
-        }`;
-
-      if (id) {
-        wrapperDiv.id = id;
+    // ------------------------------------------------------------------
+    // Errors
+    // ------------------------------------------------------------------
+    function describeError(err) {
+      const detail = String(err.detail || '');
+      if (err.kind === 'stopped') return { title: 'Stopped', message: 'You stopped waiting for this answer. The question was not added to the conversation.', soft: true };
+      if (err.kind === 'timeout') return { title: 'The assistant took too long to answer', message: `No response within ${REQUEST_TIMEOUT_MS / 1000} seconds. Questions that need several lookups can be slow; try again, or ask something narrower.` };
+      if (err.kind === 'network') return { title: 'Cannot reach the PAIMANA server', message: 'The request did not reach the assistant service. Check your connection and retry.' };
+      if (err.kind === 'llm' && /GEMINI_API_KEY|not configured/i.test(`${detail} ${err.message}`)) {
+        return { title: 'The assistant is not configured on this server', message: 'The language model has no API key (GEMINI_API_KEY is missing). An administrator needs to add it. The dashboard, projects and warnings work without it.', config: true };
       }
-
-
-      if (sender === 'user') {
-
-        wrapperDiv.innerHTML = `
-          <div class="bg-orange-600 text-white px-5 py-3 rounded-2xl rounded-tr-sm max-w-2xl text-sm shadow-sm">
-            ${content}
+      if (err.kind === 'llm') return { title: 'The language model could not answer', message: `${err.message}${detail ? ' See technical details below.' : ''}` };
+      if (err.kind === 'http' && err.status >= 500) return { title: 'The assistant service failed', message: err.detail || `The server returned an error (HTTP ${err.status}). Please retry.` };
+      if (err.kind === 'http' && err.status === 422) return { title: 'The question could not be sent', message: err.detail || 'The request was not in the expected format.' };
+      if (err.kind === 'http') return { title: 'The request was rejected', message: err.detail || `HTTP ${err.status}` };
+      return { title: 'Something went wrong', message: err.message || 'Unknown error' };
+    }
+    function renderError(botEl, err, query) {
+      const d = describeError(err);
+      const content = botEl.querySelector('.content');
+      const tech = err.detail || err.status ? `<details class="tech mt-3"><summary>${icon('chevron-right')}Technical details</summary><pre>${esc([err.status ? `HTTP ${err.status}` : '', err.detail || ''].filter(Boolean).join('\n'))}</pre></details>` : '';
+      content.innerHTML = `
+        <div class="${d.soft ? '' : 'err'}" ${d.soft ? '' : 'role="alert"'}>
+          <p class="err-title">${d.soft ? '' : icon('triangle-alert')}${esc(d.title)}</p>
+          <p class="err-msg">${esc(d.message)}</p>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button type="button" class="pm-btn pm-btn-sm" data-retry>${icon('refresh-cw', 'w-3.5 h-3.5')}Retry question</button>
+            ${d.config ? `<a href="dashboard.html" class="pm-btn pm-btn-ghost pm-btn-sm">Open dashboard ${icon('arrow-right', 'w-3.5 h-3.5')}</a>` : ''}
           </div>
-        `;
-
-      } else {
-
-        wrapperDiv.innerHTML = `
-          <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center shrink-0 mt-1">
-            <i data-lucide="bot" class="w-5 h-5"></i>
-          </div>
-
-          <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] text-slate-800 dark:text-slate-200 px-5 py-4 rounded-2xl rounded-tl-sm max-w-2xl text-sm shadow-sm leading-relaxed">
-            ${content}
-          </div>
-        `;
-
-      }
-
-
-      chatViewport.appendChild(wrapperDiv);
-
-      lucide.createIcons();
-
-
-      chatViewport.scrollTo({
-        top: chatViewport.scrollHeight,
-        behavior: 'smooth'
+          ${tech}
+        </div>`;
+      content.querySelector('[data-retry]').addEventListener('click', () => {
+        if (isSending) return;
+        botEl.remove();
+        sendMessage(query);
       });
-
+      scrollToEnd();
     }
 
-
-    // --------------------------------------------------
-    // Basic Markdown formatter
-    // --------------------------------------------------
-
+    // ------------------------------------------------------------------
+    // Answer text: small, safe Markdown subset (escape first)
+    // ------------------------------------------------------------------
+    function inline(s) {
+      return s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+    }
     function formatAnswer(text) {
-
-      let safe = escapeHtml(text);
-
-
-      // Bold: **text**
-
-      safe = safe.replace(
-        /\*\*(.*?)\*\*/g,
-        '<strong>$1</strong>'
-      );
-
-
-      // Bullet points
-
-      safe = safe.replace(
-        /^\s*\*\s+/gm,
-        '• '
-      );
-
-
-      // Numbered lines
-
-      safe = safe.replace(
-        /^(\d+)\.\s+/gm,
-        '<strong>$1.</strong> '
-      );
-
-
-      // New lines
-
-      safe = safe.replace(/\n/g, '<br>');
-
-
-      return safe;
-
+      const lines = esc(text).replace(/\r/g, '').split('\n');
+      let html = '', list = null, para = [];
+      const flushPara = () => { if (para.length) { html += `<p>${inline(para.join('<br>'))}</p>`; para = []; } };
+      const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
+      for (const raw of lines) {
+        const line = raw.trimEnd();
+        const bullet = /^\s*[*\-•]\s+(.*)$/.exec(line);
+        const ordered = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
+        const heading = /^\s*#{1,6}\s+(.*)$/.exec(line);
+        if (bullet || ordered) {
+          flushPara();
+          const want = bullet ? 'ul' : 'ol';
+          if (list !== want) { closeList(); html += `<${want}>`; list = want; }
+          html += `<li>${inline((bullet ? bullet[1] : ordered[2]))}</li>`;
+        } else if (heading) { flushPara(); closeList(); html += `<h4>${inline(heading[1])}</h4>`; }
+        else if (!line.trim()) { flushPara(); closeList(); }
+        else { closeList(); para.push(line.trim()); }
+      }
+      flushPara(); closeList();
+      return html;
     }
 
+    // ------------------------------------------------------------------
+    // Structured data: tool results returned with the answer
+    // ------------------------------------------------------------------
+    const TOOL_LABEL = {
+      search_projects: 'Project search', get_project: 'Project record', get_latest_prediction: 'Latest prediction',
+      get_project_updates: 'Monthly updates', get_project_alerts: 'Project alerts', get_risk_history: 'Risk history',
+      get_portfolio_risk_summary: 'Portfolio summary', get_critical_projects: 'Critical projects',
+      get_sector_analytics: 'Sector analytics', get_state_analytics: 'State analytics', get_risk_trends: 'Risk trends'
+    };
+    const label = (t) => TOOL_LABEL[t] || String(t || 'Lookup').replace(/_/g, ' ');
+    const plink = (id, name) => id
+      ? `<a class="plink" href="project-details.html?id=${encodeURIComponent(id)}">${esc(name || id)}</a>`
+      : esc(name || '—');
+    const prob = (v) => { const n = num(v); if (n === null) return '—'; return `${(n <= 1 ? n * 100 : n).toFixed(1)}%`; };
+    const score = (v) => num(v) === null ? '—' : fmt.dec(v, 1);
+    const titleCase = (s) => String(s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\bAnd\b/g, 'and');
+    const card = (title, sub, inner) => `<div class="data-block"><div class="pm-card"><div class="data-head"><p class="pm-title" style="font-size:13px">${esc(title)}</p>${sub ? `<p class="pm-updated">${sub}</p>` : ''}</div>${inner}</div></div>`;
+    const tiles = (items) => `<div class="tiles-wrap"><div class="tiles">${items.map(([k, v, extra]) => `<div class="tile"><p class="pm-kpi-label">${esc(k)}</p><div class="tile-v">${v}</div>${extra ? `<p class="pm-updated mt-0.5">${extra}</p>` : ''}</div>`).join('')}</div></div>`;
 
-    // --------------------------------------------------
-    // Prevent HTML injection
-    // --------------------------------------------------
-
-    function escapeHtml(value) {
-
-      return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-
+    function table(cols, rows, limit = 8) {
+      const body = rows.map((r, i) => `<tr ${i >= limit ? 'data-more hidden' : ''}>${cols.map(c => `<td class="${c.num ? 'num-cell' : ''}">${c.cell(r)}</td>`).join('')}</tr>`).join('');
+      const more = rows.length > limit ? `<div class="px-4 py-2" style="border-top:1px solid var(--pm-line)"><button type="button" class="pm-btn pm-btn-ghost pm-btn-sm" data-show-more>Show all ${rows.length}</button></div>` : '';
+      return `<div class="overflow-x-auto"><table class="pm-table compact"><thead><tr>${cols.map(c => `<th class="${c.num ? 'num-cell' : ''}" scope="col">${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>${more}`;
     }
 
+    const RENDER = {
+      search_projects: (rows) => Array.isArray(rows) && rows.length ? card('Matching projects', `${rows.length} found`, table([
+        { h: 'Project', cell: r => plink(r.project_id, r.project_name) },
+        { h: 'Sector', cell: r => esc(titleCase(r.sector)) },
+        { h: 'State', cell: r => esc(titleCase(r.state)) },
+        { h: 'Original cost', num: true, cell: r => fmt.crore(r.original_cost_crore) }
+      ], rows)) : '',
+      get_critical_projects: (rows) => Array.isArray(rows) && rows.length ? card('Critical projects', `${rows.length} listed`, table([
+        { h: 'Project', cell: r => plink(r.project_id, r.project_name) },
+        { h: 'Sector', cell: r => esc(titleCase(r.sector)) },
+        { h: 'State', cell: r => esc(titleCase(r.state)) },
+        { h: 'Risk', cell: r => tierBadge(r.risk_tier, r.composite_risk_score) },
+        { h: 'Report', cell: r => esc(fmt.month(r.report_month)) }
+      ], rows)) : '',
+      get_project: (p) => p && typeof p === 'object' ? card('Project record', plink(p.project_id, 'Open project'), `
+        <div class="px-4 py-3"><p class="text-[13.5px] font-semibold" style="color:var(--pm-text)">${plink(p.project_id, p.project_name)}</p>
+        <p class="pm-updated mt-0.5">${esc([p.project_id, titleCase(p.sector), titleCase(p.state), p.implementing_agency].filter(Boolean).join(' · '))}</p></div>
+        ${tiles([['Original cost', esc(fmt.crore(p.original_cost_crore))], ['Approved', esc(fmt.date(p.date_of_approval))], ['Original commissioning', esc(fmt.date(p.original_commissioning_date))], ['Agency', esc(p.implementing_agency || '—')]])}`) : '',
+      get_latest_prediction: (p) => p && typeof p === 'object' ? card('Latest prediction', `${p.report_month ? `Report ${esc(fmt.month(p.report_month))}` : ''}${p.project_id ? ` · ${plink(p.project_id, p.project_id)}` : ''}`,
+        tiles([['Composite risk', tierBadge(p.risk_tier, p.composite_risk_score)], ['Cost overrun (XGBoost)', prob(p.cost_risk_probability)], ['Delay (XGBoost)', prob(p.schedule_risk_probability)], ['Survival (Cox)', prob(p.cox_risk_probability ?? p.cox_risk)]])) : '',
+      get_project_updates: (rows) => Array.isArray(rows) && rows.length ? card('Monthly updates', `${rows.length} reports`, table([
+        { h: 'Report', cell: r => esc(fmt.month(r.report_month)) },
+        { h: 'Anticipated cost', num: true, cell: r => fmt.crore(r.anticipated_cost_crore ?? r.revised_cost_crore) },
+        { h: 'Spent', num: true, cell: r => fmt.crore(r.cumulative_expenditure_crore) },
+        { h: 'Delay', num: true, cell: r => num(r.delay_original_months) === null ? '—' : `${fmt.int(r.delay_original_months)} mo` },
+        { h: 'Milestones', num: true, cell: r => num(r.milestones_total) ? `${fmt.int(r.milestones_achieved)}/${fmt.int(r.milestones_total)}` : '—' }
+      ], rows, 6)) : '',
+      get_project_alerts: (rows) => Array.isArray(rows) && rows.length ? card('Alerts', `${rows.length} found`, `<ul>${rows.slice(0, 10).map(a => `
+        <li class="px-4 py-3 flex gap-3 items-start" style="border-top:1px solid var(--pm-line)">
+          <span class="pt-0.5">${tierBadge(a.severity, null, { showScore: false })}</span>
+          <div class="min-w-0"><p class="text-[12.5px]" style="color:var(--pm-text-2)">${esc(a.message || a.alert_type || '')}</p>
+          <p class="pm-updated mt-1">${esc([a.is_resolved ? 'Resolved' : 'Open', a.triggered_at ? fmt.date(a.triggered_at) : ''].filter(Boolean).join(' · '))}</p></div>
+        </li>`).join('')}</ul>${rows[0]?.project_id ? `<div class="px-4 py-2" style="border-top:1px solid var(--pm-line)"><a class="pm-btn pm-btn-ghost pm-btn-sm" href="early-warnings.html?project_id=${encodeURIComponent(rows[0].project_id)}">Open in warning center ${icon('arrow-right', 'w-3.5 h-3.5')}</a></div>` : ''}`) : '',
+      get_risk_history: (rows) => Array.isArray(rows) && rows.length ? card('Risk history', `${rows.length} predictions`, table([
+        { h: 'Report', cell: r => esc(fmt.month(r.report_month)) },
+        { h: 'Composite', cell: r => tierBadge(r.risk_tier, r.composite_risk_score) },
+        { h: 'Cost', num: true, cell: r => prob(r.cost_risk_probability) },
+        { h: 'Delay', num: true, cell: r => prob(r.schedule_risk_probability) },
+        { h: 'Cox', num: true, cell: r => prob(r.cox_risk_probability) }
+      ], rows, 6)) : '',
+      get_portfolio_risk_summary: (s) => {
+        if (!s || typeof s !== 'object') return '';
+        const rc = s.risk_counts || {};
+        const order = ['LOW', 'WATCH', 'ELEVATED', 'CRITICAL'];
+        const vals = order.map(t => num(rc[t.toLowerCase()]) || 0);
+        const tot = vals.reduce((a, b) => a + b, 0);
+        return card('Portfolio risk summary', 'Latest prediction per project', `
+          ${tiles([['Projects scored', esc(fmt.int(s.total_projects))], ['Average composite', esc(score(s.average_composite_risk_score)), 'on 0–100'], ['Critical', esc(fmt.int(rc.critical)), tot ? `${((vals[3] / tot) * 100).toFixed(1)}%` : ''], ['Elevated', esc(fmt.int(rc.elevated)), tot ? `${((vals[2] / tot) * 100).toFixed(1)}%` : '']])}
+          ${tot ? `<div class="px-4 py-3"><div class="tierbar" role="img" aria-label="${order.map((t, i) => `${PM.TIERS[t].label} ${vals[i]}`).join(', ')}">${order.map((t, i) => `<span data-tier="${t}" style="width:${(vals[i] / tot) * 100}%"></span>`).join('')}</div>
+          <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2">${order.map((t, i) => `<span class="flex items-center gap-1.5 text-[11.5px]" style="color:var(--pm-muted)" data-tier="${t}"><span class="pm-tier-dot"></span>${PM.TIERS[t].label} <strong class="tabular-nums" style="color:var(--pm-text)">${fmt.int(vals[i])}</strong></span>`).join('')}</div></div>` : ''}`);
+      },
+      get_sector_analytics: (rows) => groupTable(rows, 'sector', 'Sector analytics'),
+      get_state_analytics: (rows) => groupTable(rows, 'state', 'State analytics'),
+      get_risk_trends: (rows) => Array.isArray(rows) && rows.length ? card('Risk trend by report month', `${rows.length} months`, table([
+        { h: 'Report month', cell: r => esc(fmt.month(r.report_month)) },
+        { h: 'Average composite', num: true, cell: r => score(r.average_composite_risk_score) },
+        { h: 'Critical', num: true, cell: r => fmt.int(r.critical) }
+      ], rows, 8)) : ''
+    };
+
+    function groupTable(rows, key, title) {
+      if (!Array.isArray(rows) || !rows.length) return '';
+      const sorted = [...rows].sort((a, b) => (num(b.critical) || 0) - (num(a.critical) || 0) || (num(b.total_projects) || 0) - (num(a.total_projects) || 0));
+      // Only show tier columns that actually carry counts in this response.
+      const has = (k) => rows.some(r => num(r[k]) > 0);
+      const cols = [
+        { h: key === 'sector' ? 'Sector' : 'State', cell: r => esc(titleCase(r[key]) || '—') },
+        { h: 'Projects', num: true, cell: r => fmt.int(r.total_projects) },
+        { h: 'Critical', num: true, cell: r => `<span data-tier="CRITICAL" class="${num(r.critical) ? 'pm-tier-text font-semibold' : ''}">${fmt.int(r.critical)}</span>` }
+      ];
+      if (has('high')) cols.push({ h: 'Elevated', num: true, cell: r => fmt.int(r.high) });
+      if (has('medium')) cols.push({ h: 'Watch', num: true, cell: r => fmt.int(r.medium) });
+      cols.push({ h: 'Avg score', num: true, cell: r => score(r.average_composite_risk_score) });
+      return card(title, `${rows.length} ${key === 'sector' ? 'sectors' : 'states'} · sorted by critical`, table(cols, sorted, 8));
+    }
+
+    function renderStructured(sd) {
+      const calls = Array.isArray(sd?.tool_calls) ? sd.tool_calls : [];
+      const seen = new Set();
+      let html = '';
+      const failed = [];
+      calls.forEach(c => {
+        const res = c.result || {};
+        const tool = c.tool || res.tool;
+        if (res.success === false) { failed.push(`${label(tool)}: ${res.error || 'failed'}`); return; }
+        const key = `${tool}:${JSON.stringify(c.arguments || {})}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        const fn = RENDER[tool];
+        if (fn) { try { html += fn(res.result); } catch (e) { console.warn('[PAIMANA] could not render tool result', tool, e); } }
+      });
+      if (failed.length) html += `<p class="pm-updated mt-3">${icon('triangle-alert', 'w-3.5 h-3.5 inline-block align-[-2px] mr-1')}Some lookups failed: ${esc(failed.join('; '))}</p>`;
+      return { html, calls };
+    }
+
+    function renderAnswer(botEl, data, answer) {
+      const { html, calls } = renderStructured(data.structured_data);
+      const tools = [...new Set(calls.filter(c => c.result?.success !== false).map(c => c.tool).filter(Boolean))];
+      const techPayload = calls.length ? JSON.stringify(calls, null, 2) : '';
+      const content = botEl.querySelector('.content');
+      content.innerHTML = `
+        <div class="answer">${formatAnswer(answer)}</div>
+        ${data.answer_audio_url ? `<audio class="mt-3 w-full" controls src="${esc(data.answer_audio_url)}"></audio>` : ''}
+        ${html}
+        <div class="msg-meta">
+          ${tools.length ? `<span>Sources:</span>${tools.map(t => `<span class="tool-chip">${esc(label(t))}</span>`).join('')}` : '<span>No database lookup was needed for this answer.</span>'}
+        </div>
+        ${techPayload ? `<details class="tech mt-2"><summary>${icon('chevron-right')}Technical details</summary><pre>${esc(techPayload.length > 40000 ? techPayload.slice(0, 40000) + '\n… (truncated)' : techPayload)}</pre></details>` : ''}`;
+      content.querySelectorAll('[data-show-more]').forEach(b => b.addEventListener('click', () => {
+        b.closest('.pm-card').querySelectorAll('tr[data-more]').forEach(tr => tr.hidden = false);
+        b.parentElement.remove();
+      }));
+      scrollToEnd();
+    }
+
+    window.sendMessage = () => sendMessage();
+  })();
   </script>
-
 </body>
-
 </html>

@@ -1,699 +1,740 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PAIMANA AI - Project Intelligence</title>
-
+  <title>Project Intelligence · PAIMANA</title>
+  <meta name="description" content="Risk, cost, schedule and model explanation for a single monitored infrastructure project.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
-    }
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };
   </script>
-
   <script>
-    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (localStorage.getItem('theme') === 'dark' ||
+      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
   </script>
+  <link rel="stylesheet" href="/css/custom.css">
+  <link rel="stylesheet" href="/css/paimana.css">
+  <style>
+    .crumb-sep { color: var(--pm-faint); }
+    .crumb-cur { color: var(--pm-text-2); max-width: 42ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
-  <link rel="stylesheet" href="css/custom.css">
+    /* Identity + risk hero */
+    .hero { display: grid; grid-template-columns: minmax(0, 1fr); }
+    @media (min-width: 1024px) { .hero { grid-template-columns: minmax(0, 1fr) 380px; } }
+    .hero-id { padding: 24px; }
+    @media (min-width: 768px) { .hero-id { padding: 28px 30px; } }
+    .hero-risk { padding: 24px; border-top: 1px solid var(--pm-line); background: var(--pm-surface-2); }
+    @media (min-width: 1024px) { .hero-risk { border-top: 0; border-left: 1px solid var(--pm-line); border-radius: 0 var(--pm-radius) var(--pm-radius) 0; padding: 28px; } }
+    .p-name { font-size: 22px; line-height: 1.25; font-weight: 750; color: var(--pm-text); letter-spacing: -.02em; }
+    @media (min-width: 768px) { .p-name { font-size: 26px; } }
+    .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin-top: 22px; }
+    @media (min-width: 768px) { .facts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .fact dt { font-size: 11px; font-weight: 600; color: var(--pm-muted); }
+    .fact dd { font-size: 13.5px; color: var(--pm-text); font-weight: 600; margin-top: 3px; overflow-wrap: anywhere; }
+    .fact dd.muted { color: var(--pm-faint); font-weight: 500; }
+    .score-big { font-size: 56px; line-height: 1; font-weight: 800; letter-spacing: -.04em; color: var(--pm-text); font-variant-numeric: tabular-nums; }
+    .score-of { font-size: 16px; font-weight: 600; color: var(--pm-muted); margin-left: 4px; }
+    .band { position: relative; margin-top: 18px; }
+    .band-track { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; height: 8px; }
+    .band-track > span { border-radius: 3px; background: var(--pm-tier-fill); opacity: .22; transition: opacity .4s var(--pm-ease); }
+    .band-track > span.on { opacity: 1; }
+    .band-marker { position: absolute; top: -5px; width: 3px; height: 18px; border-radius: 2px; background: var(--pm-text); left: 0; transform: translateX(-50%);
+      box-shadow: 0 0 0 2px var(--pm-surface-2); transition: left 1s var(--pm-ease-out); }
+    .band-ticks { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 7px; font-size: 10.5px; color: var(--pm-faint); }
+    .band-ticks span { font-variant-numeric: tabular-nums; }
+    .why { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--pm-line); }
+    .why li { display: grid; grid-template-columns: 18px 1fr; gap: 9px; font-size: 13px; line-height: 1.5; color: var(--pm-text-2); padding: 5px 0; }
+    .why li svg { width: 15px; height: 15px; margin-top: 3px; }
+    .why li[data-k="bad"] svg { color: var(--pm-elevated); }
+    .why li[data-k="ok"] svg { color: var(--pm-low); }
+    .why li[data-k="info"] svg { color: var(--pm-muted); }
+    .why strong { color: var(--pm-text); font-weight: 650; }
+
+    /* Metric cells */
+    .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--pm-line); border: 1px solid var(--pm-line); border-radius: 11px; overflow: hidden; }
+    .metric { background: var(--pm-surface); padding: 14px 16px; min-width: 0; }
+    .metric .v { font-size: 20px; font-weight: 750; color: var(--pm-text); letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-top: 4px; white-space: nowrap; }
+    .metric .f { font-size: 11.5px; color: var(--pm-muted); margin-top: 3px; }
+    .v.up { color: var(--pm-critical); } .v.flat { color: var(--pm-text); } .v.down { color: var(--pm-low); }
+    .bar-row { margin-top: 18px; }
+    .bar-row .top { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; margin-bottom: 7px; }
+    .bar-row .top span:first-child { color: var(--pm-text-2); }
+    .bar-row .top span:last-child { color: var(--pm-text); font-weight: 650; font-variant-numeric: tabular-nums; }
+    .bar-row .pm-meter { height: 8px; }
+    .bar-row .pm-meter > span { background: var(--c, var(--pm-info)); }
+    .bar-row .foot { font-size: 11.5px; color: var(--pm-muted); margin-top: 6px; }
+    .cost-row { display: grid; grid-template-columns: 84px 1fr 104px; gap: 10px; align-items: center; padding: 4px 0; font-size: 12px; }
+    .cost-k { color: var(--pm-muted); }
+    .cost-v { text-align: right; color: var(--pm-text); font-weight: 650; font-variant-numeric: tabular-nums; }
+    .cost-track { position: relative; height: 8px; border-radius: 4px; background: var(--pm-surface-hover); overflow: hidden; }
+    .cost-track > span { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit; transition: width 1s var(--pm-ease-out); transition-delay: var(--d, 0ms); }
+    .cost-stack { position: relative; height: 26px; border-radius: 7px; background: var(--pm-surface-hover); overflow: hidden; margin-top: 4px; }
+    .cost-stack > span { position: absolute; top: 0; bottom: 0; left: 0; width: 0; transition: width 1s var(--pm-ease-out); transition-delay: var(--d, 0ms); }
+    .cost-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 11.5px; color: var(--pm-muted); }
+    .cost-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+    /* Timeline */
+    .tl { position: relative; margin: 34px 4px 8px; }
+    .tl-axis { position: relative; height: 10px; border-radius: 5px; background: var(--pm-surface-hover); }
+    .tl-seg { position: absolute; top: 0; bottom: 0; border-radius: 5px; transform-origin: left center; transform: scaleX(0); transition: transform .9s var(--pm-ease-out); transition-delay: var(--d, 0ms); }
+    .tl.in .tl-seg { transform: scaleX(1); }
+    .tl-seg.plan { background: var(--pm-info); opacity: .75; }
+    .tl-seg.slip { background: repeating-linear-gradient(135deg, var(--pm-critical-fill) 0 5px, color-mix(in srgb, var(--pm-critical-fill) 55%, transparent) 5px 10px); }
+    .tl-seg.early { background: var(--pm-low-fill); }
+    .tl-mark { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--pm-surface); border: 3px solid var(--c); opacity: 0; transition: opacity .3s var(--pm-ease); transition-delay: var(--d, 0ms); }
+    .tl.in .tl-mark { opacity: 1; }
+    .tl-mark.sq { border-radius: 3px; }
+    .tl-mark.dia { border-radius: 2px; transform: rotate(45deg); }
+    .tl-today { position: absolute; top: -22px; bottom: -8px; width: 0; border-left: 2px dashed var(--pm-muted); opacity: 0; transition: opacity .3s .6s; }
+    .tl.in .tl-today { opacity: 1; }
+    .tl-today span { position: absolute; top: -2px; left: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--pm-muted); white-space: nowrap; }
+    .tl-today.flip span { left: auto; right: 6px; }
+    .tl-years { position: relative; height: 16px; margin-top: 10px; font-size: 10.5px; color: var(--pm-faint); font-variant-numeric: tabular-nums; }
+    .tl-years span { position: absolute; transform: translateX(-50%); }
+    .tl-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; margin-top: 18px; }
+    @media (min-width: 640px) { .tl-legend { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .tl-legend dt { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; color: var(--pm-muted); }
+    .tl-legend dt i { width: 10px; height: 10px; border: 2.5px solid var(--c); border-radius: 50%; flex: none; }
+    .tl-legend dt i.sq { border-radius: 2px; } .tl-legend dt i.dia { border-radius: 1px; transform: rotate(45deg) scale(.9); }
+    .tl-legend dt i.dash { border: 0; border-left: 2px dashed var(--pm-muted); border-radius: 0; width: 2px; height: 12px; }
+    .tl-legend dd { font-size: 13.5px; font-weight: 650; color: var(--pm-text); margin-top: 3px; font-variant-numeric: tabular-nums; }
+
+    /* Models */
+    .model { display: flex; flex-direction: column; }
+    .model-val { font-size: 34px; font-weight: 800; letter-spacing: -.03em; color: var(--pm-text); line-height: 1; font-variant-numeric: tabular-nums; }
+    .model-val small { font-size: 15px; font-weight: 650; color: var(--pm-muted); margin-left: 2px; }
+    .model .pm-meter { height: 6px; margin-top: 14px; }
+    .model .pm-meter > span { background: var(--pm-tier-fill); }
+    .model-desc { font-size: 12.5px; line-height: 1.55; color: var(--pm-text-2); margin-top: 14px; }
+    .model-contrib { margin-top: auto; padding-top: 14px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 12px; color: var(--pm-muted); }
+    .model-contrib strong { color: var(--pm-text); font-size: 14px; font-variant-numeric: tabular-nums; }
+    .weight-pill { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+      color: var(--pm-text-2); background: var(--pm-surface-hover); box-shadow: inset 0 0 0 1px var(--pm-line-strong); font-variant-numeric: tabular-nums; }
+    .combine { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: 13px; color: var(--pm-text-2); }
+    .combine .term { display: inline-flex; align-items: baseline; gap: 5px; padding: 6px 10px; border-radius: 8px; background: var(--pm-surface-2); border: 1px solid var(--pm-line); font-variant-numeric: tabular-nums; }
+    .combine .term b { color: var(--pm-text); }
+    .combine .op { color: var(--pm-faint); font-weight: 700; }
+    .combine .total { border-color: var(--pm-accent-line); background: var(--pm-accent-soft); }
+    .stackbar { display: flex; height: 12px; border-radius: 4px; overflow: hidden; background: var(--pm-surface-hover); margin-top: 14px; }
+    .stackbar > span { height: 100%; width: 0; transition: width .9s var(--pm-ease-out); transition-delay: var(--d, 0ms); }
+    .stackbar > span + span { box-shadow: -2px 0 0 var(--pm-surface); }
+
+    /* SHAP */
+    .shap-model + .shap-model { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--pm-line); }
+    .shap-axis-lbl { display: grid; grid-template-columns: minmax(150px, 34%) 1fr 1fr 64px; gap: 10px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--pm-faint); margin: 12px 0 4px; }
+    .shap-axis-lbl span:nth-child(2) { text-align: right; padding-right: 6px; }
+    .shap-row { display: grid; grid-template-columns: minmax(150px, 34%) 1fr 1fr 64px; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--pm-line); }
+    .shap-name { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--pm-text); min-width: 0; }
+    .shap-name svg { width: 15px; height: 15px; flex: none; }
+    .shap-name [data-dir="up"] { color: var(--pm-critical); }
+    .shap-name [data-dir="down"] { color: var(--pm-low); }
+    .shap-name small { display: block; font-size: 11px; color: var(--pm-muted); }
+    .shap-half { position: relative; height: 14px; }
+    .shap-half.neg { border-right: 1px solid var(--pm-line-strong); }
+    .shap-bar { position: absolute; top: 0; bottom: 0; width: 0; border-radius: 3px; transition: width .8s var(--pm-ease-out); transition-delay: var(--d, 0ms); }
+    .shap-half.neg .shap-bar { right: 0; background: var(--pm-low-fill); }
+    .shap-half.pos .shap-bar { left: 0; background: var(--pm-critical-fill); }
+    .shap-val { font-size: 12px; text-align: right; color: var(--pm-text-2); font-variant-numeric: tabular-nums; }
+    @media (max-width: 639px) {
+      .shap-axis-lbl { display: none; }
+      .shap-row { grid-template-columns: 1fr 1fr 56px; }
+      .shap-name { grid-column: 1 / -1; }
+    }
+
+    /* Early-warning case (rendered by js/project-warnings.js) */
+    .pw-case { padding: 18px 0; border-top: 1px solid var(--pm-line); }
+    .pw-case:first-child { border-top: 0; padding-top: 4px; }
+    .pw-case.is-closed { opacity: .72; }
+    .pw-case-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .pw-status { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11px; font-weight: 650; color: var(--pm-text-2); background: var(--pm-surface-hover); box-shadow: inset 0 0 0 1px var(--pm-line-strong); }
+    .pw-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--pm-info); }
+    .pw-status[data-status="RESOLVED"]::before { background: var(--pm-ok); }
+    .pw-status[data-status="DISMISSED"]::before { background: var(--pm-faint); }
+    .pw-status[data-status="UNDER_REVIEW"]::before, .pw-status[data-status="ACKNOWLEDGED"]::before { background: var(--pm-watch-fill); }
+    .pw-kind { font-size: 11.5px; color: var(--pm-muted); }
+    .pw-priority { text-align: right; flex: none; }
+    .pw-priority-val { display: block; font-size: 18px; font-weight: 750; color: var(--pm-text); font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .pw-priority-lbl { font-size: 11px; color: var(--pm-muted); }
+    .pw-what { font-size: 14px; font-weight: 600; color: var(--pm-text); margin-top: 12px; line-height: 1.45; }
+    .pw-meta { font-size: 11.5px; color: var(--pm-faint); margin-top: 4px; }
+    .pw-dl { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 12px 24px; margin-top: 14px; }
+    @media (min-width: 768px) { .pw-dl { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .pw-dl dt { font-size: 11px; font-weight: 600; color: var(--pm-muted); }
+    .pw-dl dd { font-size: 12.5px; line-height: 1.5; color: var(--pm-text-2); margin-top: 3px; }
+    .pw-details { margin-top: 14px; }
+    .pw-details summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--pm-text); list-style: none; padding: 4px 0; }
+    .pw-details summary::-webkit-details-marker { display: none; }
+    .pw-chev { width: 14px; height: 14px; transition: transform .15s var(--pm-ease); color: var(--pm-muted); }
+    .pw-details[open] .pw-chev { transform: rotate(90deg); }
+    .pw-count { font-size: 11px; color: var(--pm-muted); font-weight: 600; }
+    .pw-signals { margin-top: 6px; }
+    .pw-signal { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: start; padding: 9px 0; border-top: 1px dashed var(--pm-line); }
+    .pw-signal-type { font-size: 12px; font-weight: 650; color: var(--pm-text); }
+    .pw-signal-text { font-size: 12px; color: var(--pm-text-2); margin-top: 2px; line-height: 1.45; }
+    .pw-confidence { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; line-height: 1.5; color: var(--pm-text-2); margin-top: 14px; padding: 9px 11px; border-radius: 9px; background: var(--pm-surface-2); border: 1px solid var(--pm-line); }
+    .pw-confidence svg { margin-top: 2px; flex: none; color: var(--pm-watch); }
+    .pw-confidence[data-level="HIGH"] svg { color: var(--pm-low); }
+    .pw-confidence strong { color: var(--pm-text); font-weight: 650; }
+    .pw-note { margin-top: 12px; padding: 10px 12px; border-left: 3px solid var(--pm-accent); background: var(--pm-accent-soft); border-radius: 0 8px 8px 0; font-size: 12.5px; color: var(--pm-text-2); }
+    .pw-note-k { font-size: 11px; font-weight: 700; color: var(--pm-text); }
+    .pw-note-t { font-size: 11px; color: var(--pm-muted); margin-top: 4px; }
+  </style>
 </head>
 
-<body
-  class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
+<body class="pm-app flex min-h-screen antialiased">
+  <a href="#main" class="pm-skip">Skip to content</a>
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden"></div>
+  <aside id="sidebar" data-pm-shell
+    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 flex flex-col justify-between p-4 shrink-0 overflow-y-auto"></aside>
 
-  <!-- ================= SIDEBAR (Collapsed) ================= -->
-  <aside
-    class="w-20 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col items-center py-6 shrink-0 transition-colors duration-200">
-    <div class="w-10 h-10 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold mb-8">
-      <i data-lucide="shield-alert" class="w-6 h-6"></i>
-    </div>
-    <nav class="space-y-4">
-      <a href="dashboard.html"
-        class="p-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition block"><i
-          data-lucide="layout-dashboard" class="w-5 h-5"></i></a>
-      <a href="projects.html"
-        class="p-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition block"><i
-          data-lucide="folder-kanban" class="w-5 h-5"></i></a>
-      <a href="early-warnings.html"
-        class="p-3 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition block"><i
-          data-lucide="bell" class="w-5 h-5"></i></a>
-    </nav>
-  </aside>
-
-  <!-- ================= MAIN CONTENT ================= -->
-  <main class="flex-1 flex flex-col overflow-y-auto">
-    <header
-      class="h-16 border-b border-slate-200 dark:border-[#1E293B] px-4 md:px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
-      <div>
-        <a href="projects.html"
-          class="text-xs text-orange-600 dark:text-orange-500 hover:underline flex items-center gap-1 font-semibold">
-          <i data-lucide="arrow-left" class="w-3 h-3"></i> Back to Projects
-        </a>
+  <main id="main" class="flex-1 flex flex-col h-screen overflow-y-auto min-w-0">
+    <header class="pm-header">
+      <div class="flex items-center gap-3 min-w-0">
+        <button id="sidebar-toggle" type="button" class="lg:hidden pm-btn pm-btn-ghost pm-icon-btn -ml-2" aria-label="Open navigation">
+          <span data-icon="menu" class="w-5 h-5"></span>
+        </button>
+        <div class="min-w-0">
+          <nav aria-label="Breadcrumb">
+            <ol class="pm-crumbs">
+              <li><a href="dashboard.html">Dashboard</a></li>
+              <li aria-hidden="true" class="crumb-sep">/</li>
+              <li><a href="projects.html" id="crumb-projects">Projects</a></li>
+              <li aria-hidden="true" class="crumb-sep hidden sm:block">/</li>
+              <li class="hidden sm:block"><span id="crumb-name" class="crumb-cur block" aria-current="page">Project</span></li>
+            </ol>
+          </nav>
+          <h1 id="page-title" class="pm-page-title truncate mt-0.5">Project intelligence</h1>
+        </div>
       </div>
-      <button id="theme-toggle"
-        class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-        <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
-        <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
-      </button>
+      <div class="flex items-center gap-2 shrink-0">
+        <a href="projects.html" id="back-link" class="pm-btn pm-btn-sm" aria-label="Back to projects">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          <span class="hidden sm:inline">Projects</span>
+        </a>
+        <button id="theme-toggle" type="button" class="pm-btn pm-btn-ghost pm-icon-btn" aria-label="Toggle theme">
+          <span id="theme-dark-icon" data-icon="moon" class="w-4 h-4 hidden"></span>
+          <span id="theme-light-icon" data-icon="sun" class="w-4 h-4 hidden"></span>
+        </button>
+      </div>
     </header>
 
-    <div class="p-4 md:p-8 max-w-6xl mx-auto w-full space-y-6">
+    <div class="px-4 md:px-8 py-6 md:py-8">
+      <div class="max-w-[1320px] mx-auto space-y-6">
 
-      <!-- Project Header & AI Badge -->
-      <div
-        class="relative flex flex-col md:flex-row md:items-start justify-between gap-6 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
-        <div>
-          <div
-            class="flex items-center gap-2 text-[11px] font-bold tracking-wide uppercase text-slate-500 dark:text-slate-400 mb-2">
-            <span id="p-sector">SECTOR</span> <span class="text-slate-300 dark:text-slate-600">•</span>
-            <span id="p-agency">AGENCY</span> <span class="text-slate-300 dark:text-slate-600">•</span>
-            ID: <span id="p-id">00000000</span>
-          </div>
-          <h1 id="p-name" class="text-2xl font-bold text-slate-900 dark:text-white leading-tight">Loading Project...
-          </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-1">
-            <i data-lucide="map-pin" class="w-3 h-3"></i> <span id="p-state">State</span>
-          </p>
-        </div>
+        <!-- Not found / load failure replaces the report -->
+        <div id="page-state" class="hidden"></div>
 
-        <!-- Big AI Risk Badge -->
-        <div class="relative shrink-0 z-40">
-          <div id="risk-badge"
-            class="flex items-center gap-4 bg-orange-500/10 border border-orange-500/30 px-6 py-3 rounded-xl">
-
-            <div class="text-right">
-              <span class="block text-[10px] uppercase font-bold tracking-wide" id="risk-label-text"
-                style="color: inherit;">
-                AI Failure Risk
-              </span>
-
-              <span id="p-riskscore" class="text-3xl font-black" style="color: inherit;">
-                -- / 100
-              </span>
+        <div id="report" class="space-y-6">
+          <!-- ============ Identity + composite risk: /projects/{id} ============ -->
+          <section class="pm-card hero pm-enter" aria-labelledby="p-name">
+            <div class="hero-id flex flex-col justify-center" id="identity" aria-busy="true">
+              <div class="pm-skel pm-skel-line" style="width:180px"></div>
+              <div class="pm-skel" style="height:28px;width:78%;margin-top:14px"></div>
+              <div class="pm-skel" style="height:28px;width:52%;margin-top:8px"></div>
+              <div class="facts">
+                <div><div class="pm-skel pm-skel-line" style="width:60%"></div><div class="pm-skel pm-skel-line" style="width:80%"></div></div>
+                <div><div class="pm-skel pm-skel-line" style="width:60%"></div><div class="pm-skel pm-skel-line" style="width:80%"></div></div>
+                <div><div class="pm-skel pm-skel-line" style="width:60%"></div><div class="pm-skel pm-skel-line" style="width:80%"></div></div>
+                <div><div class="pm-skel pm-skel-line" style="width:60%"></div><div class="pm-skel pm-skel-line" style="width:80%"></div></div>
+              </div>
             </div>
+            <div class="hero-risk" id="risk" aria-busy="true">
+              <div class="pm-skel pm-skel-line" style="width:40%"></div>
+              <div class="pm-skel" style="height:52px;width:55%;margin-top:12px"></div>
+              <div class="pm-skel" style="height:8px;margin-top:22px"></div>
+                          </div>
+          </section>
 
-            <!-- Expand / Collapse Button -->
-            <button id="risk-breakdown-toggle" type="button" class="w-9 h-9 rounded-lg flex items-center justify-center
-             hover:bg-black/10 dark:hover:bg-white/10
-             transition" title="View model breakdown" aria-expanded="false" aria-controls="risk-breakdown">
-              <i data-lucide="chevron-down" id="risk-breakdown-icon" class="w-6 h-6"></i>
-            </button>
-
-            <i data-lucide="alert-triangle" id="risk-icon" class="w-8 h-8" style="color: inherit;"></i>
-          </div>
-
-          <!-- Model Breakdown Dropdown -->
-          <div id="risk-breakdown" class="hidden absolute right-0 top-full mt-3 w-80
-           bg-white dark:bg-[#121826]
-           border border-slate-200 dark:border-[#1E293B]
-           rounded-xl shadow-xl z-30 p-5">
-
-            <div class="flex items-center justify-between mb-4">
+          <!-- ============ Why flagged ============ -->
+          <section class="pm-card pm-card-pad pm-enter" style="--pm-delay:40ms" aria-labelledby="why-title">
+            <div class="pm-card-head" style="margin-bottom:6px">
               <div>
-                <h3 class="text-sm font-bold text-slate-900 dark:text-white">
-                  Model Risk Breakdown
-                </h3>
-                <p class="text-[10px] text-slate-500 mt-1">
-                  Contribution to overall project risk
-                </p>
+                <p class="pm-eyebrow">Assessment</p>
+                <h2 id="why-title" class="pm-title mt-1">What drives this score</h2>
+                <p class="pm-sub">Plain-language reading of the latest reported figures and model outputs for this project.</p>
               </div>
             </div>
+            <ul id="why" class="why" style="margin-top:8px;border-top:0;padding-top:0"></ul>
+          </section>
 
-            <!-- Cost Model -->
-            <div class="mb-4">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Cost Risk
-                </span>
-                <span id="model-cost-risk" class="text-sm font-bold text-red-500">
-                  --
-                </span>
+          <!-- ============ Cost + schedule ============ -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <section class="pm-card pm-card-pad lg:col-span-5 pm-enter" style="--pm-delay:80ms" aria-labelledby="cost-title">
+              <div class="pm-card-head">
+                <div>
+                  <p class="pm-eyebrow">Cost</p>
+                  <h2 id="cost-title" class="pm-title mt-1">Sanctioned, anticipated and spent</h2>
+                </div>
+                <span class="pm-updated">₹ crore</span>
               </div>
+              <div id="cost"></div>
+            </section>
 
-              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
-                <span>XGBoost</span>
-                <span>Weight: 40%</span>
-              </div>
-
-              <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div id="model-cost-bar" class="h-full bg-red-500 transition-all duration-500" style="width: 0%"></div>
-              </div>
-
-              <div class="text-[10px] text-slate-500 mt-1">
-                Contribution:
-                <span id="model-cost-contribution" class="font-semibold">
-                  -- pts
-                </span>
-              </div>
-            </div>
-
-            <!-- Schedule Model -->
-            <div class="mb-4">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Schedule Risk
-                </span>
-                <span id="model-schedule-risk" class="text-sm font-bold text-orange-500">
-                  --
-                </span>
-              </div>
-
-              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
-                <span>XGBoost</span>
-                <span>Weight: 40%</span>
-              </div>
-
-              <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div id="model-schedule-bar" class="h-full bg-orange-500 transition-all duration-500" style="width: 0%">
+            <section class="pm-card pm-card-pad lg:col-span-7 pm-enter" style="--pm-delay:120ms" aria-labelledby="sched-title">
+              <div class="pm-card-head">
+                <div>
+                  <p class="pm-eyebrow">Schedule</p>
+                  <h2 id="sched-title" class="pm-title mt-1">Approval to commissioning</h2>
                 </div>
               </div>
-
-              <div class="text-[10px] text-slate-500 mt-1">
-                Contribution:
-                <span id="model-schedule-contribution" class="font-semibold">
-                  -- pts
-                </span>
-              </div>
-            </div>
-
-            <!-- Cox Model -->
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Lifecycle Risk
-                </span>
-                <span id="model-cox-risk" class="text-sm font-bold text-purple-500">
-                  --
-                </span>
-              </div>
-
-              <div class="flex justify-between text-[10px] text-slate-500 mb-1">
-                <span>Cox Proportional Hazards</span>
-                <span>Weight: 20%</span>
-              </div>
-
-              <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div id="model-cox-bar" class="h-full bg-purple-500 transition-all duration-500" style="width: 0%">
-                </div>
-              </div>
-
-              <div class="text-[10px] text-slate-500 mt-1">
-                Contribution:
-                <span id="model-cox-contribution" class="font-semibold">
-                  -- pts
-                </span>
-              </div>
-            </div>
-
-            <!-- Formula -->
-            <div class="mt-5 pt-4 border-t border-slate-100 dark:border-[#1E293B]">
-              <p class="text-[10px] text-slate-500 leading-relaxed">
-                Overall Risk =
-                <strong>40% Cost</strong> +
-                <strong>40% Schedule</strong> +
-                <strong>20% Lifecycle</strong>
-              </p>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-
-      <section class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl">
-        <h2 class="font-semibold mb-3">Early Warning Case</h2>
-        <div id="project-warnings" class="space-y-3 text-sm">Loading warnings...</div>
-        <a id="project-warning-link" href="early-warnings.html" class="text-orange-500 text-xs">Review in Early Warning Center</a>
-      </section>
-      <!-- KPI Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div
-          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
-          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Original Cost</p>
-          <p id="p-orig-cost" class="text-xl font-bold text-slate-900 dark:text-white mt-1">₹-- Cr</p>
-        </div>
-        <div
-          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
-          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Anticipated Cost</p>
-          <p id="p-anti-cost" class="text-xl font-bold text-orange-600 dark:text-orange-400 mt-1">₹-- Cr</p>
-        </div>
-        <div
-          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
-          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Cost Escalation</p>
-          <p id="p-cost-escalation" class="text-xl font-bold text-red-600 dark:text-red-500 mt-1">--%</p>
-        </div>
-        <div
-          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-5 rounded-xl shadow-sm transition-colors duration-200">
-          <p class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Current Delay</p>
-          <p id="p-delay" class="text-xl font-bold text-red-600 dark:text-red-500 mt-1">-- Months</p>
-          <p class="text-[10px] text-slate-400 mt-0.5">vs. original schedule, as of today</p>
-        </div>
-      </div>
-
-      <!-- Main Two Columns -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- Left: Progress Bars -->
-        <div
-          class="lg:col-span-2 bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200 space-y-6">
-          <h2
-            class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-[#1E293B] pb-3">
-            Project Progress Metrics</h2>
-
-          <!-- Physical -->
-          <div class="space-y-2">
-            <div class="flex justify-between text-xs">
-              <span class="text-slate-600 dark:text-slate-400">Physical Progress (Milestones)</span>
-              <span id="p-phys-text" class="font-bold text-slate-900 dark:text-white">--%</span>
-            </div>
-            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-              <div id="p-phys-bar" class="bg-emerald-500 h-full w-0 transition-all duration-1000"></div>
-            </div>
-            <p id="p-milestone-text" class="text-[10px] text-slate-500 text-right">0 / 0 Achieved</p>
+              <div id="schedule"></div>
+            </section>
           </div>
 
-          <!-- Financial -->
-          <div class="space-y-2">
-            <div class="flex justify-between text-xs">
-              <span class="text-slate-600 dark:text-slate-400">Financial Progress (Expenditure vs Anticipated)</span>
-              <span id="p-fin-text" class="font-bold text-slate-900 dark:text-white">--%</span>
+          <!-- ============ Model breakdown ============ -->
+          <section class="pm-card pm-card-pad pm-reveal" aria-labelledby="models-title">
+            <div class="pm-card-head">
+              <div>
+                <p class="pm-eyebrow">Model breakdown</p>
+                <h2 id="models-title" class="pm-title mt-1">How three models combine into the composite score</h2>
+                <p class="pm-sub">Each model outputs a probability-like value between 0 and 100%. The composite is their weighted sum: 40% cost + 40% schedule + 20% survival.</p>
+              </div>
             </div>
-            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-              <div id="p-fin-bar" class="bg-blue-500 h-full w-0 transition-all duration-1000"></div>
-            </div>
-            <p id="p-expenditure-text" class="text-[10px] text-slate-500 text-right">₹0 / ₹0 Cr Spent</p>
-          </div>
+            <div id="models"></div>
+          </section>
 
-          <!-- Timeline Dates -->
-          <div class="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100 dark:border-[#1E293B]">
-            <div>
-              <p class="text-[10px] text-slate-500 uppercase font-semibold">Approval Date</p>
-              <p id="p-date-approve" class="text-xs font-medium text-slate-900 dark:text-white mt-1">--</p>
+          <!-- ============ SHAP (on demand): /projects/{id}/explanation ============ -->
+          <section class="pm-card pm-card-pad pm-reveal" aria-labelledby="shap-title">
+            <div class="pm-card-head">
+              <div>
+                <p class="pm-eyebrow">Model explanation</p>
+                <h2 id="shap-title" class="pm-title mt-1">Top factors behind the cost and schedule predictions</h2>
+                <p class="pm-sub">SHAP attribution for the two XGBoost models: how much each input pushed this project's prediction up or down.</p>
+              </div>
             </div>
-            <div>
-              <p class="text-[10px] text-slate-500 uppercase font-semibold">Org. Commissioning</p>
-              <p id="p-date-org" class="text-xs font-medium text-slate-900 dark:text-white mt-1">--</p>
+            <div id="shap" aria-live="polite">
+              <div class="pm-state" style="min-height:0;padding:18px 16px">
+                <p class="pm-state-msg">The explanation is computed on request from the latest project snapshot (usually a few seconds).</p>
+                <button id="shap-load" type="button" class="pm-btn pm-btn-sm">
+                  <span data-icon="sparkles" class="w-3.5 h-3.5"></span>Show model explanation
+                </button>
+              </div>
             </div>
-            <div>
-              <p class="text-[10px] text-orange-600 dark:text-orange-400 uppercase font-semibold">Anti. Commissioning
-              </p>
-              <p id="p-date-anti" class="text-xs font-bold text-orange-600 dark:text-orange-400 mt-1">--</p>
+            <p class="pm-sub mt-4 pt-4" style="border-top:1px solid var(--pm-line)">
+              SHAP represents model attribution, not causation. Values are in the model's log-odds units; larger bars mean a stronger push on this prediction.
+            </p>
+          </section>
+
+          <!-- ============ Early-warning case: /alerts/cases ============ -->
+          <section class="pm-card pm-card-pad pm-reveal" aria-labelledby="warn-title">
+            <div class="pm-card-head">
+              <div>
+                <p class="pm-eyebrow">Early warning</p>
+                <h2 id="warn-title" class="pm-title mt-1">Warning case <span id="project-warnings-count" class="pm-updated ml-1 font-medium" hidden></span></h2>
+                <p class="pm-sub">Signals raised by the early-warning engine for this project, including closed cases.</p>
+              </div>
+              <a id="project-warning-link" href="early-warnings.html" class="pm-btn pm-btn-sm">Review in Warning Center <span data-icon="arrow-right" class="w-3.5 h-3.5"></span></a>
             </div>
-          </div>
-        </div>
+            <div id="project-warnings"></div>
+          </section>
 
-        <!-- Right: AI Risk Explanation -->
-        <div
-          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
-
-          <h2
-            class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-[#1E293B] pb-3 mb-4">
-            AI Risk Explanation
-          </h2>
-
-          <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
-            Risk drivers identified by the Cost and Schedule XGBoost models using SHAP.
-            Positive values increase predicted risk; negative values decrease it.
+          <p class="pm-sub px-1" id="snapshot-note">
+            All figures are the latest reported snapshot for this project. PAIMANA does not currently expose a per-project history, so past values are not shown.
           </p>
-
-          <!-- Cost Risk -->
-          <div class="mb-6">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Cost Risk
-              </span>
-              <span class="text-[9px] font-bold text-slate-400">
-                XGBoost · 40%
-              </span>
-            </div>
-
-            <div id="cost-shap-drivers" class="space-y-3">
-              <div class="text-xs text-slate-400">
-                Loading cost risk drivers...
-              </div>
-            </div>
-          </div>
-
-          <!-- Schedule Risk -->
-          <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Schedule Risk
-              </span>
-              <span class="text-[9px] font-bold text-slate-400">
-                XGBoost · 40%
-              </span>
-            </div>
-
-            <div id="schedule-shap-drivers" class="space-y-3">
-              <div class="text-xs text-slate-400">
-                Loading schedule risk drivers...
-              </div>
-            </div>
-          </div>
-
-          <p class="text-[9px] text-slate-400 dark:text-slate-500 mt-5">
-            SHAP represents model attribution, not causation.
-          </p>
-
         </div>
-        </div>
-
       </div>
     </div>
   </main>
 
-  <script src="js/api.js?v=cases-3"></script>
-  <script src="js/warning-ui.js?v=cases-3"></script>
-  <script src="js/project-warnings.js?v=cases-3"></script>
-  <script src="js/theme.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/animations.js"></script>
+  <script src="js/theme.js"></script>
+  <script>window.ProjectWarningsDeferred = true;</script>
+  <script src="js/warning-ui.js"></script>
+  <script src="js/project-warnings.js"></script>
   <script>
-    lucide.createIcons();
+  (() => {
+    'use strict';
+    const { esc, fmt, num, icon, tier, tierBadge, TIERS, stateHTML, countUp } = PM;
+    const $ = (id) => document.getElementById(id);
+    PM.hydrateIcons();
 
-    // 1. Extract the Project ID from URL query parameters (e.g. project-details.html?id=220100181)
-    const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('id');
+    const projectId = (new URLSearchParams(location.search).get('id') || '').trim();
+    const titleCase = (s) => String(s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\b(And|Of)\b/g, m => m.toLowerCase());
+    const sectorName = (s) => s === 'DPIIT' ? 'DPIIT' : titleCase(s);
+    const reported = (v, bad = []) => v && !['Unknown', 'Unknown Agency', ...bad].includes(String(v).trim()) ? String(v) : null;
+    const parseDate = (v) => { if (!v) return null; const d = new Date(`${String(v).slice(0, 10)}T00:00:00`); return Number.isFinite(d.getTime()) ? d : null; };
+    const monthYear = (d) => d ? d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : '—';
+    const pctOf = (p) => { const n = num(p); return n === null ? null : n * 100; };
+    const afterPaint = (fn) => requestAnimationFrame(() => requestAnimationFrame(fn));
+    const ICON_DOWN = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 7 10 10"/><path d="M17 7v10H7"/></svg>';
 
-    // 2. Fetch live data from backend endpoint
-    async function loadProjectData() {
-      if (!projectId) {
-        window.location.href = "projects.html";
-        return;
+    // Keep the list view (q/sector) when going back to Projects.
+    try {
+      const ref = document.referrer && new URL(document.referrer);
+      if (ref && ref.origin === location.origin && ref.pathname.endsWith('/projects.html') && ref.search) {
+        $('back-link').href = `projects.html${ref.search}`;
+        $('crumb-projects').href = `projects.html${ref.search}`;
       }
+    } catch (_) { /* ignore */ }
 
-      try {
-        // Relative URL avoids CORS / origin mismatch issues
-        const response = await fetch(`/api/v1/projects/${encodeURIComponent(projectId)}`);
-
-        if (!response.ok) {
-          const errorPayload = await response.json().catch(() => ({}));
-          throw new Error(errorPayload.detail || `Server returned HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        // Populate Header & Metadata
-        document.getElementById('p-name').innerText = data.name;
-        document.getElementById('p-agency').innerText = data.agency;
-        document.getElementById('p-sector').innerText = data.sector;
-        document.getElementById('p-id').innerText = data.id;
-        document.getElementById('p-state').innerText = data.state;
-
-        // Populate Dates
-        document.getElementById('p-date-approve').innerText = data.approval_date || "--";
-        document.getElementById('p-date-org').innerText = data.original_comm || "--";
-        document.getElementById('p-date-anti').innerText = data.anti_comm || "--";
-
-        // Populate Costs and Escalation
-        document.getElementById('p-orig-cost').innerText = `₹${Number(data.original_cost).toLocaleString()} Cr`;
-        document.getElementById('p-anti-cost').innerText = `₹${Number(data.anticipated_cost).toLocaleString()} Cr`;
-
-        const isCostEscalated = data.cost_escalation_pct > 0;
-        const costEscalationEl = document.getElementById('p-cost-escalation');
-        PaimanaFX.countUp(costEscalationEl, Number(data.cost_escalation_pct) || 0, {
-          decimals: 1,
-          format: (v) => `${v > 0 ? '+' : ''}${v}%`
-        });
-        costEscalationEl.className = `text-xl font-bold mt-1 ${isCostEscalated ? 'text-red-600 dark:text-red-500' : 'text-emerald-600 dark:text-emerald-500'
-          }`;
-
-        PaimanaFX.countUp(document.getElementById('p-delay'), Number(data.delay_months) || 0, {
-          format: (v) => `${v} Months`
-        });
-
-        // Calculate Progress
-        const totalMilestones = data.milestones_total > 0 ? data.milestones_total : 100;
-        const physPct = Math.min(100, Math.round((data.milestones_achieved / totalMilestones) * 100));
-
-        const anticipated = data.anticipated_cost > 0 ? data.anticipated_cost : data.original_cost;
-        const finPct = anticipated > 0 ? Math.min(100, Math.round((data.expenditure / anticipated) * 100)) : 0;
-
-        document.getElementById('p-phys-text').innerText = `${physPct}%`;
-        document.getElementById('p-phys-bar').style.width = `${physPct}%`;
-        document.getElementById('p-milestone-text').innerText = `${data.milestones_achieved} / ${totalMilestones} Achieved`;
-
-        document.getElementById('p-fin-text').innerText = `${finPct}%`;
-        document.getElementById('p-fin-bar').style.width = `${finPct}%`;
-        document.getElementById('p-expenditure-text').innerText = `₹${Number(data.expenditure).toLocaleString()} / ₹${Number(anticipated).toLocaleString()} Cr Spent`;
-
-        // Render Risk Badge
-        const riskBadge = document.getElementById('risk-badge');
-        const riskScoreEl = document.getElementById('p-riskscore');
-        const riskLabelEl = document.getElementById('risk-label-text');
-
-        const score = Number(data.risk_score) || 0;
-        const label = (data.risk_label || 'LOW').toUpperCase();
-
-        PaimanaFX.countUp(riskScoreEl, score, { decimals: 1, format: (v) => `${v.toFixed(1)} / 100` });
-        riskLabelEl.innerText = `${label} RISK`;
-        // Populate individual ML model outputs
-        const costRisk = Number(data.cost_risk_probability) || 0;
-        const scheduleRisk = Number(data.schedule_risk_probability) || 0;
-        const coxRisk = Number(data.cox_risk_probability) || 0;
-
-        // Convert model probabilities/signals to percentages
-        const costRiskPct = costRisk * 100;
-        const scheduleRiskPct = scheduleRisk * 100;
-        const coxRiskPct = coxRisk * 100;
-
-        // Calculate each model's contribution to the final 100-point score
-        const costContribution = costRiskPct * 0.40;
-        const scheduleContribution = scheduleRiskPct * 0.40;
-        const coxContribution = coxRiskPct * 0.20;
-
-        // Display model values
-        document.getElementById('model-cost-risk').innerText =
-          `${costRiskPct.toFixed(1)}%`;
-
-        document.getElementById('model-schedule-risk').innerText =
-          `${scheduleRiskPct.toFixed(1)}%`;
-
-        document.getElementById('model-cox-risk').innerText =
-          `${coxRiskPct.toFixed(1)}%`;
-
-        // Display contribution to overall score
-        document.getElementById('model-cost-contribution').innerText =
-          `${costContribution.toFixed(1)} pts`;
-
-        document.getElementById('model-schedule-contribution').innerText =
-          `${scheduleContribution.toFixed(1)} pts`;
-
-        document.getElementById('model-cox-contribution').innerText =
-          `${coxContribution.toFixed(1)} pts`;
-
-        // Update progress bars
-        document.getElementById('model-cost-bar').style.width =
-          `${Math.min(100, costRiskPct)}%`;
-
-        document.getElementById('model-schedule-bar').style.width =
-          `${Math.min(100, scheduleRiskPct)}%`;
-
-        document.getElementById('model-cox-bar').style.width =
-          `${Math.min(100, coxRiskPct)}%`;
-
-        if (label.includes("CRITICAL")) {
-          riskBadge.className = "flex items-center gap-4 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-500 px-6 py-3 rounded-xl shrink-0";
-        } else if (label.includes("ELEVATED") || label.includes("HIGH")) {
-          riskBadge.className = "flex items-center gap-4 bg-orange-500/10 border border-orange-500/30 text-orange-600 dark:text-orange-500 px-6 py-3 rounded-xl shrink-0";
-        } else if (label.includes("WATCH") || label.includes("MEDIUM")) {
-          riskBadge.className = "flex items-center gap-4 bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 dark:text-yellow-500 px-6 py-3 rounded-xl shrink-0";
-        } else {
-          riskBadge.className = "flex items-center gap-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-500 px-6 py-3 rounded-xl shrink-0";
-        }
-
-      } catch (error) {
-        console.error("Failed to load project details:", error);
-        document.getElementById('p-name').innerText = `Error: ${error.message}`;
-        alert(`Could not load project details: ${error.message}`);
-      }
-    }
-async function loadSHAPExplanation() {
-  const costContainer = document.getElementById('cost-shap-drivers');
-  const scheduleContainer = document.getElementById('schedule-shap-drivers');
-
-  if (!costContainer || !scheduleContainer || !projectId) {
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `/api/v1/projects/${encodeURIComponent(projectId)}/explanation`
-    );
-
-    if (!response.ok) {
-      const errorPayload = await response.json().catch(() => ({}));
-      throw new Error(
-        errorPayload.detail || `Server returned HTTP ${response.status}`
-      );
+    // ------------------------------------------------------------------
+    // Not found / failure
+    // ------------------------------------------------------------------
+    function showPageState({ kind, title, message, retry }) {
+      $('report').classList.add('hidden');
+      const el = $('page-state');
+      el.classList.remove('hidden');
+      el.innerHTML = `<section class="pm-card pm-card-pad pm-enter">${stateHTML({ kind, title, message })}
+        <div class="flex justify-center gap-2 pb-4"><a href="projects.html" class="pm-btn pm-btn-sm ${kind === 'error' ? 'pm-btn-ghost' : 'pm-btn-primary'}">Browse projects</a></div></section>`;
+      const btn = el.querySelector('[data-pm-retry]');
+      if (btn && retry) btn.addEventListener('click', () => { el.classList.add('hidden'); $('report').classList.remove('hidden'); retry(); }, { once: true });
+      $('page-title').textContent = title;
+      $('crumb-name').textContent = kind === 'error' ? 'Unavailable' : 'Not found';
+      document.title = `${title} · PAIMANA`;
     }
 
-    const data = await response.json();
-
-    const featureNames = {
-      agency_overrun_rate: "Agency Overrun Rate",
-      sector_overrun_rate: "Sector Overrun Rate",
-      cost_growth_3m: "Cost Growth — 3 Months",
-      cost_growth_6m: "Cost Growth — 6 Months",
-      cost_growth_12m: "Cost Growth — 12 Months",
-      expenditure_growth_3m: "Expenditure Growth — 3 Months",
-      expenditure_growth_6m: "Expenditure Growth — 6 Months",
-      expenditure_growth_12m: "Expenditure Growth — 12 Months",
-      cost_revision_percentage: "Cost Revision",
-      anticipated_cost_percentage: "Anticipated Cost Change",
-      current_cost: "Current Cost",
-      project_duration_elapsed_percentage: "Project Duration Elapsed",
-      schedule_progress_mismatch: "Schedule Progress Mismatch",
-      anticipated_delay_from_original: "Anticipated Delay",
-      remaining_org_months: "Remaining Original Duration",
-      milestone_completion_percentage: "Milestone Completion",
-      milestone_progress_change_3m: "Milestone Progress — 3 Months",
-      milestone_progress_change_6m: "Milestone Progress — 6 Months",
-      milestone_progress_change_12m: "Milestone Progress — 12 Months",
-      expenditure_progress_gap_org: "Expenditure vs Progress",
-      expenditure_progress_gap_anti: "Expenditure vs Anticipated Progress",
-      exp_vs_org_prct: "Expenditure vs Original Cost",
-      exp_vs_anti_prct: "Expenditure vs Anticipated Cost",
-      exp_vs_rev_prct: "Expenditure vs Revised Cost",
-      project_age: "Project Age",
-      duration_overrun_months: "Duration Overrun",
-      year: "Year",
-      month: "Month"
-    };
-
-    function formatFeatureName(feature) {
-      if (featureNames[feature]) return featureNames[feature];
-
-      return feature
-        .replaceAll('_', ' ')
-        .replace(/\b\w/g, letter => letter.toUpperCase());
+    // ------------------------------------------------------------------
+    // Identity + risk hero
+    // ------------------------------------------------------------------
+    function renderIdentity(p) {
+      const el = $('identity');
+      el.removeAttribute('aria-busy');
+      const agency = reported(p.agency), state = reported(p.state);
+      const fact = (k, v, mono = false) => `<div class="fact"><dt>${k}</dt><dd class="${v ? '' : 'muted'} ${mono ? 'pm-mono' : ''}">${v ? esc(v) : 'Not reported'}</dd></div>`;
+      el.innerHTML = `
+        <p class="pm-eyebrow">${esc(sectorName(p.sector) || 'Sector not reported')}</p>
+        <h2 id="p-name" class="p-name mt-2">${esc(p.name || 'Unnamed project')}</h2>
+        <dl class="facts">
+          ${fact('Implementing agency', agency)}
+          ${fact('State', state ? titleCase(state) : null)}
+          ${fact('Project ID', p.id, true)}
+          ${fact('Approved', parseDate(p.approval_date) ? fmt.date(p.approval_date) : null)}
+        </dl>`;
+      el.classList.add('pm-fade-swap');
     }
 
-    function renderDrivers(container, drivers) {
-      if (!drivers || drivers.length === 0) {
-        container.innerHTML =
-          `<div class="text-xs text-slate-400">No explanation available.</div>`;
-        return;
+    function renderRisk(p) {
+      const el = $('risk');
+      el.removeAttribute('aria-busy');
+      const t = tier(p.risk_label, p.risk_score);
+      const s = t === 'UNKNOWN' ? null : num(p.risk_score);
+      el.innerHTML = `
+        <div class="flex items-center justify-between gap-3">
+          <p class="pm-eyebrow">Composite AI risk</p>
+          ${tierBadge(t === 'UNKNOWN' ? 'UNASSESSED' : p.risk_label, null, { showScore: false })}
+        </div>
+        <p class="mt-3"><span id="score" class="score-big">${s === null ? '—' : '0.0'}</span><span class="score-of">/ 100</span></p>
+        ${s === null ? '<p class="pm-sub mt-2">No stored prediction for this project yet.</p>' : `
+        <div class="band" role="img" aria-label="Score ${s.toFixed(1)} of 100, ${TIERS[t].label} band (${TIERS[t].range})">
+          <div class="band-track">${['LOW', 'WATCH', 'ELEVATED', 'CRITICAL'].map(x => `<span data-tier="${x}" class="${x === t ? 'on' : ''}"></span>`).join('')}</div>
+          <span class="band-marker" id="band-marker"></span>
+          <div class="band-ticks"><span>Low</span><span>Watch · 25</span><span>Elevated · 50</span><span>Critical · 75</span></div>
+        </div>
+        <p class="pm-sub mt-4">${TIERS[t].label} band covers scores ${TIERS[t].range}. Highest single model: <strong style="color:var(--pm-text)">${esc(topModel(p)?.name || '—')}</strong>${topModel(p) ? ` at ${topModel(p).pct.toFixed(1)}%` : ''}.</p>`}`;
+      if (s !== null) {
+        countUp($('score'), s, { decimals: 1, duration: 1000, format: v => v.toFixed(1) });
+        afterPaint(() => { const m = $('band-marker'); if (m) m.style.left = `${Math.max(0, Math.min(100, s))}%`; });
       }
+    }
 
-      container.innerHTML = drivers.map(driver => {
-        const increasesRisk = driver.direction === 'increases_risk';
+    const MODELS = [
+      { key: 'cost_risk_probability', name: 'Cost XGBoost', short: 'Cost', weight: 0.4, label: 'Cost-overrun probability',
+        desc: 'Gradient-boosted model estimating the chance that this project ends up over its sanctioned cost.' },
+      { key: 'schedule_risk_probability', name: 'Schedule XGBoost', short: 'Schedule', weight: 0.4, label: 'Delay probability',
+        desc: 'Gradient-boosted model estimating the chance that commissioning slips beyond the planned date.' },
+      { key: 'cox_risk_probability', name: 'Cox survival', short: 'Survival', weight: 0.2, label: 'Lifecycle hazard',
+        desc: 'Cox proportional-hazards model of the project lifecycle. Its relative hazard is scaled to 0–100%; a project with average characteristics scores 50%.' }
+    ];
+    function topModel(p) {
+      const vals = MODELS.map(m => ({ ...m, pct: pctOf(p[m.key]) })).filter(m => m.pct !== null);
+      return vals.sort((a, b) => b.pct - a.pct)[0] || null;
+    }
 
-        const arrow = increasesRisk ? '↑' : '↓';
-        const directionClass = increasesRisk
-          ? 'text-red-500'
-          : 'text-emerald-500';
+    // ------------------------------------------------------------------
+    // Plain-language explanation (only facts from the response)
+    // ------------------------------------------------------------------
+    function renderWhy(p) {
+      const items = [];
+      const add = (k, html) => items.push({ k, html });
+      const t = tier(p.risk_label, p.risk_score);
+      const o = num(p.original_cost), a = num(p.anticipated_cost), e = num(p.cost_escalation_pct), spent = num(p.expenditure);
+      const delay = num(p.delay_months);
+      const total = num(p.milestones_total), done = num(p.milestones_achieved);
+      const anti = parseDate(p.anti_comm), today = new Date();
 
-        const impact = Math.abs(Number(driver.shap_value) || 0);
+      if (t !== 'UNKNOWN') {
+        const top = topModel(p);
+        add(t === 'LOW' ? 'ok' : 'bad', `Composite score <strong>${num(p.risk_score).toFixed(1)}</strong> places the project in the <strong>${TIERS[t].label}</strong> band (${TIERS[t].range}).${top ? ` The <strong>${esc(top.name)}</strong> model gives the highest value of the three (${top.pct.toFixed(1)}%).` : ''}`);
+      } else {
+        add('info', 'No model prediction is stored for this project yet, so it has no composite score.');
+      }
+      if (e !== null && o) {
+        if (e > 0.05) add('bad', `Anticipated cost is <strong>${e.toFixed(1)}% above</strong> the original sanction (${fmt.crore(o)} → ${fmt.crore(a)}).`);
+        else if (e < -0.05) add('ok', `Anticipated cost is <strong>${Math.abs(e).toFixed(1)}% below</strong> the original sanction (${fmt.crore(o)} → ${fmt.crore(a)}).`);
+        else add('ok', `No cost revision reported: anticipated cost equals the original sanction of ${fmt.crore(o)}.`);
+      }
+      if (delay !== null) {
+        if (delay > 0) add('bad', `Commissioning is now expected <strong>${fmt.int(delay)} month${delay === 1 ? '' : 's'}</strong>${delay >= 24 ? ` (${(delay / 12).toFixed(1)} years)` : ''} later than originally planned.`);
+        else if (delay < 0) add('ok', `Commissioning is expected ${fmt.int(Math.abs(delay))} months earlier than originally planned.`);
+        else add('ok', 'No schedule slip reported: anticipated commissioning matches the original date.');
+      }
+      if (anti && anti < today) add('info', `The latest reported anticipated commissioning date (${monthYear(anti)}) is already in the past; the project's status after that date is not in this snapshot.`);
+      if (total > 0) {
+        const pct = (done / total) * 100;
+        add(pct >= 75 ? 'ok' : 'info', `<strong>${fmt.int(done)} of ${fmt.int(total)}</strong> milestones achieved (${pct.toFixed(0)}%).`);
+      } else {
+        add('info', 'No milestones reported for this project, so physical progress cannot be assessed.');
+      }
+      if (spent !== null && (a || o)) {
+        const base = a || o;
+        const sp = (spent / base) * 100;
+        add(sp > 100 ? 'bad' : 'info', `Expenditure of ${fmt.crore(spent)} is <strong>${sp.toFixed(0)}%</strong> of the anticipated cost${sp > 100 ? ', already above it' : ''}.`);
+      }
+      const ICON = { bad: 'triangle-alert', ok: 'circle-check', info: 'eye' };
+      $('why').innerHTML = items.map(i => `<li data-k="${i.k}">${icon(ICON[i.k])}<span>${i.html}</span></li>`).join('');
+      PM.stagger($('why').children, 50, 'pm-fade-swap');
+    }
 
-        let impactLabel = 'LOW IMPACT';
+    // ------------------------------------------------------------------
+    // Cost
+    // ------------------------------------------------------------------
+    function renderCost(p) {
+      const o = num(p.original_cost), a = num(p.anticipated_cost), spent = num(p.expenditure), e = num(p.cost_escalation_pct);
+      const base = a || o;
+      const spentPct = spent !== null && base ? (spent / base) * 100 : null;
+      const max = Math.max(o || 0, a || 0, spent || 0, 1);
+      const dir = e === null ? 'flat' : e > 0.05 ? 'up' : e < -0.05 ? 'down' : 'flat';
+      $('cost').innerHTML = `
+        <div class="metrics">
+          <div class="metric"><p class="pm-kpi-label">Original cost</p><p class="v">${fmt.crore(o)}</p><p class="f">Sanctioned</p></div>
+          <div class="metric"><p class="pm-kpi-label">Anticipated cost</p><p class="v">${fmt.crore(a)}</p><p class="f">Latest estimate</p></div>
+          <div class="metric"><p class="pm-kpi-label">Cost escalation</p><p class="v ${dir}">${e === null ? '—' : `${e > 0 ? '▲ +' : e < 0 ? '▼ ' : ''}${e.toFixed(1)}%`}</p><p class="f">Anticipated vs original</p></div>
+          <div class="metric"><p class="pm-kpi-label">Expenditure</p><p class="v">${fmt.crore(spent)}</p><p class="f">Cumulative spend</p></div>
+        </div>
+        <div class="bar-row">
+          <p class="pm-kpi-label" style="margin-bottom:8px">Relative scale</p>
+          ${[['Original', o, 'var(--pm-info)'], ['Anticipated', a, dir === 'up' ? 'var(--pm-elevated-fill)' : 'var(--pm-info)'], ['Spent', spent, 'var(--pm-muted)']].map(([k, v, c], i) => `
+          <div class="cost-row">
+            <span class="cost-k">${k}</span>
+            <span class="cost-track"><span data-w="${((v || 0) / max) * 100}" style="background:${c};--d:${i * 120}ms"></span></span>
+            <span class="cost-v">${fmt.crore(v)}</span>
+          </div>`).join('')}
+        </div>
+        <div class="bar-row">
+          <div class="top"><span>Spent vs anticipated cost</span><span>${spentPct === null ? '—' : `${spentPct.toFixed(0)}%`}</span></div>
+          <div class="pm-meter" role="img" aria-label="${spentPct === null ? 'Not reported' : `${spentPct.toFixed(0)}% of anticipated cost spent`}"><span data-w="${Math.min(100, spentPct || 0)}" style="--c:${spentPct > 100 ? 'var(--pm-critical-fill)' : 'var(--pm-info)'}"></span></div>
+          <p class="foot">${spentPct === null ? 'Expenditure or anticipated cost not reported.' : spentPct > 100 ? 'Spending already exceeds the latest anticipated cost.' : `${fmt.crore(Math.max(0, base - spent))} of the anticipated cost remains unspent.`}</p>
+        </div>`;
+      afterPaint(() => $('cost').querySelectorAll('[data-w]').forEach(s => { s.style.width = `${Math.max(0, s.dataset.w)}%`; }));
+    }
 
-        if (impact >= 0.5) {
-          impactLabel = 'HIGH IMPACT';
-        } else if (impact >= 0.2) {
-          impactLabel = 'MEDIUM IMPACT';
-        }
-
-        const barWidth = Math.min(
-          100,
-          Math.max(8, impact * 25)
-        );
-
-        return `
-          <div>
-            <div class="flex justify-between items-center mb-1.5">
-              <span class="text-xs font-medium text-slate-700 dark:text-slate-300">
-                <span class="${directionClass} font-bold mr-1">${arrow}</span>
-                ${formatFeatureName(driver.feature)}
-              </span>
-
-              <span class="${directionClass} text-[9px] font-bold">
-                ${impactLabel}
-              </span>
+    // ------------------------------------------------------------------
+    // Schedule + timeline
+    // ------------------------------------------------------------------
+    function renderSchedule(p) {
+      const ap = parseDate(p.approval_date), oc = parseDate(p.original_comm), ac = parseDate(p.anti_comm), today = new Date();
+      const delay = num(p.delay_months);
+      const total = num(p.milestones_total), done = num(p.milestones_achieved) || 0;
+      const msPct = total > 0 ? (done / total) * 100 : null;
+      const dates = [ap, oc, ac].filter(Boolean);
+      let timeline = '';
+      if (dates.length >= 2) {
+        const min = new Date(Math.min(...dates));
+        const maxD = new Date(Math.max(...dates, today));
+        const span = Math.max(1, maxD - min);
+        const x = (d) => ((d - min) / span) * 100;
+        const segs = [];
+        if (ap && oc) segs.push(`<span class="tl-seg plan" style="left:${x(ap)}%;width:${Math.max(0, x(oc) - x(ap))}%;--d:0ms"></span>`);
+        if (oc && ac && ac > oc) segs.push(`<span class="tl-seg slip" style="left:${x(oc)}%;width:${x(ac) - x(oc)}%;--d:450ms"></span>`);
+        if (oc && ac && ac < oc) segs.push(`<span class="tl-seg early" style="left:${x(ac)}%;width:${x(oc) - x(ac)}%;--d:450ms"></span>`);
+        const mark = (d, c, cls, label, delayMs) => d ? `<span class="tl-mark ${cls}" style="left:${x(d)}%;--c:${c};--d:${delayMs}ms" title="${esc(label)}: ${esc(monthYear(d))}"></span>` : '';
+        const years = [];
+        const y0 = min.getFullYear(), y1 = maxD.getFullYear();
+        const step = Math.max(1, Math.ceil((y1 - y0 + 1) / 7));
+        for (let y = y0 + 1; y <= y1; y += step) { const d = new Date(y, 0, 1); if (d > min && d < maxD) years.push(`<span style="left:${x(d)}%">${y}</span>`); }
+        const tx = x(today);
+        timeline = `
+          <div class="tl" id="tl" role="img" aria-label="Timeline: approved ${monthYear(ap)}, originally due ${monthYear(oc)}, now anticipated ${monthYear(ac)}; today is ${monthYear(today)}.">
+            <div class="tl-axis">
+              ${segs.join('')}
+              ${mark(ap, 'var(--pm-muted)', '', 'Approval', 100)}
+              ${mark(oc, 'var(--pm-info)', 'sq', 'Original commissioning', 300)}
+              ${mark(ac, ac && oc && ac > oc ? 'var(--pm-critical)' : 'var(--pm-low)', 'dia', 'Anticipated commissioning', 700)}
+              <span class="tl-today ${tx > 85 ? 'flip' : ''}" style="left:${tx}%"><span>Today</span></span>
             </div>
+            <div class="tl-years" aria-hidden="true">${years.join('')}</div>
+          </div>`;
+      } else {
+        timeline = stateHTML({ kind: 'empty', title: 'Timeline unavailable', message: 'Approval and commissioning dates are not reported for this project.', inline: true });
+      }
+      const slipLabel = delay === null ? '—' : delay > 0 ? `${fmt.int(delay)} months late` : delay < 0 ? `${fmt.int(-delay)} months early` : 'On original date';
+      $('schedule').innerHTML = `
+        ${timeline}
+        <dl class="tl-legend">
+          <div><dt><i style="--c:var(--pm-muted)"></i>Approved</dt><dd>${esc(monthYear(ap))}</dd></div>
+          <div><dt><i class="sq" style="--c:var(--pm-info)"></i>Original target</dt><dd>${esc(monthYear(oc))}</dd></div>
+          <div><dt><i class="dia" style="--c:${ac && oc && ac > oc ? 'var(--pm-critical)' : 'var(--pm-low)'}"></i>Anticipated</dt><dd>${esc(monthYear(ac))}</dd></div>
+          <div><dt><i class="dash"></i>Slip</dt><dd style="color:${delay > 0 ? 'var(--pm-critical)' : 'var(--pm-text)'}">${esc(slipLabel)}</dd></div>
+        </dl>
+        <div class="bar-row" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--pm-line)">
+          <div class="top"><span>Milestone progress</span><span>${msPct === null ? 'No milestones reported' : `${fmt.int(done)} / ${fmt.int(total)} · ${msPct.toFixed(0)}%`}</span></div>
+          <div class="pm-meter" role="img" aria-label="${msPct === null ? 'No milestones reported' : `${fmt.int(done)} of ${fmt.int(total)} milestones achieved`}"><span data-w="${msPct || 0}" style="--c:var(--pm-info)"></span></div>
+          <p class="foot">${msPct === null ? 'The latest update does not report milestones for this project.' : 'Milestones achieved out of total planned, from the latest update.'}</p>
+        </div>`;
+      afterPaint(() => {
+        $('tl')?.classList.add('in');
+        $('schedule').querySelectorAll('.pm-meter [data-w]').forEach(s => { s.style.width = `${s.dataset.w}%`; });
+      });
+    }
 
-            <div class="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-              <div
-                class="${increasesRisk ? 'bg-red-500' : 'bg-emerald-500'} h-full rounded-full"
-                style="width: ${barWidth}%">
-              </div>
-            </div>
-
-            <div class="text-[9px] text-slate-400 mt-1">
-              SHAP: ${Number(driver.shap_value).toFixed(3)}
-            </div>
+    // ------------------------------------------------------------------
+    // Model breakdown
+    // ------------------------------------------------------------------
+    function renderModels(p) {
+      const rows = MODELS.map(m => ({ ...m, pct: pctOf(p[m.key]) }));
+      const have = rows.every(r => r.pct !== null);
+      const composite = have ? rows.reduce((s, r) => s + r.pct * r.weight, 0) : null;
+      const reportedScore = tier(p.risk_label, p.risk_score) === 'UNKNOWN' ? null : num(p.risk_score);
+      const card = (r) => {
+        const t = r.pct === null ? 'UNKNOWN' : PM.tierFromScore(r.pct);
+        return `<article class="pm-card pm-card-pad model" data-tier="${t}" style="box-shadow:none;background:var(--pm-surface-2)">
+          <div class="flex items-start justify-between gap-2">
+            <div><p class="pm-eyebrow">${esc(r.name)}</p><p class="pm-title mt-1">${esc(r.label)}</p></div>
+            <span class="weight-pill" title="Weight in the composite score">Weight ${Math.round(r.weight * 100)}%</span>
           </div>
-        `;
-      }).join('');
+          <p class="model-val mt-4">${r.pct === null ? '—' : r.pct.toFixed(1)}<small>%</small></p>
+          <div class="pm-meter" aria-hidden="true"><span data-w="${r.pct || 0}"></span></div>
+          <p class="model-desc">${esc(r.desc)}</p>
+          <p class="model-contrib"><span>Adds to composite</span><strong>${r.pct === null ? '—' : `${(r.pct * r.weight).toFixed(1)} pts`}</strong></p>
+        </article>`;
+      };
+      const colors = ['var(--pm-info)', 'var(--pm-elevated-fill)', 'var(--pm-muted)'];
+      $('models').innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">${rows.map(card).join('')}</div>
+        ${have ? `
+        <div class="mt-5 pt-5" style="border-top:1px solid var(--pm-line)">
+          <p class="pm-kpi-label mb-3">Composite = 0.4 × cost + 0.4 × schedule + 0.2 × survival</p>
+          <div class="combine">
+            ${rows.map((r, i) => `${i ? '<span class="op">+</span>' : ''}<span class="term"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colors[i]}"></span>${r.weight} × ${r.pct.toFixed(1)} = <b>${(r.pct * r.weight).toFixed(1)}</b></span>`).join('')}
+            <span class="op">=</span><span class="term total"><b>${composite.toFixed(1)}</b> / 100</span>
+          </div>
+          <div class="stackbar" role="img" aria-label="Composite ${composite.toFixed(1)} of 100 made of ${rows.map(r => `${r.short} ${(r.pct * r.weight).toFixed(1)}`).join(', ')}">
+            ${rows.map((r, i) => `<span data-w="${r.pct * r.weight}" style="background:${colors[i]};--d:${i * 150}ms" title="${esc(r.name)}: ${(r.pct * r.weight).toFixed(1)} pts"></span>`).join('')}
+          </div>
+          ${reportedScore !== null && Math.abs(reportedScore - composite) > 0.6 ? `<p class="pm-sub mt-3">The stored composite score is ${reportedScore.toFixed(1)}; it differs from the weighted sum of the stored model outputs shown above.</p>` : ''}
+        </div>` : '<p class="pm-sub mt-4">One or more model outputs are missing, so the composite cannot be decomposed.</p>'}`;
+      afterPaint(() => $('models').querySelectorAll('[data-w]').forEach(s => { s.style.width = `${Math.min(100, s.dataset.w)}%`; }));
     }
 
-    renderDrivers(
-      costContainer,
-      data.cost?.drivers || []
-    );
-
-    renderDrivers(
-      scheduleContainer,
-      data.schedule?.drivers || []
-    );
-
-  } catch (error) {
-    console.error('SHAP explanation failed:', error);
-
-    costContainer.innerHTML =
-      `<div class="text-xs text-red-500">Unable to load cost risk explanation.</div>`;
-
-    scheduleContainer.innerHTML =
-      `<div class="text-xs text-red-500">Unable to load schedule risk explanation.</div>`;
-  }
-}
-document.addEventListener('DOMContentLoaded', loadProjectData);
-
-loadSHAPExplanation();
-
-      // Risk model breakdown toggle
-      const riskBreakdownToggle = document.getElementById('risk-breakdown-toggle');
-      const riskBreakdown = document.getElementById('risk-breakdown');
-      const riskBreakdownIcon = document.getElementById('risk-breakdown-icon');
-
-      if (riskBreakdownToggle && riskBreakdown && riskBreakdownIcon) {
-        riskBreakdownToggle.addEventListener('click', () => {
-          const isHidden = riskBreakdown.classList.contains('hidden');
-
-          riskBreakdown.classList.toggle('hidden');
-
-          riskBreakdownToggle.setAttribute(
-            'aria-expanded',
-            String(isHidden)
-          );
-
-          riskBreakdownIcon.setAttribute(
-            'data-lucide',
-            isHidden ? 'chevron-up' : 'chevron-down'
-          );
-
-          if (window.lucide) {
-            lucide.createIcons();
-          }
-        });
+    // ------------------------------------------------------------------
+    // SHAP — loaded on demand only
+    // ------------------------------------------------------------------
+    const FEATURES = {
+      agency_overrun_rate: 'Agency overrun rate', sector_overrun_rate: 'Sector overrun rate',
+      agency_project_count_as_of_T: 'Agency project count', sector_project_count_as_of_T: 'Sector project count',
+      cost_growth_3m: 'Cost growth, 3 months', cost_growth_6m: 'Cost growth, 6 months', cost_growth_12m: 'Cost growth, 12 months',
+      expenditure_growth_3m: 'Expenditure growth, 3 months', expenditure_growth_6m: 'Expenditure growth, 6 months', expenditure_growth_12m: 'Expenditure growth, 12 months',
+      cost_revision_percentage: 'Cost revision', anticipated_cost_percentage: 'Anticipated cost change', anticipated_cost_crore: 'Anticipated cost',
+      original_cost_crore: 'Original cost', current_cost: 'Current cost', original_duration_months: 'Original planned duration',
+      project_duration_elapsed_percentage: 'Share of planned duration elapsed', schedule_progress_mismatch: 'Schedule vs progress mismatch',
+      anticipated_delay_from_original: 'Anticipated delay vs original', remaining_org_months: 'Months left on original schedule',
+      milestone_completion_percentage: 'Milestone completion', milestones_total: 'Total milestones', milestones_achieved: 'Milestones achieved',
+      milestone_progress_change_3m: 'Milestone progress, 3 months', milestone_progress_change_6m: 'Milestone progress, 6 months', milestone_progress_change_12m: 'Milestone progress, 12 months',
+      expenditure_progress_gap_org: 'Spend vs progress gap', expenditure_progress_gap_anti: 'Spend vs progress gap (anticipated)',
+      exp_vs_org_prct: 'Spend vs original cost', exp_vs_anti_prct: 'Spend vs anticipated cost', exp_vs_rev_prct: 'Spend vs revised cost',
+      project_age: 'Project age', duration_overrun_months: 'Duration overrun', year: 'Report year', month: 'Report month'
+    };
+    let currentSector = '';
+    const humanFeature = (f) => {
+      const m = /^sector_(.+)$/.exec(String(f || ''));
+      if (m && !FEATURES[f]) {
+        // One-hot sector indicator: the project is in exactly one sector.
+        const same = m[1].trim().toUpperCase() === String(currentSector).trim().toUpperCase();
+        return `Sector ${same ? 'is' : 'is not'} ${sectorName(m[1])}`;
       }
-      
+      return humanFeature0(f);
+    };
+    const humanFeature0 = (f) => FEATURES[f] || String(f || '').replace(/_as_of_T$/i, '').replace(/_/g, ' ').replace(/\bprct\b/g, '%').replace(/^\w/, c => c.toUpperCase());
+
+    function shapModelHTML(title, block) {
+      const drivers = (block?.drivers || []).filter(d => num(d.shap_value) !== null);
+      if (!drivers.length) return `<div class="shap-model"><p class="pm-title">${esc(title)}</p>${stateHTML({ kind: 'empty', title: 'No attribution returned', message: 'The model did not return drivers for this project.', inline: true })}</div>`;
+      const max = Math.max(...drivers.map(d => Math.abs(num(d.shap_value))), 1e-9);
+      return `<div class="shap-model">
+        <div class="flex items-baseline justify-between gap-3"><p class="pm-title">${esc(title)}</p><p class="pm-updated">${esc(block.model || '')} · top ${drivers.length}</p></div>
+        <div class="shap-axis-lbl" aria-hidden="true"><span>Factor</span><span>◀ Lowers risk</span><span>Raises risk ▶</span><span style="text-align:right">SHAP</span></div>
+        <ul>${drivers.map((d, i) => {
+          const v = num(d.shap_value), up = d.direction ? d.direction === 'increases_risk' : v > 0;
+          const w = (Math.abs(v) / max) * 100;
+          return `<li class="shap-row">
+            <span class="shap-name"><span data-dir="${up ? 'up' : 'down'}">${up ? icon('arrow-up-right') : ICON_DOWN}</span>
+              <span class="min-w-0"><span class="block truncate" title="${esc(d.feature)}">${esc(humanFeature(d.feature))}</span><small>${up ? 'Raises' : 'Lowers'} predicted risk</small></span></span>
+            <span class="shap-half neg">${up ? '' : `<span class="shap-bar" data-w="${w}" style="--d:${i * 60}ms"></span>`}</span>
+            <span class="shap-half pos">${up ? `<span class="shap-bar" data-w="${w}" style="--d:${i * 60}ms"></span>` : ''}</span>
+            <span class="shap-val pm-mono">${v > 0 ? '+' : ''}${v.toFixed(3)}</span>
+          </li>`;
+        }).join('')}</ul>
+      </div>`;
+    }
+
+    let shapCtl = null;
+    function loadSHAP() {
+      shapCtl?.abort();
+      shapCtl = new AbortController();
+      return PM.section($('shap'), {
+        loader: () => API.getProjectExplanation(projectId, { signal: shapCtl.signal }),
+        skeleton: `<div class="py-2">${PM.skeleton.lines(1)}${Array.from({ length: 5 }, () => '<div class="flex gap-4 items-center py-2"><div class="pm-skel pm-skel-line" style="width:30%"></div><div class="pm-skel" style="height:12px;flex:1"></div></div>').join('')}</div><p class="pm-sub">Computing SHAP attribution…</p>`,
+        isEmpty: d => !d || (!d.cost?.drivers?.length && !d.schedule?.drivers?.length),
+        empty: { title: 'No explanation available', message: 'The models returned no attribution for this project.' },
+        errorTitle: 'Model explanation unavailable',
+        render: (d, el) => {
+          el.innerHTML = shapModelHTML('Cost-overrun model', d.cost) + shapModelHTML('Schedule-delay model', d.schedule);
+          PM.stagger(el.querySelectorAll('.shap-model'), 90, 'pm-fade-swap');
+          afterPaint(() => el.querySelectorAll('.shap-bar').forEach(b => { b.style.width = `${b.dataset.w}%`; }));
+        }
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // Boot — /projects/{id}
+    // ------------------------------------------------------------------
+    function startWarnings() {
+      if (window.ProjectWarnings) window.ProjectWarnings.start();
+      else document.addEventListener('DOMContentLoaded', () => window.ProjectWarnings?.start(), { once: true });
+    }
+
+    async function loadProject() {
+      if (!projectId) {
+        showPageState({ kind: 'empty', title: 'Project not found', message: 'No project ID was given. Choose a project from the portfolio.' });
+        return;
+      }
+      try {
+        const p = await API.getProjectById(projectId, { cache: 'no-store' });
+        if (!p || !p.id) throw Object.assign(new Error('The requested record was not found.'), { status: 404 });
+        document.title = `${p.name || p.id} · PAIMANA`;
+        currentSector = p.sector || '';
+        $('crumb-name').textContent = p.name || p.id;
+        $('crumb-name').title = p.name || '';
+        renderIdentity(p);
+        renderRisk(p);
+        renderWhy(p);
+        renderCost(p);
+        renderSchedule(p);
+        renderModels(p);
+        PM.reveal();
+        $('shap-load')?.addEventListener('click', loadSHAP, { once: true });
+        startWarnings();
+      } catch (err) {
+        if (err?.status === 404) {
+          showPageState({ kind: 'empty', title: 'Project not found', message: `No project with ID “${projectId}” exists in the PAIMANA database.` });
+        } else {
+          console.warn('[PAIMANA] project failed:', err);
+          showPageState({ kind: 'error', title: 'Could not load this project', message: err?.message || 'Unexpected error.', retry: loadProject });
+        }
+      }
+    }
+    loadProject();
+  })();
   </script>
 </body>
-
 </html>

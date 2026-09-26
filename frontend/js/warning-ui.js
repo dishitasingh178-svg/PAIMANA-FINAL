@@ -44,7 +44,23 @@
     const d = new Date(text);
     return text && Number.isFinite(d.getTime()) ? d.toLocaleString() : 'Unavailable';
   };
-  const api = {safeText,safeNumber,safeArray,humanize,escape,normalize,fmt,date,classLabels,closed:item => ['RESOLVED','DISMISSED'].includes(item.workflow_status)};
+  // Presentation helpers (additive; existing exports above are unchanged).
+  const typeLabels = {ML_RISK_WARNING:'ML risk warning', RISK_DETERIORATION:'Risk deterioration', EXPENDITURE_ACCELERATION:'Expenditure acceleration', EXPENDITURE_PROGRESS_GAP:'Spend ahead of progress', MILESTONE_STAGNATION:'Milestone stagnation', COST_ESCALATION:'Cost escalation', SCHEDULE_SLIPPAGE:'Schedule slippage'};
+  const typeLabel = value => {
+    const key = safeText(value, '').toUpperCase();
+    if (Object.hasOwn(typeLabels, key)) return typeLabels[key];
+    const text = humanize(value).toLowerCase();
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+  // "[2022-05] ML risk warning: ..." -> {month:'2022-05', text:'ML risk warning: ...'}
+  const splitMonth = value => {
+    const text = safeText(value, '');
+    const m = /^\s*\[(\d{4}-\d{2})\]\s*/.exec(text);
+    return m ? {month:m[1], text:text.slice(m[0].length)} : {month:null, text};
+  };
+  const statusLabels = {NEW:'New', ACKNOWLEDGED:'Acknowledged', UNDER_REVIEW:'Under review', RESOLVED:'Resolved', DISMISSED:'Dismissed'};
+  const api = {safeText,safeNumber,safeArray,humanize,escape,normalize,fmt,date,classLabels,closed:item => ['RESOLVED','DISMISSED'].includes(item.workflow_status),
+    typeLabels, typeLabel, splitMonth, statusLabels};
   if (typeof module !== 'undefined') module.exports = api;
   else window.WarningUI = api;
 })();

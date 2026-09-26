@@ -3,10 +3,7 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
 
-/* Makes the map look cool and dark in dark mode */
-.dark .leaflet-tile-pane { 
-    filter: brightness(0.65) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3); 
-}
+/* Dark-mode maps use a native dark basemap (see dashboard.html), not a CSS filter. */
 
 /* ================= Mobile / responsive polish ================= */
 
@@ -25,7 +22,8 @@ html, body {
 
 /* Give the mobile sidebar drawer a visible shadow so it reads as an overlay */
 @media (max-width: 1023px) {
-  #sidebar {
+  /* Only while the drawer is open; a closed off-canvas drawer must not cast a shadow into view */
+  #sidebar:not(.-translate-x-full) {
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
   }
 }

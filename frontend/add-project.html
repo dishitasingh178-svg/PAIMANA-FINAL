@@ -1,1301 +1,1327 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PAIMANA AI - Add New Project</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Add Project Data · PAIMANA</title>
+  <meta name="description" content="Ingest a PAIMANA flash report PDF or a single project record and watch it flow through extraction, the database, the risk models and the early-warning engine.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif']
-          }
-        }
-      }
-    }
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };
   </script>
-
-  <!-- Prevent Flash of Unstyled Content -->
   <script>
-    if (
-      localStorage.getItem('theme') === 'dark' ||
-      (!('theme' in localStorage) &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches)
-    ) {
+    if (localStorage.getItem('theme') === 'dark' ||
+      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
   </script>
-
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
-  <link rel="stylesheet" href="css/custom.css">
-
   <!-- Administrator-only page: bounce a Project User session before anything renders -->
   <script>
     if (localStorage.getItem('paimana_role') === 'user') {
       window.location.replace('dashboard.html');
     }
   </script>
+  <link rel="stylesheet" href="/css/custom.css">
+  <link rel="stylesheet" href="/css/paimana.css">
+  <style>
+    /* ---------- Mode switch ---------- */
+    .mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 13px;
+      background: var(--pm-surface-2); border: 1px solid var(--pm-line); }
+    @media (min-width: 768px) { .mode-switch { display: inline-grid; grid-template-columns: 280px 280px; } }
+    .mode-btn { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; text-align: left;
+      color: var(--pm-muted); border: 1px solid transparent; transition: background .16s var(--pm-ease), color .16s, border-color .16s, box-shadow .16s; }
+    .mode-btn:hover { color: var(--pm-text); }
+    .mode-btn[aria-pressed="true"] { background: var(--pm-surface); color: var(--pm-text); border-color: var(--pm-line-strong); box-shadow: var(--pm-shadow); }
+    .mode-ico { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none;
+      background: var(--pm-surface-hover); color: var(--pm-muted); transition: background .16s, color .16s; }
+    .mode-ico svg { width: 16px; height: 16px; }
+    .mode-btn[aria-pressed="true"] .mode-ico { background: var(--pm-accent-soft); color: var(--pm-accent); box-shadow: inset 0 0 0 1px var(--pm-accent-line); }
+    .mode-name { font-size: 13px; font-weight: 650; line-height: 1.25; }
+    .mode-desc { font-size: 11.5px; color: var(--pm-muted); margin-top: 1px; }
+    @media (max-width: 480px) { .mode-desc { display: none; } .mode-ico { width: 28px; height: 28px; } }
+
+    /* ---------- Drop zone ---------- */
+    .dz { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+      gap: 6px; padding: 40px 20px; border-radius: 12px; cursor: pointer; background: var(--pm-surface-2);
+      border: 1.5px dashed var(--pm-line-strong); transition: border-color .16s var(--pm-ease), background .16s var(--pm-ease); }
+    .dz:hover, .dz:focus-visible { border-color: var(--pm-accent); background: var(--pm-accent-soft); outline: none; }
+    .dz:focus-visible { box-shadow: 0 0 0 3px var(--pm-accent-soft); }
+    .dz.is-drag { border-style: solid; border-color: var(--pm-accent); background: var(--pm-accent-soft); }
+    .dz.is-drag .dz-ico { transform: translateY(-3px); }
+    .dz-ico { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 6px;
+      color: var(--pm-accent); background: var(--pm-accent-soft); box-shadow: inset 0 0 0 1px var(--pm-accent-line); transition: transform .2s var(--pm-ease-out); }
+    .dz-ico svg { width: 21px; height: 21px; }
+    .dz-title { font-size: 14px; font-weight: 650; color: var(--pm-text); }
+    .dz-hint { font-size: 12.5px; color: var(--pm-muted); }
+    .dz-link { color: var(--pm-accent); font-weight: 600; }
+    .dz-meta { font-size: 11px; color: var(--pm-faint); margin-top: 6px; }
+
+    .file-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 11px; border: 1px solid var(--pm-line); background: var(--pm-surface-2); }
+    .file-ico { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; flex: none; color: var(--pm-critical); background: var(--pm-critical-bg); font: 700 9.5px/1 Inter, sans-serif; letter-spacing: .04em; }
+    .inline-msg { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border-radius: 10px; font-size: 12.5px; line-height: 1.5;
+      color: var(--pm-text-2); background: var(--pm-critical-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-critical) 25%, transparent); }
+    .inline-msg > svg { width: 16px; height: 16px; flex: none; color: var(--pm-critical); margin-top: 1px; }
+
+    /* ---------- Job header + overall progress ---------- */
+    .ov-bar { height: 6px; border-radius: 99px; background: var(--pm-surface-hover); overflow: hidden; }
+    .ov-bar > span { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--pm-accent); transition: width .5s var(--pm-ease-out), background .3s; }
+    [data-phase="done"] .ov-bar > span { background: var(--pm-ok); }
+    [data-phase="failed"] .ov-bar > span { background: var(--pm-critical-fill); }
+    .job-pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 99px; font-size: 11px; font-weight: 700;
+      letter-spacing: .03em; color: var(--pm-accent); background: var(--pm-accent-soft); box-shadow: inset 0 0 0 1px var(--pm-accent-line); white-space: nowrap; }
+    .job-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    [data-phase="done"] .job-pill { color: var(--pm-ok); background: color-mix(in srgb, var(--pm-ok) 11%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-ok) 30%, transparent); }
+    [data-phase="failed"] .job-pill { color: var(--pm-critical); background: var(--pm-critical-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-critical) 30%, transparent); }
+
+    /* ---------- Stage rail ---------- */
+    .rail { list-style: none; margin: 0; padding: 0; }
+    .st { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: 14px; padding-bottom: 14px; }
+    .st:last-child { padding-bottom: 0; }
+    .st::before { content: ""; position: absolute; left: 13.5px; top: 32px; bottom: 4px; width: 1px; background: var(--pm-line-strong); transition: background .4s var(--pm-ease); }
+    .st:last-child::before { display: none; }
+    .st[data-status="done"]::before, .st[data-status="skipped"]::before { background: color-mix(in srgb, var(--pm-ok) 45%, var(--pm-line)); }
+
+    .node { position: relative; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; flex: none;
+      background: var(--pm-surface); box-shadow: inset 0 0 0 1.5px var(--pm-line-strong); color: var(--pm-faint); transition: background .3s var(--pm-ease), box-shadow .3s, color .3s; }
+    .node svg { width: 14px; height: 14px; }
+    .node .n-num { font: 700 10.5px/1 Inter, sans-serif; font-variant-numeric: tabular-nums; }
+    .node .n-check, .node .n-x, .node .n-dash, .node .n-spin { position: absolute; inset: 0; margin: auto; opacity: 0; transition: opacity .2s; }
+    .node .n-check path { stroke-dasharray: 24; stroke-dashoffset: 24; transition: stroke-dashoffset .45s var(--pm-ease-out) .05s; }
+    .node .n-spin { width: 28px; height: 28px; }
+    .node[data-s="running"] { color: var(--pm-accent); box-shadow: inset 0 0 0 1.5px var(--pm-accent-line); background: var(--pm-surface); }
+    .node[data-s="running"]::after { content: ""; position: absolute; inset: 0; margin: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--pm-accent); }
+    .lane .node[data-s="running"]::after { width: 6px; height: 6px; }
+    .node[data-s="running"] .n-spin { opacity: 1; animation: st-spin 1.1s linear infinite; }
+    .node[data-s="done"] { background: var(--pm-ok); box-shadow: none; color: #fff; }
+    html.dark .node[data-s="done"] { color: #04150e; }
+    .node[data-s="done"] .n-check { opacity: 1; }
+    .node[data-s="done"] .n-check path { stroke-dashoffset: 0; }
+    .node[data-s="failed"] { background: var(--pm-critical-fill); box-shadow: none; color: #fff; }
+    .node[data-s="failed"] .n-x { opacity: 1; }
+    .node[data-s="skipped"] { background: var(--pm-surface-hover); color: var(--pm-muted); }
+    .node[data-s="skipped"] .n-dash { opacity: 1; }
+    .node:not([data-s="pending"]) .n-num { opacity: 0; }
+    @keyframes st-spin { to { transform: rotate(360deg); } }
+
+    .st-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 28px; width: 100%; text-align: left; border-radius: 7px; }
+    button.st-head:not(:disabled) { cursor: pointer; }
+    button.st-head:disabled { cursor: default; color: inherit; }
+    button.st-head:not(:disabled):hover .st-label { color: var(--pm-accent); }
+    .st-label { font-size: 13.5px; font-weight: 650; color: var(--pm-text); transition: color .2s; }
+    .st-main[data-s="pending"] .st-label { color: var(--pm-faint); font-weight: 600; }
+    .st-meta { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pm-faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .st-meta svg { width: 13px; height: 13px; transition: transform .2s var(--pm-ease); }
+    [aria-expanded="true"] .st-meta svg { transform: rotate(90deg); }
+    .st-main[data-s="running"] .st-meta { color: var(--pm-accent); font-weight: 600; }
+    .st-main[data-s="failed"] .st-meta { color: var(--pm-critical); font-weight: 600; }
+    .st-sum { font-size: 12.5px; color: var(--pm-muted); line-height: 1.45; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .st-sum:empty { display: none; }
+    .st-main[data-s="running"] .st-sum, .st-main[data-s="failed"] .st-sum { display: none; }
+
+    /* Expanding body: grid 0fr -> 1fr animates height without measuring */
+    .st-body { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .38s var(--pm-ease-out), opacity .3s var(--pm-ease); }
+    .st-body > div { overflow: hidden; min-height: 0; }
+    .is-open > .st-body { grid-template-rows: 1fr; opacity: 1; }
+    .st-msg { font-size: 12.5px; color: var(--pm-text-2); margin-top: 4px; line-height: 1.45; overflow-wrap: anywhere; }
+    .st-prog { display: flex; align-items: center; gap: 10px; margin-top: 9px; max-width: 420px; }
+    .st-prog .ov-bar { flex: 1; height: 4px; }
+    .st-prog .ov-bar > span { transition: width .35s var(--pm-ease-out); }
+    .st-pct { font-size: 11px; font-weight: 700; color: var(--pm-text); font-variant-numeric: tabular-nums; min-width: 34px; text-align: right; }
+    .st-details { list-style: none; margin: 8px 0 2px; padding: 0 0 0 1px; display: flex; flex-direction: column; gap: 4px; }
+    .st-details li { position: relative; padding-left: 14px; font-size: 12px; color: var(--pm-muted); line-height: 1.45; overflow-wrap: anywhere; }
+    .st-details li::before { content: ""; position: absolute; left: 1px; top: 7px; width: 5px; height: 5px; border-radius: 50%; background: var(--pm-line-strong); }
+    .st-main[data-s="running"] .st-details li:last-child::before { background: var(--pm-accent); }
+    .st-details li.is-new { animation: st-line .4s var(--pm-ease-out) both; }
+    @keyframes st-line { from { opacity: 0; transform: translateY(3px); } }
+    .st-error { margin-top: 8px; }
+
+    /* Parallel lanes: ML predictions + early-warning generation */
+    .fork { margin-top: 6px; display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 640px) { .fork { grid-template-columns: 1fr 1fr; } }
+    .fork-note { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pm-faint); }
+    .fork-note svg { width: 13px; height: 13px; }
+    .lane { border: 1px solid var(--pm-line); border-radius: 11px; padding: 11px 12px 12px; background: var(--pm-surface-2); min-width: 0; transition: border-color .3s var(--pm-ease), background .3s; }
+    .lane[data-status="running"] { border-color: var(--pm-accent-line); background: color-mix(in srgb, var(--pm-accent-soft) 60%, var(--pm-surface-2)); }
+    .lane[data-status="failed"] { border-color: color-mix(in srgb, var(--pm-critical) 35%, transparent); }
+    .lane-top { display: flex; align-items: flex-start; gap: 10px; }
+    .lane .node { width: 22px; height: 22px; }
+    .lane .node svg { width: 12px; height: 12px; }
+    .lane .node .n-spin { width: 22px; height: 22px; }
+    .lane .st-head { min-height: 22px; }
+    .lane .st-label { font-size: 13px; }
+    .lane .st-sum { white-space: normal; }
+
+    /* ---------- Impact chain (live counters) ---------- */
+    .chain { list-style: none; margin: 0; padding: 0; }
+    .ch { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; column-gap: 12px; align-items: start; padding: 12px 0; }
+    .ch + .ch { border-top: 1px solid var(--pm-line); }
+    .ch-ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--pm-faint); background: var(--pm-surface-2);
+      box-shadow: inset 0 0 0 1px var(--pm-line); transition: color .3s, background .3s, box-shadow .3s; }
+    .ch-ico svg { width: 16px; height: 16px; }
+    .ch-label { font-size: 12.5px; font-weight: 650; color: var(--pm-text-2); line-height: 1.3; }
+    .ch-sub { font-size: 11.5px; color: var(--pm-muted); margin-top: 3px; line-height: 1.45; }
+    .ch-val { font-size: 22px; font-weight: 750; letter-spacing: -.02em; color: var(--pm-faint); font-variant-numeric: tabular-nums; text-align: right; line-height: 1.1; white-space: nowrap; transition: color .3s; }
+    .ch-val small { font-size: 12px; font-weight: 600; color: var(--pm-muted); margin-left: 2px; letter-spacing: 0; }
+    .ch-unit { font-size: 10.5px; color: var(--pm-faint); text-align: right; margin-top: 3px; white-space: nowrap; }
+    .ch[data-state="active"] .ch-ico { color: var(--pm-accent); background: var(--pm-accent-soft); box-shadow: inset 0 0 0 1px var(--pm-accent-line); }
+    .ch[data-state="done"] .ch-ico { color: var(--pm-ok); background: color-mix(in srgb, var(--pm-ok) 10%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-ok) 28%, transparent); }
+    .ch[data-state="failed"] .ch-ico { color: var(--pm-critical); background: var(--pm-critical-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-critical) 28%, transparent); }
+    .ch[data-state="active"] .ch-val, .ch[data-state="done"] .ch-val, .ch.has-val .ch-val { color: var(--pm-text); }
+    .ch[data-state="idle"] .ch-label, .ch[data-state="skipped"] .ch-label { color: var(--pm-muted); }
+    .ch-val.bump { animation: ch-bump .5s var(--pm-ease-out); }
+    @keyframes ch-bump { 30% { color: var(--pm-accent); } }
+
+    /* ---------- Event stream (proof layer) ---------- */
+    .log > summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 14px 20px; cursor: pointer; }
+    .log > summary::-webkit-details-marker { display: none; }
+    .log > summary .chev { transition: transform .2s var(--pm-ease); color: var(--pm-muted); }
+    .log[open] > summary .chev { transform: rotate(90deg); }
+    .log-body { margin: 0 12px 12px; border-radius: 10px; background: #0b1019; border: 1px solid #1c2535; max-height: 300px; overflow: auto; padding: 10px 0; }
+    .log-line { display: grid; grid-template-columns: 92px 34px 118px minmax(0, 1fr); gap: 10px; padding: 1px 14px; font-size: 11.5px; line-height: 1.65; color: #aeb9c9; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .log-line:hover { background: rgba(255, 255, 255, .03); }
+    .log-t { color: #5d6a7e; }
+    .log-id { color: #5d6a7e; text-align: right; }
+    .log-p { color: #7dd3fc; }
+    .log-line[data-kind="ok"] .log-m { color: #6ee7b7; }
+    .log-line[data-kind="ok"] .log-p { color: #6ee7b7; }
+    .log-line[data-kind="err"] .log-m, .log-line[data-kind="err"] .log-p { color: #fca5a5; }
+    .log-line[data-kind="db"] .log-p { color: #fcd34d; }
+    .log-line[data-kind="dim"] .log-m { color: #8b97a9; }
+    @media (max-width: 640px) { .log-line { grid-template-columns: 62px minmax(0, 1fr); } .log-id, .log-p { display: none; } }
+
+    /* ---------- Summary ---------- */
+    .sum-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--pm-line); }
+    @media (min-width: 900px) { .sum-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+    .sum-cell { padding: 16px 20px; border-bottom: 1px solid var(--pm-line); min-width: 0; }
+    .sum-cell:nth-child(2n) { border-left: 1px solid var(--pm-line); }
+    @media (min-width: 900px) { .sum-cell { border-bottom: 0; } .sum-cell + .sum-cell { border-left: 1px solid var(--pm-line); } }
+    .sum-cell .pm-kpi-value { font-size: 26px; margin-top: 6px; }
+    .ok-tile { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none; color: var(--pm-ok);
+      background: color-mix(in srgb, var(--pm-ok) 11%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pm-ok) 28%, transparent); }
+    .ok-tile svg { width: 18px; height: 18px; }
+    .ok-tile path { stroke-dasharray: 24; stroke-dashoffset: 24; animation: draw .5s var(--pm-ease-out) .15s forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    .sev-chip { display: inline-flex; align-items: center; gap: 8px; }
+    .err-list { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow: auto; border: 1px solid var(--pm-line); border-radius: 10px; }
+    .err-list li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding: 8px 12px; font-size: 12px; color: var(--pm-text-2); }
+    .err-list li + li { border-top: 1px solid var(--pm-line); }
+
+    /* ---------- Manual form ---------- */
+    .fset { border: 0; margin: 0; padding: 0; min-width: 0; }
+    .fset + .fset { border-top: 1px solid var(--pm-line); padding-top: 22px; margin-top: 22px; }
+    .fset legend { padding: 0; float: left; width: 100%; }
+    .fset legend + * { clear: both; }
+    .flabel { display: block; font-size: 12px; font-weight: 600; color: var(--pm-text-2); margin-bottom: 6px; }
+    .flabel .req { color: var(--pm-accent); }
+    .fhint { font-size: 11px; color: var(--pm-faint); margin-top: 5px; }
+    .pm-input.w-full, .pm-select.w-full { width: 100%; }
+    .pm-input:invalid:not(:placeholder-shown), .was-validated .pm-input:invalid { border-color: var(--pm-critical); }
+    #pdfResult:focus, #resultCard:focus, [data-failure]:focus, #formError:focus { outline: none; }
+    .sticky-col { position: sticky; top: 88px; }
+    @media (max-width: 1023px) { .sticky-col { position: static; } }
+  </style>
 </head>
 
-<body
-  class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
-
-  <!-- Mobile sidebar backdrop -->
+<body class="pm-app flex min-h-screen antialiased">
+  <a href="#main" class="pm-skip">Skip to content</a>
   <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden"></div>
+  <aside id="sidebar" data-pm-shell
+    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 flex flex-col justify-between p-4 shrink-0 overflow-y-auto"></aside>
 
-  <!-- ================= SIDEBAR ================= -->
-  <aside id="sidebar"
-    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200 overflow-y-auto">
-
-    <div>
-
-      <div class="flex items-center gap-3 mb-10 pl-2">
-        <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
-          <i data-lucide="shield-alert" class="w-5 h-5"></i>
-        </div>
-
-        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
-          PAIMANA AI
-        </span>
-      </div>
-
-      <nav class="space-y-1 text-sm font-medium">
-
-        <a href="dashboard.html" data-hover-lift
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-          Overview
-        </a>
-
-        <a href="projects.html" data-hover-lift
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="folder-kanban" class="w-4 h-4"></i>
-          Projects
-        </a>
-
-        <a href="add-project.html" data-role="admin"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i>
-          Add Project
-        </a>
-
-        <a href="risk-analytics.html" data-hover-lift
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="line-chart" class="w-4 h-4"></i>
-          Risk Analytics
-        </a>
-
-        <a href="early-warnings.html" data-hover-lift
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="bell" class="w-4 h-4"></i>
-          Early Warnings
-        </a>
-
-        <a href="ai-assistant.html" data-hover-lift
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="bot" class="w-4 h-4"></i>
-          AI Assistant
-        </a>
-
-      </nav>
-    </div>
-  </aside>
-
-
-  <!-- ================= MAIN CONTENT ================= -->
-  <main class="flex-1 flex flex-col overflow-y-auto h-screen min-w-0">
-
-    <header
-      class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-4 md:px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
-
+  <main id="main" class="flex-1 flex flex-col h-screen overflow-y-auto min-w-0">
+    <header class="pm-header">
       <div class="flex items-center gap-3 min-w-0">
-        <button id="sidebar-toggle"
-          class="lg:hidden shrink-0 p-2 -ml-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-          <i data-lucide="menu" class="w-5 h-5"></i>
+        <button id="sidebar-toggle" type="button" class="lg:hidden pm-btn pm-btn-ghost pm-icon-btn -ml-2" aria-label="Open navigation">
+          <span data-icon="menu" class="w-5 h-5"></span>
         </button>
         <div class="min-w-0">
-          <h1 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white truncate">
-            Project Ingestion & Analysis
-          </h1>
-
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden sm:block">
-            Upload new project details to generate an instant ML risk prediction.
-          </p>
+          <p class="pm-eyebrow">Ingest</p>
+          <h1 class="pm-page-title truncate">Project ingestion &amp; analysis</h1>
         </div>
       </div>
-
-      <!-- Theme Toggle -->
-      <button id="theme-toggle"
-        class="shrink-0 p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-
-        <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
-
-        <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
-
-      </button>
-
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="pm-updated hidden md:inline">Administrator workspace</span>
+        <button id="theme-toggle" type="button" class="pm-btn pm-btn-ghost pm-icon-btn" aria-label="Toggle theme">
+          <span id="theme-dark-icon" data-icon="moon" class="w-4 h-4 hidden"></span>
+          <span id="theme-light-icon" data-icon="sun" class="w-4 h-4 hidden"></span>
+        </button>
+      </div>
     </header>
 
+    <div class="px-4 md:px-8 py-6 md:py-8">
+      <div class="max-w-[1320px] mx-auto space-y-6">
 
-    <div class="p-4 md:p-8 max-w-4xl mx-auto w-full space-y-6">
-      <!-- ================= INGESTION METHOD ================= -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- ============ Intro + ingestion method ============ -->
+        <section class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4 pm-enter" aria-labelledby="intro-title">
+          <div class="max-w-2xl">
+            <h2 id="intro-title" class="text-[15px] font-semibold" style="color:var(--pm-text)">Bring new monitoring data into PAIMANA</h2>
+            <p class="pm-page-sub leading-relaxed">A PAIMANA flash report is parsed, written to the project database, scored by the cost, schedule and survival models,
+              and checked by the early-warning engine. Every step below is reported live by the backend.</p>
+          </div>
+          <div class="mode-switch" role="group" aria-label="Ingestion method">
+            <button type="button" id="pdfModeBtn" class="mode-btn ingestion-mode-btn" aria-pressed="true" aria-controls="pdfUploadSection">
+              <span class="mode-ico" data-ic="file-up"></span>
+              <span class="min-w-0"><span class="mode-name block">Through PDF</span><span class="mode-desc block">Upload a PAIMANA flash report</span></span>
+            </button>
+            <button type="button" id="detailsModeBtn" class="mode-btn ingestion-mode-btn" aria-pressed="false" aria-controls="projectForm">
+              <span class="mode-ico" data-ic="pen-line"></span>
+              <span class="min-w-0"><span class="mode-name block">Through details</span><span class="mode-desc block">Enter one project manually</span></span>
+            </button>
+          </div>
+        </section>
 
-        <!-- Through Details -->
-        <button
-          type="button"
-          id="detailsModeBtn"
-          class="ingestion-mode-btn border-2 border-orange-500 bg-orange-500/10 rounded-xl p-5 text-left transition-all">
+        <!-- ================= PDF INGESTION ================= -->
+        <section id="pdfUploadSection" data-phase="idle" aria-labelledby="pdf-title" class="space-y-6">
+          <p id="announcer" class="pm-sr-only" aria-live="polite" aria-atomic="true"></p>
 
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-10 h-10 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center">
-              <i data-lucide="file-pen-line" class="w-5 h-5"></i>
+          <!-- Completion summary (job_completed.result) -->
+          <div id="pdfResult" class="pm-card hidden" tabindex="-1" aria-labelledby="pdfResultTitle"></div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <!-- Left: upload / live pipeline -->
+            <div class="lg:col-span-7 xl:col-span-8 space-y-6 min-w-0">
+              <div class="pm-card pm-card-pad" id="pdfCard">
+                <div class="pm-card-head" style="margin-bottom:14px">
+                  <div class="min-w-0">
+                    <p class="pm-eyebrow" id="pdfEyebrow">Step 1 · Document</p>
+                    <h2 id="pdf-title" class="pm-title mt-1">Upload a PAIMANA PDF</h2>
+                    <p class="pm-sub" id="pdfSub">Project records are extracted from the report and added to the database, then scored.</p>
+                  </div>
+                  <span id="jobPill" class="job-pill hidden">Processing</span>
+                </div>
+
+                <!-- Idle / selected -->
+                <div id="pickArea">
+                  <div id="dropZone" class="dz" role="button" tabindex="0" aria-describedby="dzHint"
+                    aria-label="Choose a PAIMANA PDF. Press Enter to browse, or drop a file here.">
+                    <span class="dz-ico" data-ic="file-up"></span>
+                    <p class="dz-title">Drop a PAIMANA PDF here</p>
+                    <p class="dz-hint" id="dzHint">or <span class="dz-link">browse your files</span> · PDF only, up to 25 MB</p>
+                    <label for="projectPdf" class="pm-sr-only">PAIMANA project PDF</label>
+                    <input type="file" id="projectPdf" name="projectPdf" accept=".pdf,application/pdf" class="pm-sr-only" tabindex="-1">
+                  </div>
+
+                  <div id="fileRow" class="file-row hidden mt-0">
+                    <span class="file-ico" aria-hidden="true">PDF</span>
+                    <div class="min-w-0 flex-1">
+                      <p id="selectedPdfName" class="text-[13px] font-semibold truncate" style="color:var(--pm-text)"></p>
+                      <p id="selectedPdfMeta" class="pm-updated mt-0.5"></p>
+                    </div>
+                    <button type="button" id="changePdfBtn" class="pm-btn pm-btn-ghost pm-btn-sm">Change</button>
+                    <button type="button" id="removePdfBtn" class="pm-btn pm-btn-ghost pm-icon-btn pm-btn-sm" style="width:30px" aria-label="Remove selected file"><span data-icon="x" class="w-4 h-4"></span></button>
+                  </div>
+
+                  <div id="pdfStatus" class="inline-msg hidden mt-4" role="alert"></div>
+
+                  <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 mt-5">
+                    <p class="pm-updated whitespace-normal">A successful upload writes to the live database.</p>
+                    <button type="button" id="uploadPdfBtn" class="pm-btn pm-btn-primary" disabled>
+                      <span data-ic="upload" class="w-4 h-4 inline-block"></span><span>Upload &amp; process</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Running / done / failed: job header, overall progress and stage rail -->
+                <div id="pdfPipeline" class="hidden">
+                  <div class="file-row">
+                    <span class="file-ico" aria-hidden="true">PDF</span>
+                    <div class="min-w-0 flex-1">
+                      <p id="jobFile" class="text-[13px] font-semibold truncate" style="color:var(--pm-text)"></p>
+                      <p class="pm-updated mt-0.5 truncate"><span id="pdfPipelineJob" class="pm-mono">Uploading…</span></p>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <p id="pdfPipelinePercent" class="pm-num text-[18px] font-bold leading-none" style="color:var(--pm-text)">0%</p>
+                      <p class="pm-updated mt-1">overall</p>
+                    </div>
+                  </div>
+                  <div class="ov-bar mt-3" role="progressbar" aria-label="Overall processing progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="pdfPipelineBarWrap"><span id="pdfPipelineBar"></span></div>
+                  <p id="pdfPipelineMessage" class="text-[12.5px] mt-2.5 leading-snug" style="color:var(--pm-muted)">Uploading PDF…</p>
+
+                  <ol id="pdfStages" class="rail mt-6" aria-label="Processing stages"></ol>
+
+                  <div id="pipelineError" class="hidden mt-5"></div>
+
+                  <div id="pipelineActions" class="hidden mt-6 pt-5 flex flex-wrap gap-2" style="border-top:1px solid var(--pm-line)">
+                    <button type="button" id="anotherPdfBtn" class="pm-btn pm-btn-sm"><span data-icon="file-up" class="w-3.5 h-3.5"></span>Process another PDF</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Proof layer: raw SSE events -->
+              <details id="pdfLogWrap" class="pm-card log hidden">
+                <summary>
+                  <span data-ic="terminal" class="w-4 h-4 inline-block" style="color:var(--pm-muted)"></span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-[13px] font-semibold" style="color:var(--pm-text)">Backend event stream</span>
+                    <span class="block pm-updated truncate">SSE <span class="pm-mono">/api/v1/jobs/<span id="logJobId">…</span>/events</span> · mirrored in the browser console</span>
+                  </span>
+                  <span id="logCount" class="pm-updated">0 events</span>
+                  <span data-icon="chevron-right" class="w-4 h-4 chev"></span>
+                </summary>
+                <div id="pdfLog" class="log-body pm-mono" role="log" aria-label="Backend event stream"></div>
+              </details>
             </div>
 
-            <div>
-              <h3 class="font-semibold text-slate-900 dark:text-white">
-                Through Details
-              </h3>
+            <!-- Right: impact chain, driven by event counters -->
+            <aside class="lg:col-span-5 xl:col-span-4 min-w-0 sticky-col" aria-labelledby="chain-title">
+              <div class="pm-card pm-card-pad">
+                <div class="pm-card-head" style="margin-bottom:4px">
+                  <div>
+                    <p class="pm-eyebrow">Impact chain</p>
+                    <h2 id="chain-title" class="pm-title mt-1">What this upload changes</h2>
+                    <p class="pm-sub" id="chainSub">Counts fill in from the job's live counters.</p>
+                  </div>
+                </div>
+                <ol id="chain" class="chain"></ol>
+              </div>
+            </aside>
+          </div>
+        </section>
 
-              <p class="text-xs text-slate-500 dark:text-slate-400">
-                Enter project information manually
-              </p>
+        <!-- ================= MANUAL PROJECT FORM ================= -->
+        <form id="projectForm" class="pm-card hidden" novalidate aria-labelledby="form-title">
+          <div class="pm-card-pad" style="border-bottom:1px solid var(--pm-line)">
+            <p class="pm-eyebrow">Manual entry</p>
+            <h2 id="form-title" class="pm-title mt-1">Add one project and score it</h2>
+            <p class="pm-sub">Creates the project record, then runs the risk models for its report month. Only the project ID is required.</p>
+          </div>
+
+          <div class="pm-card-pad">
+            <fieldset class="fset">
+              <legend class="pm-eyebrow mb-4">1 · Project identity</legend>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                <div>
+                  <label for="project_id" class="flabel">Project ID <span class="req" aria-hidden="true">*</span><span class="pm-sr-only">(required)</span></label>
+                  <input type="text" id="project_id" name="project_id" placeholder="Enter project ID" required aria-describedby="project_id_hint" class="pm-input w-full">
+                  <p id="project_id_hint" class="fhint">Unique identifier used across PAIMANA.</p>
+                </div>
+                <div>
+                  <label for="project_name" class="flabel">Project name</label>
+                  <input type="text" id="project_name" name="project_name" placeholder="Enter project name" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="implementing_agency" class="flabel">Implementing agency</label>
+                  <input type="text" id="implementing_agency" name="implementing_agency" placeholder="Enter implementing agency" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="sector" class="flabel">Sector</label>
+                  <select id="sector" name="sector" class="pm-select w-full">
+                    <option value="">Select sector</option>
+                    <option value="STEEL">Steel</option>
+                    <option value="RAILWAYS">Railways</option>
+                    <option value="POWER">Power</option>
+                    <option value="ROAD TRANSPORT & HIGHWAYS">Road Transport &amp; Highways</option>
+                    <option value="PETROLEUM">Petroleum</option>
+                    <option value="COAL">Coal</option>
+                  </select>
+                </div>
+                <div class="md:col-span-2">
+                  <label for="state" class="flabel">State</label>
+                  <select id="state" name="state" class="pm-select w-full">
+                    <option value="">Select state</option>
+                    <option value="ANDHRA PRADESH">Andhra Pradesh</option>
+                    <option value="ARUNACHAL PRADESH">Arunachal Pradesh</option>
+                    <option value="ASSAM">Assam</option>
+                    <option value="BIHAR">Bihar</option>
+                    <option value="CHHATTISGARH">Chhattisgarh</option>
+                    <option value="GOA">Goa</option>
+                    <option value="GUJARAT">Gujarat</option>
+                    <option value="HARYANA">Haryana</option>
+                    <option value="HIMACHAL PRADESH">Himachal Pradesh</option>
+                    <option value="JHARKHAND">Jharkhand</option>
+                    <option value="KARNATAKA">Karnataka</option>
+                    <option value="KERALA">Kerala</option>
+                    <option value="MADHYA PRADESH">Madhya Pradesh</option>
+                    <option value="MAHARASHTRA">Maharashtra</option>
+                    <option value="MANIPUR">Manipur</option>
+                    <option value="MEGHALAYA">Meghalaya</option>
+                    <option value="MIZORAM">Mizoram</option>
+                    <option value="NAGALAND">Nagaland</option>
+                    <option value="ODISHA">Odisha</option>
+                    <option value="PUNJAB">Punjab</option>
+                    <option value="RAJASTHAN">Rajasthan</option>
+                    <option value="SIKKIM">Sikkim</option>
+                    <option value="TAMIL NADU">Tamil Nadu</option>
+                    <option value="TELANGANA">Telangana</option>
+                    <option value="TRIPURA">Tripura</option>
+                    <option value="UTTAR PRADESH">Uttar Pradesh</option>
+                    <option value="UTTARAKHAND">Uttarakhand</option>
+                    <option value="WEST BENGAL">West Bengal</option>
+                    <option value="ANDAMAN AND NICOBAR ISLANDS">Andaman and Nicobar Islands</option>
+                    <option value="CHANDIGARH">Chandigarh</option>
+                    <option value="DADRA AND NAGAR HAVELI AND DAMAN AND DIU">Dadra and Nagar Haveli and Daman and Diu</option>
+                    <option value="DELHI">Delhi</option>
+                    <option value="JAMMU AND KASHMIR">Jammu and Kashmir</option>
+                    <option value="LADAKH">Ladakh</option>
+                    <option value="LAKSHADWEEP">Lakshadweep</option>
+                    <option value="PUDUCHERRY">Puducherry</option>
+                    <option value="MULTIPLE STATES">Multiple States</option>
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fset">
+              <legend class="pm-eyebrow mb-4">2 · Timeline &amp; schedule</legend>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                <div>
+                  <label for="date_of_approval" class="flabel">Date of approval</label>
+                  <input type="date" id="date_of_approval" name="date_of_approval" aria-describedby="doa_hint" class="pm-input w-full">
+                  <p id="doa_hint" class="fhint">Its month becomes the prediction's report month (current month if empty).</p>
+                </div>
+                <div>
+                  <label for="original_commissioning_date" class="flabel">Original commissioning date</label>
+                  <input type="date" id="original_commissioning_date" name="original_commissioning_date" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="revised_commissioning_date" class="flabel">Revised commissioning date</label>
+                  <input type="date" id="revised_commissioning_date" name="revised_commissioning_date" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="anticipated_commissioning_date" class="flabel">Anticipated commissioning date</label>
+                  <input type="date" id="anticipated_commissioning_date" name="anticipated_commissioning_date" class="pm-input w-full">
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="fset">
+              <legend class="pm-eyebrow mb-4">3 · Financial &amp; physical progress</legend>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                <div>
+                  <label for="original_cost_crore" class="flabel">Original cost (₹ Cr)</label>
+                  <input type="number" step="any" id="original_cost_crore" name="original_cost_crore" placeholder="Optional" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="revised_cost_crore" class="flabel">Revised cost (₹ Cr)</label>
+                  <input type="number" step="any" id="revised_cost_crore" name="revised_cost_crore" placeholder="Optional" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="anticipated_cost_crore" class="flabel">Anticipated cost (₹ Cr)</label>
+                  <input type="number" step="any" id="anticipated_cost_crore" name="anticipated_cost_crore" placeholder="Optional" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="cumulative_expenditure_crore" class="flabel">Cumulative expenditure (₹ Cr)</label>
+                  <input type="number" step="any" id="cumulative_expenditure_crore" name="cumulative_expenditure_crore" placeholder="Optional" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="delay_original_months" class="flabel">Delay w.r.t. original (months)</label>
+                  <input type="number" step="any" id="delay_original_months" name="delay_original_months" placeholder="Optional" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="delay_revised_months" class="flabel">Delay w.r.t. revised (months)</label>
+                  <input type="number" step="any" id="delay_revised_months" name="delay_revised_months" placeholder="Optional" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="milestones_achieved" class="flabel">Milestones achieved</label>
+                  <input type="number" step="1" id="milestones_achieved" name="milestones_achieved" placeholder="Optional" class="pm-input w-full">
+                </div>
+                <div>
+                  <label for="milestones_total" class="flabel">Milestones total</label>
+                  <input type="number" step="1" id="milestones_total" name="milestones_total" placeholder="Optional" class="pm-input w-full">
+                </div>
+              </div>
+            </fieldset>
+
+            <div id="formError" class="inline-msg hidden mt-6" role="alert"></div>
+
+            <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 mt-7 pt-5" style="border-top:1px solid var(--pm-line)">
+              <p class="pm-updated whitespace-normal">Submitting writes the project to the live database and stores a prediction.</p>
+              <button type="submit" class="pm-btn pm-btn-primary">
+                <span data-ic="cpu" class="w-4 h-4 inline-block"></span><span>Submit for AI analysis</span>
+              </button>
             </div>
           </div>
+        </form>
 
-        </button>
-
-
-        <!-- Through PDF -->
-        <button
-          type="button"
-          id="pdfModeBtn"
-          class="ingestion-mode-btn border-2 border-slate-200 dark:border-[#1E293B] rounded-xl p-5 text-left transition-all hover:border-orange-400">
-
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
-              <i data-lucide="file-up" class="w-5 h-5"></i>
-            </div>
-
-            <div>
-              <h3 class="font-semibold text-slate-900 dark:text-white">
-                Through PDF
-              </h3>
-
-              <p class="text-xs text-slate-500 dark:text-slate-400">
-                Upload a PAIMANA project PDF
-              </p>
+        <!-- Manual entry result -->
+        <div id="resultCard" class="pm-card pm-card-pad hidden" tabindex="-1" aria-labelledby="resultTitle">
+          <div class="flex items-start gap-3">
+            <span class="ok-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+            <div class="min-w-0 flex-1">
+              <p class="pm-eyebrow">Analysis complete</p>
+              <h3 id="resultTitle" class="pm-title mt-1">Project saved and scored</h3>
+              <div id="resultText" class="text-[13px] mt-2" style="color:var(--pm-text-2)">Project saved successfully. Risk score calculated.</div>
             </div>
           </div>
-
-        </button>
-
-      </div>
-      <!-- ================= PROJECT FORM ================= -->
-      <form id="projectForm"
-        class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-4 sm:p-8 rounded-xl shadow-sm space-y-6 transition-colors duration-200">
-
-
-        <!-- ================= 1. PROJECT IDENTITY ================= -->
-        <h2
-          class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#1E293B] pb-2">
-          1. Project Identity
-        </h2>
-
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          <!-- Project ID -->
-          <div class="space-y-2">
-            <label for="project_id" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Project ID <span class="text-orange-500">*</span>
-            </label>
-
-            <input type="text" id="project_id" name="project_id" placeholder="Enter project ID" required
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-          </div>
-
-
-          <!-- Project Name -->
-          <div class="space-y-2">
-            <label for="project_name" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Project Name
-            </label>
-
-            <input type="text" id="project_name" name="project_name" placeholder="Enter project name"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-          </div>
-
-
-          <!-- Implementing Agency -->
-          <div class="space-y-2">
-            <label for="implementing_agency" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Implementing Agency
-            </label>
-
-            <input type="text" id="implementing_agency" name="implementing_agency"
-              placeholder="Enter implementing agency"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-          </div>
-
-
-          <!-- Sector -->
-          <div class="space-y-2">
-            <label for="sector" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Sector
-            </label>
-
-            <select id="sector" name="sector"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-              <option value="">Select Sector</option>
-              <option value="STEEL">Steel</option>
-              <option value="RAILWAYS">Railways</option>
-              <option value="POWER">Power</option>
-              <option value="ROAD TRANSPORT & HIGHWAYS">Road Transport & Highways</option>
-              <option value="PETROLEUM">Petroleum</option>
-              <option value="COAL">Coal</option>
-
-            </select>
-          </div>
-
-
-          <!-- State -->
-          <div class="space-y-2 md:col-span-2">
-
-            <label for="state" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              State
-            </label>
-
-            <select id="state" name="state"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-              <option value="">Select State</option>
-
-              <option value="ANDHRA PRADESH">Andhra Pradesh</option>
-              <option value="ARUNACHAL PRADESH">Arunachal Pradesh</option>
-              <option value="ASSAM">Assam</option>
-              <option value="BIHAR">Bihar</option>
-              <option value="CHHATTISGARH">Chhattisgarh</option>
-              <option value="GOA">Goa</option>
-              <option value="GUJARAT">Gujarat</option>
-              <option value="HARYANA">Haryana</option>
-              <option value="HIMACHAL PRADESH">Himachal Pradesh</option>
-              <option value="JHARKHAND">Jharkhand</option>
-              <option value="KARNATAKA">Karnataka</option>
-              <option value="KERALA">Kerala</option>
-              <option value="MADHYA PRADESH">Madhya Pradesh</option>
-              <option value="MAHARASHTRA">Maharashtra</option>
-              <option value="MANIPUR">Manipur</option>
-              <option value="MEGHALAYA">Meghalaya</option>
-              <option value="MIZORAM">Mizoram</option>
-              <option value="NAGALAND">Nagaland</option>
-              <option value="ODISHA">Odisha</option>
-              <option value="PUNJAB">Punjab</option>
-              <option value="RAJASTHAN">Rajasthan</option>
-              <option value="SIKKIM">Sikkim</option>
-              <option value="TAMIL NADU">Tamil Nadu</option>
-              <option value="TELANGANA">Telangana</option>
-              <option value="TRIPURA">Tripura</option>
-              <option value="UTTAR PRADESH">Uttar Pradesh</option>
-              <option value="UTTARAKHAND">Uttarakhand</option>
-              <option value="WEST BENGAL">West Bengal</option>
-
-              <option value="ANDAMAN AND NICOBAR ISLANDS">
-                Andaman and Nicobar Islands
-              </option>
-
-              <option value="CHANDIGARH">
-                Chandigarh
-              </option>
-
-              <option value="DADRA AND NAGAR HAVELI AND DAMAN AND DIU">
-                Dadra and Nagar Haveli and Daman and Diu
-              </option>
-
-              <option value="DELHI">
-                Delhi
-              </option>
-
-              <option value="JAMMU AND KASHMIR">
-                Jammu and Kashmir
-              </option>
-
-              <option value="LADAKH">
-                Ladakh
-              </option>
-
-              <option value="LAKSHADWEEP">
-                Lakshadweep
-              </option>
-
-              <option value="PUDUCHERRY">
-                Puducherry
-              </option>
-
-              <option value="MULTIPLE STATES">
-                Multiple States
-              </option>
-
-            </select>
-
-          </div>
-
-        </div>
-
-
-        <!-- ================= 2. TIMELINE ================= -->
-        <h2
-          class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#1E293B] pb-2 mt-6">
-          2. Timeline & Schedule
-        </h2>
-
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-
-          <!-- Date of Approval -->
-          <div class="space-y-2">
-
-            <label for="date_of_approval" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Date of Approval
-            </label>
-
-            <input type="date" id="date_of_approval" name="date_of_approval"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-
-          <!-- Original Commissioning -->
-          <div class="space-y-2">
-
-            <label for="original_commissioning_date" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Original Commissioning Date
-            </label>
-
-            <input type="date" id="original_commissioning_date" name="original_commissioning_date"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-
-          <!-- Revised Commissioning -->
-          <div class="space-y-2">
-
-            <label for="revised_commissioning_date" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Revised Commissioning Date
-            </label>
-
-            <input type="date" id="revised_commissioning_date" name="revised_commissioning_date"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-
-          <!-- Anticipated Commissioning -->
-          <div class="space-y-2">
-
-            <label for="anticipated_commissioning_date"
-              class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Anticipated Commissioning Date
-            </label>
-
-            <input type="date" id="anticipated_commissioning_date" name="anticipated_commissioning_date"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-        </div>
-
-
-        <!-- ================= 3. FINANCIAL & PHYSICAL PROGRESS ================= -->
-        <h2
-          class="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-200 dark:border-[#1E293B] pb-2 mt-6">
-          3. Financial & Physical Progress
-        </h2>
-
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-
-          <!-- Original Cost -->
-          <div class="space-y-2">
-
-            <label for="original_cost_crore" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Original Cost (₹ Cr)
-            </label>
-
-            <input type="number" step="any" id="original_cost_crore" name="original_cost_crore" placeholder="Optional"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-
-          <!-- Revised Cost -->
-          <div class="space-y-2">
-
-            <label for="revised_cost_crore" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Revised Cost (₹ Cr)
-            </label>
-
-            <input type="number" step="any" id="revised_cost_crore" name="revised_cost_crore" placeholder="Optional"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-
-          <!-- Anticipated Cost -->
-          <div class="space-y-2">
-
-            <label for="anticipated_cost_crore" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Anticipated Cost (₹ Cr)
-            </label>
-
-            <input type="number" step="any" id="anticipated_cost_crore" name="anticipated_cost_crore"
-              placeholder="Optional"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-
-          <!-- Cumulative Expenditure -->
-          <div class="space-y-2">
-
-            <label for="cumulative_expenditure_crore" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Cumulative Exp. (₹ Cr)
-            </label>
-
-            <input type="number" step="any" id="cumulative_expenditure_crore" name="cumulative_expenditure_crore"
-              placeholder="Optional"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-
-          <!-- Delay Original -->
-          <div class="space-y-2">
-
-            <label for="delay_original_months" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Delay w.r.t. Original (months)
-            </label>
-
-            <input type="number" step="any" id="delay_original_months" name="delay_original_months"
-              placeholder="Optional"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-
-          <!-- Delay Revised -->
-          <div class="space-y-2">
-
-            <label for="delay_revised_months" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Delay w.r.t. Revised (months)
-            </label>
-
-            <input type="number" step="any" id="delay_revised_months" name="delay_revised_months" placeholder="Optional"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-
-          <!-- Milestones Achieved -->
-          <div class="space-y-2">
-
-            <label for="milestones_achieved" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Milestones Achieved
-            </label>
-
-            <input type="number" step="1" id="milestones_achieved" name="milestones_achieved" placeholder="Optional"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-
-          <!-- Milestones Total -->
-          <div class="space-y-2">
-
-            <label for="milestones_total" class="text-xs font-semibold text-slate-600 dark:text-slate-400">
-              Milestones Total
-            </label>
-
-            <input type="number" step="1" id="milestones_total" name="milestones_total" placeholder="Optional"
-              class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-
-          </div>
-
-        </div>
-
-
-        <!-- ================= SUBMIT ================= -->
-        <button type="submit"
-          class="w-full bg-orange-600 hover:bg-orange-500 text-white font-semibold py-3 rounded-lg transition-colors flex justify-center items-center gap-2 mt-4">
-
-          <i data-lucide="cpu" class="w-5 h-5"></i>
-          Submit for AI Analysis
-
-        </button>
-
-      </form>
-<!-- ================= PDF UPLOAD ================= -->
-      <div
-        id="pdfUploadSection"
-        class="hidden bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-4 sm:p-8 rounded-xl shadow-sm">
-
-        <div class="mb-6">
-
-          <h2 class="text-sm font-semibold text-slate-900 dark:text-white">
-            Upload PAIMANA PDF
-          </h2>
-
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Upload a PAIMANA project report. The project information will be
-            extracted automatically and added to the database.
-          </p>
-
-        </div>
-
-
-        <!-- PDF Drop Area -->
-        <label
-          for="projectPdf"
-          class="block cursor-pointer border-2 border-dashed border-slate-300 dark:border-[#334155] hover:border-orange-500 rounded-xl p-8 text-center transition-colors">
-
-          <div class="flex flex-col items-center">
-
-            <div
-              class="w-14 h-14 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center mb-4">
-
-              <i data-lucide="file-up" class="w-7 h-7"></i>
-
-            </div>
-
-            <p class="text-sm font-semibold text-slate-900 dark:text-white">
-              Choose a PAIMANA PDF
-            </p>
-
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Click here to select your PDF file
-            </p>
-
-            <p
-              id="selectedPdfName"
-              class="text-xs text-orange-500 mt-3 hidden">
-            </p>
-
-          </div>
-
-          <input
-            type="file"
-            id="projectPdf"
-            name="projectPdf"
-            accept=".pdf,application/pdf"
-            class="hidden">
-
-        </label>
-
-
-        <!-- Upload Button -->
-        <button
-          type="button"
-          id="uploadPdfBtn"
-          class="w-full mt-6 bg-orange-600 hover:bg-orange-500 text-white font-semibold py-3 rounded-lg transition-colors flex justify-center items-center gap-2">
-
-          <i data-lucide="upload" class="w-5 h-5"></i>
-
-          Upload & Process
-
-        </button>
-
-
-        <!-- PDF Processing Status -->
-        <div
-          id="pdfStatus"
-          class="hidden mt-5 rounded-lg p-4 text-sm">
-        </div>
-
-
-        <!-- Live Processing Pipeline (driven by SSE job events) -->
-        <div
-          id="pdfPipeline"
-          class="hidden mt-5 rounded-xl border border-slate-200 dark:border-[#1E293B] bg-slate-50 dark:bg-[#0F1522] p-4 sm:p-5">
-
-          <div class="flex items-center justify-between gap-3 mb-2">
-            <p id="pdfPipelineMessage" class="text-sm font-medium text-slate-900 dark:text-white truncate">
-              Uploading PDF...
-            </p>
-            <span id="pdfPipelinePercent" class="text-xs font-semibold tabular-nums text-orange-500 shrink-0">0%</span>
-          </div>
-
-          <div class="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-            <div id="pdfPipelineBar" class="h-full w-0 rounded-full bg-orange-500 transition-all duration-300"></div>
-          </div>
-
-          <p id="pdfPipelineJob" class="text-[11px] text-slate-400 dark:text-slate-500 mt-2 font-mono"></p>
-
-          <ol id="pdfStages" class="mt-4 space-y-3"></ol>
-
-          <details class="mt-4 group" open>
-            <summary class="cursor-pointer text-xs font-semibold text-slate-500 dark:text-slate-400 select-none">
-              Live activity log
-            </summary>
-            <div
-              id="pdfLog"
-              class="mt-2 max-h-48 overflow-y-auto rounded-lg bg-slate-900 text-slate-300 font-mono text-[11px] leading-5 p-3">
-            </div>
-          </details>
-
-        </div>
-
-
-        <!-- PDF Import Result -->
-        <div
-          id="pdfResult"
-          class="hidden mt-5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-5">
-
-          <h3 class="font-semibold text-emerald-600 dark:text-emerald-400 mb-3">
-            Processing Complete
-          </h3>
-
-          <div
-            id="pdfResultText"
-            class="text-sm text-slate-700 dark:text-slate-300 space-y-1">
-          </div>
-
         </div>
 
       </div>
-
-      <!-- ================= RESULT CARD ================= -->
-      <div id="resultCard" class="hidden bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-xl transition-all">
-
-        <h3 class="text-emerald-600 dark:text-emerald-400 font-bold mb-2">
-          Analysis Complete
-        </h3>
-
-        <p id="resultText" class="text-sm text-slate-700 dark:text-emerald-100">
-          Project saved successfully. Risk score calculated.
-        </p>
-
-      </div>
-
     </div>
   </main>
 
-
-  <!-- ================= SCRIPTS ================= -->
-  <script src="js/theme.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/theme.js"></script>
   <script>
     guardAdminOnlyPage();
   </script>
-  <script src="js/animations.js"></script>
 
   <script>
     // =========================================================
+    // Page-local icons (lucide 1.x paths) for glyphs ui.js doesn't ship
+    // =========================================================
+    const LOCAL_ICONS = {
+      'pen-line': '<path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>',
+      'upload': '<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
+      'database': '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+      'cpu': '<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/>',
+      'file-text': '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+      'table': '<path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/>',
+      'terminal': '<path d="M12 19h8"/><path d="m4 17 6-6-6-6"/>',
+      'split': '<path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/>'
+    };
+    function ic(name, cls = '') {
+      const body = LOCAL_ICONS[name];
+      if (!body) return PM.icon(name, cls);
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="${cls}">${body}</svg>`;
+    }
+    function hydrateLocalIcons(root = document) {
+      root.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = ic(el.dataset.ic, 'w-full h-full'); el.setAttribute('aria-hidden', 'true'); el.removeAttribute('data-ic'); });
+    }
+    hydrateLocalIcons();
+
+    const { esc, fmt, num } = PM;
+    const $ = (id) => document.getElementById(id);
+
+    // =========================================================
     // INGESTION MODE SWITCHING
     // =========================================================
-
-    const detailsModeBtn =
-      document.getElementById('detailsModeBtn');
-
-    const pdfModeBtn =
-      document.getElementById('pdfModeBtn');
-
-    const projectForm =
-      document.getElementById('projectForm');
-
-    const pdfUploadSection =
-      document.getElementById('pdfUploadSection');
-
+    const detailsModeBtn = $('detailsModeBtn');
+    const pdfModeBtn = $('pdfModeBtn');
+    const projectForm = $('projectForm');
+    const pdfUploadSection = $('pdfUploadSection');
 
     function showDetailsMode() {
-
       projectForm.classList.remove('hidden');
-
       pdfUploadSection.classList.add('hidden');
-
-      detailsModeBtn.classList.add(
-        'border-orange-500',
-        'bg-orange-500/10'
-      );
-
-      detailsModeBtn.classList.remove(
-        'border-slate-200',
-        'dark:border-[#1E293B]'
-      );
-
-      pdfModeBtn.classList.remove(
-        'border-orange-500',
-        'bg-orange-500/10'
-      );
-
-      pdfModeBtn.classList.add(
-        'border-slate-200',
-        'dark:border-[#1E293B]'
-      );
-
+      detailsModeBtn.setAttribute('aria-pressed', 'true');
+      pdfModeBtn.setAttribute('aria-pressed', 'false');
     }
-
 
     function showPdfMode() {
-
       projectForm.classList.add('hidden');
-
+      $('resultCard').classList.add('hidden');
       pdfUploadSection.classList.remove('hidden');
-
-      pdfModeBtn.classList.add(
-        'border-orange-500',
-        'bg-orange-500/10'
-      );
-
-      pdfModeBtn.classList.remove(
-        'border-slate-200',
-        'dark:border-[#1E293B]'
-      );
-
-      detailsModeBtn.classList.remove(
-        'border-orange-500',
-        'bg-orange-500/10'
-      );
-
-      detailsModeBtn.classList.add(
-        'border-slate-200',
-        'dark:border-[#1E293B]'
-      );
-
+      pdfModeBtn.setAttribute('aria-pressed', 'true');
+      detailsModeBtn.setAttribute('aria-pressed', 'false');
     }
 
-
-    detailsModeBtn.addEventListener(
-      'click',
-      showDetailsMode
-    );
-
-    pdfModeBtn.addEventListener(
-      'click',
-      showPdfMode
-    );
+    detailsModeBtn.addEventListener('click', showDetailsMode);
+    pdfModeBtn.addEventListener('click', showPdfMode);
+    if (/^#?details$/.test(location.hash) || new URLSearchParams(location.search).get('mode') === 'details') showDetailsMode();
+    window.addEventListener('hashchange', () => { if (location.hash === '#details') showDetailsMode(); else if (location.hash === '#pdf') showPdfMode(); });
 
     // =========================================================
-    // PDF FILE SELECTION
+    // PDF FILE SELECTION (file input + keyboard-operable drop zone)
     // =========================================================
+    const projectPdf = $('projectPdf');
+    const dropZone = $('dropZone');
+    const fileRow = $('fileRow');
+    const selectedPdfName = $('selectedPdfName');
+    const uploadPdfBtn = $('uploadPdfBtn');
+    const pdfStatus = $('pdfStatus');
 
-    const projectPdf =
-      document.getElementById('projectPdf');
+    let selectedFile = null;   // file chosen for the next upload
+    let lastFile = null;       // file of the current/last job (used by Retry)
 
-    const selectedPdfName =
-      document.getElementById('selectedPdfName');
-
-
-    projectPdf.addEventListener('change', function () {
-
-      const file = this.files[0];
-
-      if (!file) {
-
-        selectedPdfName.textContent = '';
-
-        selectedPdfName.classList.add('hidden');
-
-        return;
-
-      }
-
-
-      if (file.type !== 'application/pdf') {
-
-        alert('Please select a PDF file.');
-
-        this.value = '';
-
-        return;
-
-      }
-
-
-      selectedPdfName.textContent =
-        `Selected: ${file.name}`;
-
-      selectedPdfName.classList.remove('hidden');
-
-    });
-
-    // =========================================================
-    // PDF UPLOAD
-    // =========================================================
-
-    const uploadPdfBtn =
-      document.getElementById('uploadPdfBtn');
-
-    const pdfStatus =
-      document.getElementById('pdfStatus');
-
-    const pdfResult =
-      document.getElementById('pdfResult');
-
-    const pdfResultText =
-      document.getElementById('pdfResultText');
-
-
-    const pdfPipeline =
-      document.getElementById('pdfPipeline');
-
-    const pdfPipelineMessage =
-      document.getElementById('pdfPipelineMessage');
-
-    const pdfPipelinePercent =
-      document.getElementById('pdfPipelinePercent');
-
-    const pdfPipelineBar =
-      document.getElementById('pdfPipelineBar');
-
-    const pdfPipelineJob =
-      document.getElementById('pdfPipelineJob');
-
-    const pdfStages =
-      document.getElementById('pdfStages');
-
-    const pdfLog =
-      document.getElementById('pdfLog');
-
-
-    // Local mirror of the job's stages, rebuilt from SSE events.
-    let pipelineStages = {};
-
+    const fileSize = (bytes) => bytes >= 1048576 ? `${(bytes / 1048576).toFixed(2)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    const isPdf = (file) => file.type === 'application/pdf' || (!file.type && /\.pdf$/i.test(file.name));
 
     function setStatusBanner(kind, text) {
-
-      const styles = {
-        info: 'bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400',
-        success: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-        error: 'bg-red-500/10 border border-red-500/20 text-red-500'
-      };
-
-      pdfStatus.className =
-        `mt-5 rounded-lg p-4 text-sm ${styles[kind]}`;
-
-      pdfStatus.textContent = text;
-
+      if (!text) { pdfStatus.classList.add('hidden'); pdfStatus.innerHTML = ''; return; }
+      pdfStatus.innerHTML = `${PM.icon('triangle-alert')}<span>${esc(text)}</span>`;
       pdfStatus.classList.remove('hidden');
-
     }
 
+    function setFile(file) {
+      setStatusBanner(null);
+      if (!file) {
+        selectedFile = null;
+        projectPdf.value = '';
+        fileRow.classList.add('hidden');
+        dropZone.classList.remove('hidden');
+        uploadPdfBtn.disabled = true;
+        return;
+      }
+      if (!isPdf(file)) {
+        projectPdf.value = '';
+        setStatusBanner('error', `“${file.name}” is not a PDF. Please select a PDF file.`);
+        return;
+      }
+      selectedFile = file;
+      selectedPdfName.textContent = file.name;
+      $('selectedPdfMeta').textContent = `${fileSize(file.size)} · ready to upload`;
+      dropZone.classList.add('hidden');
+      fileRow.classList.remove('hidden');
+      uploadPdfBtn.disabled = false;
+    }
 
-    function stageIcon(status) {
+    projectPdf.addEventListener('change', function () { setFile(this.files[0] || null); });
+    dropZone.addEventListener('click', () => projectPdf.click());
+    dropZone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); projectPdf.click(); }
+    });
+    let dragDepth = 0;
+    dropZone.addEventListener('dragenter', (e) => { e.preventDefault(); dragDepth++; dropZone.classList.add('is-drag'); });
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+    dropZone.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; dropZone.classList.remove('is-drag'); } });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault(); dragDepth = 0; dropZone.classList.remove('is-drag');
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) setFile(file);
+    });
+    // A file dropped anywhere else must not navigate the tab away from a running job.
+    ['dragover', 'drop'].forEach(t => window.addEventListener(t, (e) => { if (!dropZone.contains(e.target)) e.preventDefault(); }));
+    $('changePdfBtn').addEventListener('click', () => projectPdf.click());
+    $('removePdfBtn').addEventListener('click', () => { setFile(null); dropZone.focus(); });
 
-      const icon = document.createElement('span');
+    // =========================================================
+    // LIVE PIPELINE STATE (mirror of the backend job, built from SSE events)
+    // =========================================================
+    const pdfPipeline = $('pdfPipeline');
+    const pdfPipelineMessage = $('pdfPipelineMessage');
+    const pdfPipelinePercent = $('pdfPipelinePercent');
+    const pdfPipelineBar = $('pdfPipelineBar');
+    const pdfPipelineJob = $('pdfPipelineJob');
+    const pdfStages = $('pdfStages');
+    const pdfLog = $('pdfLog');
+    const pdfResult = $('pdfResult');
 
-      const base =
-        'mt-0.5 w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold';
+    let pipelineStages = {};   // key -> {key,label,status,progress,message,details[],...}
+    let stageEls = {};         // key -> DOM refs
+    let counters = {};         // latest job counters from events
+    let currentJobId = null;
+    let lastEventId = 0;
+    let eventCount = 0;
+    let stopStream = null;
+    let jobStartedAt = null;
+    const PARALLEL = ['predicting', 'alerting'];
 
-      if (status === 'running') {
-        icon.className =
-          'mt-0.5 w-5 h-5 shrink-0 rounded-full border-2 border-orange-500 border-t-transparent animate-spin';
-      } else if (status === 'done') {
-        icon.className = `${base} bg-emerald-500 text-white`;
-        icon.textContent = '✓';
-      } else if (status === 'failed') {
-        icon.className = `${base} bg-red-500 text-white`;
-        icon.textContent = '✕';
-      } else if (status === 'skipped') {
-        icon.className = `${base} bg-slate-200 dark:bg-slate-700 text-slate-500`;
-        icon.textContent = '–';
-      } else {
-        icon.className =
-          `${base} border-2 border-slate-300 dark:border-slate-600`;
+    function setPhase(phase) {
+      pdfUploadSection.dataset.phase = phase;
+      const running = phase === 'running';
+      $('pickArea').classList.toggle('hidden', phase !== 'idle');
+      pdfPipeline.classList.toggle('hidden', phase === 'idle');
+      $('pipelineActions').classList.toggle('hidden', !(phase === 'done' || phase === 'failed'));
+      const pill = $('jobPill');
+      pill.classList.toggle('hidden', phase === 'idle');
+      pill.textContent = phase === 'done' ? 'Completed' : phase === 'failed' ? 'Failed' : 'Processing';
+      $('pdfEyebrow').textContent = phase === 'idle' ? 'Step 1 · Document' : 'Live processing';
+      $('pdf-title').textContent = phase === 'idle' ? 'Upload a PAIMANA PDF'
+        : phase === 'done' ? 'Report processed' : phase === 'failed' ? 'Processing stopped' : 'Processing report';
+      $('pdfSub').textContent = phase === 'idle'
+        ? 'Project records are extracted from the report and added to the database, then scored.'
+        : 'Each stage below is reported by the backend as it happens.';
+      pdfModeBtn.disabled = running; detailsModeBtn.disabled = running;
+    }
+
+    const fmtDur = (s) => s == null || !Number.isFinite(s) ? '' : s < 1 ? `${Math.max(1, Math.round(s * 1000))} ms` : s < 60 ? `${s.toFixed(1)} s` : `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`;
+
+    function nodeHTML(n) {
+      return `<span class="node" data-s="pending" aria-hidden="true">
+        <span class="n-num">${n}</span>
+        <svg class="n-spin" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="12.9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="26 56"/></svg>
+        <svg class="n-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        <svg class="n-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        <svg class="n-dash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 12h12"/></svg>
+      </span>`;
+    }
+
+    // Stage content block (shared by rail rows and the two parallel lanes).
+    function stageMainHTML(stage) {
+      return `<button type="button" class="st-head" aria-expanded="false" disabled>
+          <span class="st-label">${esc(stage.label)}</span>
+          <span class="st-meta"><span class="st-meta-t">Pending</span><span class="st-chev hidden">${PM.icon('chevron-right')}</span></span>
+        </button>
+        <p class="st-sum"></p>
+        <div class="st-body"><div>
+          <p class="st-msg"></p>
+          <div class="st-prog hidden"><div class="ov-bar" role="progressbar" aria-label="${esc(stage.label)} progress" aria-valuemin="0" aria-valuemax="100"><span></span></div><span class="st-pct">0%</span></div>
+          <ul class="st-details"></ul>
+          <div class="st-error"></div>
+        </div></div>`;
+    }
+
+    function bindStage(key, root, main) {
+      const refs = {
+        root, main,
+        head: main.querySelector('.st-head'), metaT: main.querySelector('.st-meta-t'), chev: main.querySelector('.st-chev'),
+        sum: main.querySelector('.st-sum'), msg: main.querySelector('.st-msg'), prog: main.querySelector('.st-prog'),
+        progFill: main.querySelector('.st-prog .ov-bar > span'), progBar: main.querySelector('.st-prog .ov-bar'), pct: main.querySelector('.st-pct'),
+        details: main.querySelector('.st-details'), error: main.querySelector('.st-error'), shown: 0, userOpen: false, lastStatus: null,
+        node: root.querySelector(':scope > .node, :scope > .lane-top > .node')
+      };
+      refs.head.addEventListener('click', () => {
+        const s = pipelineStages[key];
+        if (!s || s.status === 'running' || s.status === 'failed') return;
+        refs.userOpen = !refs.userOpen;
+        updateStage(key);
+      });
+      stageEls[key] = refs;
+    }
+
+    // Build the rail once from the backend's stage list; events then update it in place.
+    function buildRail() {
+      pdfStages.innerHTML = '';
+      stageEls = {};
+      const keys = Object.keys(pipelineStages);
+      const forkAt = keys.indexOf(PARALLEL[0]);
+      const hasFork = forkAt >= 0 && keys[forkAt + 1] === PARALLEL[1];
+      let n = 0;
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        n++;
+        const li = document.createElement('li');
+        li.className = 'st';
+        li.dataset.status = 'pending';
+        if (hasFork && i === forkAt) {
+          li.dataset.fork = '1';
+          li.innerHTML = `${nodeHTML(n)}<div class="min-w-0">
+            <div class="st-head"><span class="st-label">Risk scoring &amp; early warnings</span>
+              <span class="fork-note">${ic('split')}Run in parallel</span></div>
+            <p class="st-sum" style="display:block;white-space:normal">Each new prediction is checked by the early-warning rules as soon as it is stored.</p>
+            <div class="fork"></div></div>`;
+          const fork = li.querySelector('.fork');
+          PARALLEL.forEach(k => {
+            const lane = document.createElement('div');
+            lane.className = 'lane';
+            lane.dataset.status = 'pending';
+            lane.innerHTML = `<div class="lane-top">${nodeHTML('')}<div class="min-w-0 flex-1 st-main">${stageMainHTML(pipelineStages[k])}</div></div>`;
+            // lanes keep the body inside .st-main so the grid layout stays compact
+            fork.appendChild(lane);
+            bindStage(k, lane, lane.querySelector('.st-main'));
+          });
+          li.querySelector('.st-sum').className = 'pm-sub';
+          stageEls.__fork = li;
+          i++;
+        } else {
+          li.innerHTML = `${nodeHTML(n)}<div class="min-w-0 st-main">${stageMainHTML(pipelineStages[key])}</div>`;
+          bindStage(key, li, li.querySelector('.st-main'));
+        }
+        pdfStages.appendChild(li);
+      }
+    }
+
+    function updateStage(key) {
+      const s = pipelineStages[key], r = stageEls[key];
+      if (!s || !r) return;
+      const status = s.status;
+      r.root.dataset.status = status;
+      r.main.dataset.s = status;
+      if (r.node) r.node.dataset.s = status;
+      const open = status === 'running' || status === 'failed' || (r.userOpen && (status === 'done' || status === 'skipped'));
+      r.main.classList.toggle('is-open', open);
+      if (status === 'running' && r.lastStatus !== 'running') r.userOpen = false;
+
+      const hasMore = s.details.length > 0 && (status === 'done' || status === 'skipped');
+      r.head.disabled = !hasMore;
+      r.head.setAttribute('aria-expanded', String(open));
+      r.chev.classList.toggle('hidden', !hasMore);
+
+      const dur = s.startedAt && s.endedAt ? fmtDur(s.endedAt - s.startedAt) : '';
+      r.metaT.textContent = status === 'running' ? 'Running'
+        : status === 'done' ? (dur || 'Done') : status === 'failed' ? 'Failed' : status === 'skipped' ? 'Skipped' : 'Pending';
+
+      // Collapsed summary: the backend's completion/skip message
+      r.sum.textContent = (status === 'done' || status === 'skipped') && s.message !== s.label ? (s.message || '') : '';
+      r.sum.title = r.sum.textContent;
+
+      // Live message: the last non-detail message for this stage
+      r.msg.textContent = status === 'running' ? (s.liveMessage || '') : '';
+      r.msg.classList.toggle('hidden', !r.msg.textContent);
+
+      // Per-stage progress only when the backend actually reported stage_progress
+      const showProg = s.hasProgress && status === 'running';
+      r.prog.classList.toggle('hidden', !showProg);
+      if (s.hasProgress) {
+        const pct = Math.round(Math.max(0, Math.min(1, s.progress || 0)) * 100);
+        r.progFill.style.width = `${pct}%`;
+        r.pct.textContent = `${pct}%`;
+        r.progBar.setAttribute('aria-valuenow', String(pct));
       }
 
-      return icon;
+      // Detail lines appear as they arrive
+      for (; r.shown < s.details.length; r.shown++) {
+        const li = document.createElement('li');
+        li.textContent = s.details[r.shown];
+        if (!PM.reducedMotion()) li.classList.add('is-new');
+        r.details.appendChild(li);
+      }
 
+      if (status === 'failed' && s.error && r.error.dataset.err !== s.error) {
+        r.error.dataset.err = s.error;
+        r.error.innerHTML = failureHTML(s.error, 'job');
+        wireFailure(r.error);
+      } else if (status !== 'failed' && r.error.dataset.err) {
+        r.error.innerHTML = ''; delete r.error.dataset.err;
+      }
+      r.lastStatus = status;
     }
 
+    function updateFork() {
+      const li = stageEls.__fork;
+      if (!li) return;
+      const st = PARALLEL.map(k => pipelineStages[k]?.status || 'pending');
+      li.dataset.status = li.querySelector(':scope > .node').dataset.s = st.includes('failed') ? 'failed' : st.includes('running') ? 'running'
+        : st.every(x => x === 'skipped') ? 'skipped' : st.every(x => x === 'done' || x === 'skipped') ? 'done' : 'pending';
+    }
 
+    // Kept for compatibility with the previous page: re-syncs every stage row.
     function renderStages() {
+      Object.keys(pipelineStages).forEach(updateStage);
+      updateFork();
+    }
 
-      pdfStages.innerHTML = '';
+    // ---------------- Impact chain ----------------
+    const CHAIN = [
+      { key: 'doc', icon: 'file-text', label: 'Document received', stages: ['received', 'validating'], idle: 'Signature, MIME type and page count are verified.',
+        value: c => c.pages, unit: 'pages',
+        sub: c => [c.table_pages != null ? `Project table on ${fmt.int(c.table_pages)} pages` : null, c.report_month ? `Report month ${fmt.month(c.report_month)}` : null].filter(Boolean).join(' · ') },
+      { key: 'extract', icon: 'table', label: 'Data extracted', stages: ['extracting', 'normalizing'], idle: 'Project rows are parsed from the report table and normalised.',
+        value: c => c.records_extracted, unit: 'records',
+        sub: c => [c.parse_errors != null ? `${fmt.int(c.parse_errors)} rows unparsed` : null, c.records_valid != null ? `${fmt.int(c.records_valid)} valid` : null,
+          c.records_rejected ? `${fmt.int(c.records_rejected)} rejected` : null, c.sectors != null ? `${fmt.int(c.sectors)} sectors` : null].filter(Boolean).join(' · ') },
+      { key: 'db', icon: 'database', label: 'Database changed', stages: ['ingesting'], idle: 'Projects and monthly updates are written in one transaction.',
+        value: c => (c.projects_created != null || c.projects_updated != null) ? (num(c.projects_created) || 0) + (num(c.projects_updated) || 0) : null, unit: 'projects',
+        sub: c => c.projects_created == null && c.projects_updated == null ? '' :
+          `${fmt.int(c.projects_created || 0)} new · ${fmt.int(c.projects_updated || 0)} updated · ${fmt.int((num(c.updates_created) || 0) + (num(c.updates_updated) || 0))} monthly updates` },
+      { key: 'ml', icon: 'cpu', label: 'Models executed', stages: ['predicting'], idle: 'Cost XGBoost, schedule XGBoost and Cox survival score every update.',
+        value: c => c.predictions_done, of: c => c.predictions_total, unit: 'predictions',
+        sub: c => c.predictions_done == null ? '' : `${fmt.int(c.predictions_failed || 0)} failed · composite risk 0–100` },
+      { key: 'alerts', icon: 'bell', label: 'Early warnings raised', stages: ['alerting'], idle: 'Alert rules run on each new prediction.',
+        value: c => c.alerts_created, unit: 'alerts', sub: c => c.alerts_by_severity_text || '' },
+      { key: 'dash', icon: 'layout-dashboard', label: 'Dashboard updated', stages: ['complete'], idle: 'Portfolio views read the new predictions directly.',
+        value: () => null, unit: '', sub: () => '' }
+    ];
 
-      Object.values(pipelineStages).forEach(stage => {
+    function buildChain() {
+      $('chain').innerHTML = CHAIN.map(s => `
+        <li class="ch" data-step="${s.key}" data-state="idle">
+          <span class="ch-ico">${ic(s.icon)}</span>
+          <div class="min-w-0"><p class="ch-label">${esc(s.label)}</p><p class="ch-sub">${esc(s.idle)}</p></div>
+          <div>${s.key === 'dash' ? '' : `<p class="ch-val"><span class="ch-num">—</span><small class="ch-of"></small></p><p class="ch-unit">${esc(s.unit)}</p>`}</div>
+        </li>`).join('');
+    }
 
-        const item = document.createElement('li');
-        item.className = 'flex gap-3';
+    function chainState(stageKeys) {
+      const st = stageKeys.map(k => pipelineStages[k]?.status).filter(Boolean);
+      if (!st.length) return 'idle';
+      if (st.includes('failed')) return 'failed';
+      if (st.includes('running')) return 'active';
+      if (st.every(x => x === 'skipped')) return 'skipped';
+      if (st.every(x => x === 'done' || x === 'skipped')) return 'done';
+      if (st.some(x => x === 'done')) return 'active';
+      return 'idle';
+    }
 
-        item.appendChild(stageIcon(stage.status));
-
-        const body = document.createElement('div');
-        body.className = 'min-w-0 flex-1';
-
-        const title = document.createElement('p');
-        title.className =
-          stage.status === 'pending'
-            ? 'text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500'
-            : 'text-xs font-semibold uppercase tracking-wide text-slate-900 dark:text-white';
-        title.textContent = stage.label;
-        body.appendChild(title);
-
-        if (stage.message && stage.status !== 'pending') {
-          const message = document.createElement('p');
-          message.className = 'text-xs text-slate-500 dark:text-slate-400 mt-0.5 break-words';
-          message.textContent = stage.message;
-          body.appendChild(message);
+    function updateChain() {
+      CHAIN.forEach(step => {
+        const li = document.querySelector(`.ch[data-step="${step.key}"]`);
+        if (!li) return;
+        const state = chainState(step.stages);
+        li.dataset.state = state;
+        const sub = li.querySelector('.ch-sub');
+        if (step.key === 'dash') {
+          sub.innerHTML = state === 'done'
+            ? `Portfolio views now read these predictions. <a class="font-semibold" style="color:var(--pm-accent)" href="dashboard.html">Open dashboard</a>`
+            : state === 'failed' ? 'Not reached — nothing was published.' : esc(step.idle);
+          return;
         }
-
-        if (stage.status === 'running' && stage.progress > 0 && stage.progress < 1) {
-          const track = document.createElement('div');
-          track.className = 'mt-1.5 h-1 w-full max-w-xs rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden';
-          const fill = document.createElement('div');
-          fill.className = 'h-full bg-orange-400 transition-all duration-300';
-          fill.style.width = `${Math.round(stage.progress * 100)}%`;
-          track.appendChild(fill);
-          body.appendChild(track);
+        const numEl = li.querySelector('.ch-num');
+        const v = num(step.value(counters));
+        if (v !== null && numEl.dataset.pmValue !== String(v)) {
+          const first = numEl.dataset.pmValue === undefined;
+          PM.countUp(numEl, v, { duration: first ? 700 : 450 });
+          li.classList.add('has-val');
+          if (!first && !PM.reducedMotion()) { const val = li.querySelector('.ch-val'); val.classList.remove('bump'); void val.offsetWidth; val.classList.add('bump'); }
         }
-
-        if (stage.details.length && stage.status !== 'pending') {
-          const list = document.createElement('ul');
-          list.className = 'mt-1 space-y-0.5';
-          stage.details.forEach(detail => {
-            const row = document.createElement('li');
-            row.className = 'text-[11px] text-slate-500 dark:text-slate-400';
-            row.textContent = `• ${detail}`;
-            list.appendChild(row);
-          });
-          body.appendChild(list);
-        }
-
-        item.appendChild(body);
-        pdfStages.appendChild(item);
-
+        const of = step.of ? num(step.of(counters)) : null;
+        li.querySelector('.ch-of').textContent = of !== null ? `/ ${fmt.int(of)}` : '';
+        const text = step.sub(counters);
+        sub.textContent = text || (state === 'skipped' ? 'Skipped by the pipeline.' : state === 'failed' ? 'Stopped: see the failed stage.' : step.idle);
       });
-
     }
 
-
+    // ---------------- Event log (proof layer) ----------------
     function appendLog(event) {
-
-      const time = new Date((event.timestamp || Date.now() / 1000) * 1000)
-        .toLocaleTimeString([], { hour12: false });
-
+      const ts = (event.timestamp || Date.now() / 1000) * 1000;
+      const d = new Date(ts);
+      const time = `${d.toLocaleTimeString([], { hour12: false })}.${String(d.getMilliseconds()).padStart(3, '0')}`;
+      const prefix = typeof jobLogPrefix === 'function' ? jobLogPrefix(event) : `[${event.stage || 'job'}]`;
+      const kind = event.type === 'job_failed' ? 'err'
+        : event.type === 'job_completed' || event.type === 'stage_completed' ? 'ok'
+          : prefix === '[DATABASE]' ? 'db' : event.type === 'stage_progress' ? 'dim' : '';
       const line = document.createElement('div');
-
-      line.className =
-        event.type === 'job_failed' ? 'text-red-400'
-          : event.type === 'job_completed' || event.type === 'stage_completed' ? 'text-emerald-400'
-            : '';
-
-      line.textContent =
-        `${time}  ${(event.stage || 'job').padEnd(11)} ${event.message || event.type}`;
-
-      const pinned =
-        pdfLog.scrollTop + pdfLog.clientHeight >= pdfLog.scrollHeight - 8;
-
+      line.className = 'log-line';
+      if (kind) line.dataset.kind = kind;
+      line.innerHTML = `<span class="log-t">${esc(time)}</span><span class="log-id">#${esc(event.id ?? '')}</span><span class="log-p">${esc(prefix)}</span><span class="log-m">${esc(`${event.type}${event.stage ? ` · ${event.stage}` : ''} — ${event.message || event.error || ''}`)}</span>`;
+      const pinned = pdfLog.scrollTop + pdfLog.clientHeight >= pdfLog.scrollHeight - 8;
       pdfLog.appendChild(line);
-
       if (pinned) pdfLog.scrollTop = pdfLog.scrollHeight;
-
+      eventCount++;
+      $('logCount').textContent = `${eventCount} event${eventCount === 1 ? '' : 's'}`;
     }
 
+    function logNote(text, kind = 'dim') {
+      const line = document.createElement('div');
+      line.className = 'log-line';
+      line.dataset.kind = kind;
+      const d = new Date();
+      line.innerHTML = `<span class="log-t">${esc(d.toLocaleTimeString([], { hour12: false }))}</span><span class="log-id"></span><span class="log-p">[CLIENT]</span><span class="log-m">${esc(text)}</span>`;
+      pdfLog.appendChild(line);
+      pdfLog.scrollTop = pdfLog.scrollHeight;
+    }
 
     function setOverallProgress(percent, message) {
-
-      const value = Math.max(0, Math.min(100, percent || 0));
-
+      const value = Math.max(0, Math.min(100, num(percent) || 0));
       pdfPipelineBar.style.width = `${value}%`;
-
       pdfPipelinePercent.textContent = `${Math.round(value)}%`;
-
+      $('pdfPipelineBarWrap').setAttribute('aria-valuenow', String(Math.round(value)));
       if (message) pdfPipelineMessage.textContent = message;
-
     }
 
+    function announce(text) { $('announcer').textContent = text; }
 
-    // Apply one SSE event to the local stage mirror.
+    // Apply one SSE event to the local stage mirror and the UI.
     function applyJobEvent(event) {
-
+      if (event.id != null) {
+        if (event.id <= lastEventId) return;   // already applied (replay after reconnect)
+        lastEventId = event.id;
+      }
+      if (jobStartedAt == null && event.timestamp) jobStartedAt = event.timestamp;
       const stage = event.stage && pipelineStages[event.stage];
 
       if (stage) {
-
         if (event.stage_status) {
           stage.status = event.stage_status;
-          if (event.stage_status === 'done' || event.stage_status === 'skipped') stage.progress = 1;
+          if (event.stage_status === 'done' || event.stage_status === 'skipped') { stage.progress = 1; stage.endedAt = event.timestamp; }
+          if (event.stage_status === 'running' && event.type === 'stage_started') stage.startedAt = event.timestamp;
         }
-
-        if (event.stage_progress !== undefined) stage.progress = event.stage_progress;
-
+        if (event.stage_progress !== undefined && event.stage_progress !== null) stage.progress = event.stage_progress;
+        if (event.type === 'stage_progress') stage.hasProgress = true;
         if (event.message) stage.message = event.message;
-
+        if (event.message && event.type !== 'stage_detail') stage.liveMessage = event.message;
         if (event.detail) stage.details.push(event.detail);
-
       }
+
+      if (event.counters) Object.assign(counters, event.counters);
 
       if (event.type === 'job_failed') {
-        Object.values(pipelineStages)
-          .filter(s => s.status === 'running')
-          .forEach(s => { s.status = 'failed'; });
+        const running = Object.values(pipelineStages).filter(s => s.status === 'running');
+        running.forEach(s => { s.status = 'failed'; s.error = event.error || event.message; s.endedAt = event.timestamp; });
+        if (!running.length) showFailure(event.error || event.message || 'PDF processing failed.', 'job');
       }
 
-      setOverallProgress(event.progress, event.message);
-
+      const overallMsg = event.type === 'job_failed'
+        ? `Stopped${Object.values(pipelineStages).some(s => s.status === 'failed') ? ` at ${Object.values(pipelineStages).filter(s => s.status === 'failed').map(s => s.label).join(' and ')}` : ''} · nothing after this point ran`
+        : event.type === 'stage_detail' ? null : event.message;
+      setOverallProgress(event.progress, overallMsg);
       appendLog(event);
+      if (stage) updateStage(event.stage); else renderStages();
+      if (event.type === 'job_failed') renderStages();
+      updateFork();
+      updateChain();
 
-      renderStages();
-
+      // Screen readers hear stage transitions, not progress ticks
+      if (stage && event.type === 'stage_started' && event.stage === 'alerting' && pipelineStages.predicting?.status === 'running') announce('ML predictions and early-warning generation started. They run in parallel.');
+      else if (stage && event.type === 'stage_started') announce(`${stage.label} started.`);
+      else if (stage && event.type === 'stage_completed' && event.stage !== 'complete') announce(`${stage.label} complete. ${event.message || ''}`);
+      else if (stage && event.type === 'stage_skipped') announce(`${stage.label} skipped. ${event.message || ''}`);
     }
 
+    // ---------------- Failure + retry ----------------
+    function failureHTML(message, kind) {
+      const canReconnect = kind === 'stream' && currentJobId;
+      return `<div class="inline-msg" role="alert" tabindex="-1" data-failure>
+        ${PM.icon('octagon-alert')}
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold" style="color:var(--pm-text)">${kind === 'stream' ? 'Lost the live connection' : kind === 'upload' ? 'Upload was not accepted' : 'The backend stopped this job'}</p>
+          <p class="mt-0.5">${esc(message)}</p>
+          <div class="flex flex-wrap gap-2 mt-3">
+            ${canReconnect ? `<button type="button" class="pm-btn pm-btn-sm pm-btn-primary" data-act="reconnect">${PM.icon('refresh-cw', 'w-3.5 h-3.5')}Reconnect to job</button>` : ''}
+            ${lastFile ? `<button type="button" class="pm-btn pm-btn-sm ${canReconnect ? '' : 'pm-btn-primary'}" data-act="retry">${PM.icon('refresh-cw', 'w-3.5 h-3.5')}Retry upload</button>` : ''}
+            <button type="button" class="pm-btn pm-btn-sm pm-btn-ghost" data-act="other">Choose another file</button>
+          </div>
+        </div>
+      </div>`;
+    }
 
-    function renderPdfResult(result) {
+    function wireFailure(root) {
+      root.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
+        if (b.dataset.act === 'retry' && lastFile) startUpload(lastFile);
+        else if (b.dataset.act === 'reconnect' && currentJobId) followExisting(currentJobId, lastFile?.name);
+        else resetToIdle(true);
+      }));
+    }
 
-      pdfResult.classList.remove('hidden');
+    function showFailure(message, kind) {
+      const el = $('pipelineError');
+      el.innerHTML = failureHTML(message, kind);
+      el.classList.remove('hidden');
+      wireFailure(el);
+    }
 
-      pdfResultText.innerHTML = '';
+    function focusFailure() {
+      const target = pdfPipeline.querySelector('[data-failure]');
+      if (target) { target.focus({ preventScroll: true }); target.scrollIntoView({ block: 'center', behavior: PM.reducedMotion() ? 'auto' : 'smooth' }); }
+    }
 
-      const values = [
-        ['Projects found', result.projects_found],
-        ['New projects', result.projects_created],
-        ['Existing projects updated', result.projects_updated],
-        ['Monthly updates added', result.updates_created],
-        ['Monthly updates updated', result.updates_updated],
-        ['Predictions generated', result.predictions_generated],
-        ['Early-warning alerts raised', result.alerts_created],
-        ['Errors', result.errors?.length || 0]
+    // ---------------- Completion summary ----------------
+    const SEV_ORDER = ['CRITICAL', 'ELEVATED', 'WATCH', 'LOW'];
+
+    function renderPdfResult(result, job = {}) {
+      const r = result || {};
+      const i = (v) => fmt.int(num(v) || 0);
+      const errors = Array.isArray(r.errors) ? r.errors : [];
+      const bySev = r.alerts_by_severity || {};
+      const sevKeys = Object.keys(bySev).sort((a, b) => (SEV_ORDER.indexOf(a.toUpperCase()) + 99) % 99 - (SEV_ORDER.indexOf(b.toUpperCase()) + 99) % 99);
+      const duration = job.finished_at && job.created_at ? fmtDur(job.finished_at - job.created_at) : '';
+      const month = job.counters?.report_month || counters.report_month;
+      const cells = [
+        ['Projects found', r.projects_found, 'in the report'],
+        ['New projects', r.projects_created, 'added to PAIMANA'],
+        ['Projects updated', r.projects_updated, 'existing records'],
+        ['Monthly updates', (num(r.updates_created) || 0) + (num(r.updates_updated) || 0), `${i(r.updates_created)} added · ${i(r.updates_updated)} revised`],
+        ['Predictions', r.predictions_generated, `${i(r.predictions_failed)} failed`],
+        ['Early warnings', r.alerts_created, 'new alerts raised']
       ];
 
-      values.forEach(([label, value]) => {
-
-        const row = document.createElement('p');
-
-        row.textContent = `${label}: ${value ?? 0}`;
-
-        pdfResultText.appendChild(row);
-
-      });
-
-      if (result.errors && result.errors.length > 0) {
-
-        const errorHeading = document.createElement('p');
-
-        errorHeading.className = 'font-semibold text-red-500 mt-4';
-
-        errorHeading.textContent = 'Import errors:';
-
-        pdfResultText.appendChild(errorHeading);
-
-        result.errors.forEach(error => {
-
-          const errorRow = document.createElement('p');
-
-          errorRow.className = 'text-red-500';
-
-          errorRow.textContent =
-            `Page ${error.page ?? '—'}: ${error.reason}`;
-
-          pdfResultText.appendChild(errorRow);
-
-        });
-
-      }
-
+      pdfResult.innerHTML = `
+        <div class="pm-card-pad flex flex-col md:flex-row md:items-start gap-4">
+          <span class="ok-tile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div class="min-w-0 flex-1">
+            <p class="pm-eyebrow">Processing complete</p>
+            <h2 id="pdfResultTitle" class="pm-title mt-1" style="font-size:16px">${esc(r.filename || lastFile?.name || 'PDF')} is in PAIMANA</h2>
+            <p class="pm-sub">${[month ? `Report month ${esc(fmt.month(month))}` : null, r.pages ? `${i(r.pages)} pages` : null, duration ? `processed in ${esc(duration)}` : null,
+              currentJobId ? `job <span class="pm-mono">${esc(currentJobId.slice(0, 8))}</span>` : null].filter(Boolean).join(' · ')}</p>
+          </div>
+          <div class="flex flex-wrap gap-2 shrink-0">
+            <a href="dashboard.html" class="pm-btn pm-btn-primary pm-btn-sm">${PM.icon('layout-dashboard', 'w-3.5 h-3.5')}Open dashboard</a>
+            <a href="early-warnings.html" class="pm-btn pm-btn-sm">${PM.icon('bell', 'w-3.5 h-3.5')}Review early warnings</a>
+            <a href="projects.html" class="pm-btn pm-btn-sm">${PM.icon('folder-kanban', 'w-3.5 h-3.5')}Browse projects</a>
+          </div>
+        </div>
+        <div class="sum-grid">
+          ${cells.map(([label, v, foot]) => `<div class="sum-cell"><p class="pm-kpi-label">${esc(label)}</p><p class="pm-kpi-value" data-count="${num(v) || 0}">0</p><p class="pm-kpi-foot">${esc(foot)}</p></div>`).join('')}
+        </div>
+        <div class="pm-card-pad grid grid-cols-1 ${errors.length ? 'md:grid-cols-2' : ''} gap-6" style="border-top:1px solid var(--pm-line)">
+          <div>
+            <p class="pm-eyebrow mb-3">Early warnings by severity</p>
+            ${sevKeys.length ? `<div class="flex flex-wrap gap-2.5">${sevKeys.map(k => `<span class="sev-chip">${PM.tierBadge(k, null, { showScore: false })}<span class="pm-num text-[13px] font-bold" style="color:var(--pm-text)">${i(bySev[k])}</span></span>`).join('')}</div>`
+              : `<p class="text-[12.5px]" style="color:var(--pm-muted)">No new early-warning alerts were raised by this report.</p>`}
+          </div>
+          ${errors.length ? `<div>
+            <p class="pm-eyebrow mb-3">Rows that could not be imported · ${i(errors.length)}</p>
+            <ul class="err-list">${errors.map(e => `<li><span class="pm-mono pm-num" style="color:var(--pm-muted)">${e.page != null ? `p. ${esc(e.page)}` : '—'}</span><span>${esc(e.reason || e.message || JSON.stringify(e))}</span></li>`).join('')}</ul>
+          </div>` : ''}
+        </div>`;
+      pdfResult.classList.remove('hidden');
+      if (!PM.reducedMotion()) pdfResult.classList.add('pm-pop-in');
+      pdfResult.querySelectorAll('[data-count]').forEach(el => PM.countUp(el, Number(el.dataset.count), { duration: 800 }));
     }
 
-
+    // ---------------- Streaming ----------------
     // Resolves with the final job snapshot once the job completes or fails.
     function followJob(jobId) {
-
       return new Promise((resolve, reject) => {
-
-        window.API.streamJob(jobId, {
+        stopStream = window.API.streamJob(jobId, {
           onEvent: applyJobEvent,
           onDone: resolve,
           onError: reject
         });
-
       });
-
     }
 
+    function resetPipelineUI(fileName) {
+      if (stopStream) { stopStream(); stopStream = null; }
+      pipelineStages = {}; stageEls = {}; counters = {};
+      lastEventId = 0; eventCount = 0; jobStartedAt = null;
+      pdfStages.innerHTML = '';
+      pdfLog.innerHTML = '';
+      $('logCount').textContent = '0 events';
+      $('logJobId').textContent = '…';
+      $('pipelineError').classList.add('hidden');
+      $('pipelineError').innerHTML = '';
+      pdfResult.classList.add('hidden');
+      pdfResult.classList.remove('pm-pop-in');
+      pdfResult.innerHTML = '';
+      pdfPipelineJob.textContent = 'Uploading…';
+      $('jobFile').textContent = fileName || '';
+      setOverallProgress(0, fileName ? `Uploading ${fileName}…` : '');
+      buildChain();
+    }
 
-    uploadPdfBtn.addEventListener(
-      'click',
-      async function () {
+    function seedStages(stages) {
+      pipelineStages = {};
+      (stages || []).forEach(stage => {
+        pipelineStages[stage.key] = { ...stage, status: 'pending', progress: 0, message: null, details: [] };
+      });
+      buildRail();
+      renderStages();
+      updateChain();
+    }
 
-        const file =
-          projectPdf.files[0];
+    function setJob(jobId) {
+      currentJobId = jobId;
+      pdfPipelineJob.textContent = `Job ${jobId}`;
+      $('logJobId').textContent = jobId.slice(0, 8) + '…';
+      $('pdfLogWrap').classList.remove('hidden');
+    }
 
+    async function runJob(jobId) {
+      // Seed the stage list from the backend so both sides agree on it.
+      const snapshot = await window.API.getJob(jobId);
+      seedStages(snapshot.stages);
+      const job = await followJob(jobId);
+      stopStream = null;
+      return job;
+    }
 
-        if (!file) {
-
-          alert('Please choose a PDF file first.');
-
-          return;
-
-        }
-
-
-        const originalText =
-          uploadPdfBtn.innerHTML;
-
-        uploadPdfBtn.disabled = true;
-
-        uploadPdfBtn.innerHTML = `
-          <span class="animate-pulse">
-            Processing PDF...
-          </span>
-        `;
-
-        pdfStatus.classList.add('hidden');
-
-        pdfResult.classList.add('hidden');
-
-        pipelineStages = {};
-
-        pdfStages.innerHTML = '';
-
-        pdfLog.innerHTML = '';
-
-        pdfPipelineJob.textContent = '';
-
-        setOverallProgress(0, `Uploading ${file.name}...`);
-
-        pdfPipeline.classList.remove('hidden');
-
-
-        try {
-
-          const upload =
-            await window.API.uploadProjectPDF(file);
-
-          pdfPipelineJob.textContent = `Job ${upload.job_id}`;
-
-          // Seed the stage list from the backend so both sides agree on it.
-          const snapshot =
-            await window.API.getJob(upload.job_id);
-
-          snapshot.stages.forEach(stage => {
-            pipelineStages[stage.key] = {
-              ...stage,
-              status: 'pending',
-              progress: 0,
-              message: null,
-              details: []
-            };
-          });
-
-          renderStages();
-
-          const job =
-            await followJob(upload.job_id);
-
-
-          if (job.status === 'failed') {
-
-            setStatusBanner(
-              'error',
-              job.error || 'PDF processing failed.'
-            );
-
-            return;
-
-          }
-
-
-          setOverallProgress(100, 'Processing complete');
-
-          setStatusBanner(
-            'success',
-            'PDF processed: records ingested, predictions and early warnings generated.'
-          );
-
-          renderPdfResult(job.result || {});
-
-
-          // Clear selected file
-          projectPdf.value = '';
-
-          selectedPdfName.textContent = '';
-
-          selectedPdfName.classList.add('hidden');
-
-
-        } catch (error) {
-
-          console.error(
-            'PDF upload failed:',
-            error
-          );
-
-          setStatusBanner(
-            'error',
-            error.message ||
-            'PDF upload failed. Please try again.'
-          );
-
-        } finally {
-
-          uploadPdfBtn.disabled = false;
-
-          uploadPdfBtn.innerHTML =
-            originalText;
-
-        }
-
+    function finishJob(job) {
+      if (job.status === 'failed') {
+        const msg = job.error || 'PDF processing failed.';
+        // Make sure the failure is visible even if the job_failed event was missed.
+        const failed = Object.values(pipelineStages).filter(s => s.status === 'failed' || s.status === 'running');
+        if (failed.length) failed.forEach(s => { s.status = 'failed'; s.error = s.error || msg; });
+        else if ($('pipelineError').classList.contains('hidden')) showFailure(msg, 'job');
+        renderStages(); updateChain();
+        setPhase('failed');
+        announce(`Processing failed. ${msg}`);
+        focusFailure();
+        return;
       }
-    );
-    lucide.createIcons();
+      if (job.counters) Object.assign(counters, job.counters);
+      const r = job.result || {};
+      // Final totals from the job result (ingestion's completion event carries no counters)
+      Object.assign(counters, {
+        projects_created: r.projects_created ?? counters.projects_created,
+        projects_updated: r.projects_updated ?? counters.projects_updated,
+        updates_created: r.updates_created ?? counters.updates_created,
+        updates_updated: r.updates_updated ?? counters.updates_updated,
+        alerts_created: r.alerts_created ?? counters.alerts_created
+      });
+      const sev = r.alerts_by_severity || {};
+      counters.alerts_by_severity_text = Object.keys(sev).length
+        ? SEV_ORDER.filter(k => sev[k]).map(k => `${fmt.int(sev[k])} ${PM.TIERS[k].label.toLowerCase()}`).join(' · ') : '';
+      updateChain();
+      setOverallProgress(100, 'Processing complete');
+      setPhase('done');
+      renderPdfResult(r, job);
+      announce(`Processing complete. ${fmt.int(r.projects_found || 0)} projects found, ${fmt.int(r.predictions_generated || 0)} predictions generated, ${fmt.int(r.alerts_created || 0)} early warnings raised.`);
+      pdfResult.focus({ preventScroll: true });
+      $('main').scrollTo({ top: 0, behavior: PM.reducedMotion() ? 'auto' : 'smooth' });
 
+      // Clear selected file
+      projectPdf.value = '';
+      selectedFile = null;
+    }
+
+    function streamFailed(error) {
+      console.error('PDF upload failed:', error);
+      const msg = error?.message || 'PDF upload failed. Please try again.';
+      logNote(msg, 'err');
+      showFailure(msg, 'stream');
+      setPhase('failed');
+      announce(`Processing interrupted. ${msg}`);
+      focusFailure();
+    }
+
+    async function startUpload(file) {
+      if (!file) { setStatusBanner('error', 'Please choose a PDF file first.'); return; }
+      lastFile = file;
+      currentJobId = null;
+      resetPipelineUI(file.name);
+      setPhase('running');
+      announce(`Uploading ${file.name}.`);
+
+      let upload;
+      try {
+        upload = await window.API.uploadProjectPDF(file);
+      } catch (error) {
+        // Rejected before a job existed (rate limit, size, empty file, network).
+        console.error('PDF upload failed:', error);
+        setPhase('idle');
+        setFile(file);
+        setStatusBanner('error', error.message || 'PDF upload failed. Please try again.');
+        announce(`Upload failed. ${error.message || ''}`);
+        uploadPdfBtn.focus();
+        return;
+      }
+
+      setJob(upload.job_id);
+      try {
+        finishJob(await runJob(upload.job_id));
+      } catch (error) {
+        streamFailed(error);
+      }
+    }
+
+    // Re-attach to a job that is still known to the backend (after a lost stream).
+    async function followExisting(jobId, fileName) {
+      resetPipelineUI(fileName);
+      setJob(jobId);
+      setPhase('running');
+      logNote('Reconnecting: replaying the job from its first event.');
+      try {
+        finishJob(await runJob(jobId));
+      } catch (error) {
+        streamFailed(error);
+      }
+    }
+
+    function resetToIdle(focus) {
+      if (stopStream) { stopStream(); stopStream = null; }
+      resetPipelineUI('');
+      $('pdfLogWrap').classList.add('hidden');
+      currentJobId = null;
+      setPhase('idle');
+      setFile(null);
+      if (focus) dropZone.focus();
+    }
+
+    uploadPdfBtn.addEventListener('click', () => {
+      if (!selectedFile) { setStatusBanner('error', 'Please choose a PDF file first.'); return; }
+      startUpload(selectedFile);
+    });
+    $('anotherPdfBtn').addEventListener('click', () => resetToIdle(true));
+    window.addEventListener('pagehide', () => { if (stopStream) stopStream(); });
+
+    buildChain();
 
     // =========================================================
-    // HELPER FUNCTIONS
+    // HELPER FUNCTIONS (manual form)
     // =========================================================
 
     // Converts empty form fields to null instead of 0 or NaN.
     function optionalNumber(id, parser = parseFloat) {
-
       const value = document.getElementById(id).value.trim();
-
       if (value === '') {
         return null;
       }
-
       const parsed = parser(value);
-
       return Number.isNaN(parsed) ? null : parsed;
     }
 
-
     function optionalText(id) {
-
       const value = document.getElementById(id).value.trim();
-
       return value === '' ? null : value;
-
     }
-
 
     function optionalDate(id) {
-
       const value = document.getElementById(id).value.trim();
-
       return value === '' ? null : value;
-
     }
-
 
     // =========================================================
     // FORM SUBMISSION
     // =========================================================
+    const formError = $('formError');
 
     document
       .getElementById('projectForm')
@@ -1303,225 +1329,131 @@
 
         e.preventDefault();
 
+        // Native constraint validation (Project ID is required), shown inline.
+        if (!this.checkValidity()) {
+          this.classList.add('was-validated');
+          const firstInvalid = this.querySelector(':invalid');
+          this.reportValidity();
+          if (firstInvalid) firstInvalid.focus();
+          return;
+        }
+        formError.classList.add('hidden');
 
         // -----------------------------------------------------
         // Build frontend project object
         // Empty optional fields become null.
         // -----------------------------------------------------
-
         const newProject = {
-
           // Mandatory
-          project_id:
-            document.getElementById('project_id').value.trim(),
+          project_id: document.getElementById('project_id').value.trim(),
 
           // Project identity
-          project_name:
-            optionalText('project_name'),
-
-          implementing_agency:
-            optionalText('implementing_agency'),
-
-          sector:
-            optionalText('sector'),
-
-          state:
-            optionalText('state'),
-
+          project_name: optionalText('project_name'),
+          implementing_agency: optionalText('implementing_agency'),
+          sector: optionalText('sector'),
+          state: optionalText('state'),
 
           // Timeline
-          date_of_approval:
-            optionalDate('date_of_approval'),
-
-          original_commissioning_date:
-            optionalDate('original_commissioning_date'),
-
-          revised_commissioning_date:
-            optionalDate('revised_commissioning_date'),
-
-          anticipated_commissioning_date:
-            optionalDate('anticipated_commissioning_date'),
-
+          date_of_approval: optionalDate('date_of_approval'),
+          original_commissioning_date: optionalDate('original_commissioning_date'),
+          revised_commissioning_date: optionalDate('revised_commissioning_date'),
+          anticipated_commissioning_date: optionalDate('anticipated_commissioning_date'),
 
           // Financial
-          original_cost_crore:
-            optionalNumber('original_cost_crore'),
-
-          revised_cost_crore:
-            optionalNumber('revised_cost_crore'),
-
-          anticipated_cost_crore:
-            optionalNumber('anticipated_cost_crore'),
-
-          cumulative_expenditure_crore:
-            optionalNumber('cumulative_expenditure_crore'),
-
+          original_cost_crore: optionalNumber('original_cost_crore'),
+          revised_cost_crore: optionalNumber('revised_cost_crore'),
+          anticipated_cost_crore: optionalNumber('anticipated_cost_crore'),
+          cumulative_expenditure_crore: optionalNumber('cumulative_expenditure_crore'),
 
           // Delay
-          delay_original_months:
-            optionalNumber('delay_original_months'),
-
-          delay_revised_months:
-            optionalNumber('delay_revised_months'),
-
+          delay_original_months: optionalNumber('delay_original_months'),
+          delay_revised_months: optionalNumber('delay_revised_months'),
 
           // Physical progress
-          milestones_achieved:
-            optionalNumber('milestones_achieved', parseInt),
-
-          milestones_total:
-            optionalNumber('milestones_total', parseInt)
-
+          milestones_achieved: optionalNumber('milestones_achieved', parseInt),
+          milestones_total: optionalNumber('milestones_total', parseInt)
         };
 
-
-        console.log(
-          'Frontend project data:',
-          newProject
-        );
-
+        console.log('Frontend project data:', newProject);
 
         // -----------------------------------------------------
         // Button state
         // -----------------------------------------------------
-
-        const btn =
-          e.target.querySelector(
-            'button[type="submit"]'
-          );
-
-        const originalText =
-          btn.innerHTML;
-
-        btn.innerHTML =
-          `<span class="animate-pulse">Running ML Model...</span>`;
-
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<span>Running ML models…</span>`;
         btn.disabled = true;
-
+        btn.setAttribute('aria-busy', 'true');
 
         try {
-
-          // ---------------------------------------------------
-          // CURRENT API CALL
-          //
-          // This will be updated in the backend phase.
-          // ---------------------------------------------------
-
           const createResponse = await fetch(
             `${window.location.origin}/api/v1/projects`,
             {
               method: 'POST',
-
               headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
               },
-
               body: JSON.stringify(newProject)
             }
           );
 
-
           if (!createResponse.ok) {
-
-            const err =
-              await createResponse
-                .json()
-                .catch(() => ({}));
-
+            const err = await createResponse.json().catch(() => ({}));
             throw new Error(
-              err.detail ||
+              (typeof err.detail === 'string' && err.detail) ||
               `Project creation failed (${createResponse.status})`
             );
-
           }
 
-
-          const created =
-            await createResponse.json();
-
+          const created = await createResponse.json();
 
           // ---------------------------------------------------
           // Prediction
           // ---------------------------------------------------
-
           const reportMonth =
             newProject.date_of_approval
               ? newProject.date_of_approval.slice(0, 7)
               : new Date().toISOString().slice(0, 7);
 
-
-          const mlResult =
-            await window.API.runPrediction(
-              created.project_id,
-              reportMonth
-            );
-
+          const mlResult = await window.API.runPrediction(created.project_id, reportMonth);
 
           // ---------------------------------------------------
           // Display result
           // ---------------------------------------------------
-
-          const resultCard =
-            document.getElementById('resultCard');
-
-          const resultText =
-            document.getElementById('resultText');
-
-
-          resultCard.classList.remove('hidden');
-
+          const resultCard = document.getElementById('resultCard');
+          const resultText = document.getElementById('resultText');
+          const score = num(mlResult.composite_risk_score);
+          const pid = created.project_id || newProject.project_id;
 
           resultText.innerHTML = `
-
-            <strong>
-              ${newProject.project_name || newProject.project_id}
-            </strong>
-            analyzed successfully.
-
-            <br><br>
-
-            <strong>AI Risk Score:</strong>
-            ${Number(
-            mlResult.composite_risk_score || 0
-          ).toFixed(1)}/100
-
-            <br>
-
-            <strong>Status:</strong>
-            ${mlResult.risk_tier || 'N/A'}
-
-          `;
-
+            <p><strong style="color:var(--pm-text)">${esc(newProject.project_name || newProject.project_id)}</strong> analyzed successfully.</p>
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-3 mt-4">
+              <div><p class="pm-kpi-label">AI risk score</p><p class="pm-kpi-value" style="font-size:26px">${score === null ? '—' : score.toFixed(1)}<span class="pm-kpi-unit">/100</span></p></div>
+              <div><p class="pm-kpi-label mb-1.5">Status</p>${mlResult.risk_tier || score !== null ? PM.tierBadge(mlResult.risk_tier, score, { showScore: false }) : 'N/A'}</div>
+              <a class="pm-btn pm-btn-sm ml-auto" href="project-details.html?id=${encodeURIComponent(pid)}">Open project ${PM.icon('arrow-right', 'w-3.5 h-3.5')}</a>
+            </div>`;
+          resultCard.classList.remove('hidden');
+          resultCard.focus({ preventScroll: true });
+          resultCard.scrollIntoView({ block: 'nearest', behavior: PM.reducedMotion() ? 'auto' : 'smooth' });
 
           btn.innerHTML = originalText;
-
           btn.disabled = false;
-
+          btn.removeAttribute('aria-busy');
           e.target.reset();
-
+          e.target.classList.remove('was-validated');
 
         } catch (error) {
-
-          console.error(
-            "Error communicating with ML backend:",
-            error
-          );
-
+          console.error('Error communicating with ML backend:', error);
           btn.innerHTML = originalText;
-
           btn.disabled = false;
-
-          alert(
-            "Failed to connect to the prediction server. Check the console."
-          );
-
+          btn.removeAttribute('aria-busy');
+          formError.innerHTML = `${PM.icon('triangle-alert')}<div><p class="font-semibold" style="color:var(--pm-text)">Failed to connect to the prediction server.</p><p class="mt-0.5">${esc(error.message || 'Check the console.')}</p></div>`;
+          formError.classList.remove('hidden');
+          formError.setAttribute('tabindex', '-1');
+          formError.focus();
         }
-
       });
-
   </script>
-
 </body>
-
 </html>

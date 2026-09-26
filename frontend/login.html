@@ -1,111 +1,111 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PAIMANA AI - Admin Login</title>
-
+  <title>Admin sign in · PAIMANA</title>
+  <meta name="description" content="Administrator sign in for PAIMANA project management and flash report upload.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };
+  </script>
+  <script>
+    if (localStorage.getItem('theme') === 'dark' ||
+      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
   </script>
-  <script src="js/theme.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
-  <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="/css/custom.css">
+  <link rel="stylesheet" href="/css/paimana.css">
+  <style>
+    .side { background: var(--pm-bg-elev); border-right: 1px solid var(--pm-line); }
+    .side-title { font-size: clamp(28px, 2.6vw, 38px); line-height: 1.15; font-weight: 740; letter-spacing: -.025em; color: var(--pm-text); }
+    .steps li { display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: start; padding: 14px 0; border-top: 1px solid var(--pm-line); }
+    .steps li:last-child { border-bottom: 1px solid var(--pm-line); }
+    .step-icon { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--pm-surface-hover); color: var(--pm-text-2); }
+    .step-icon svg { width: 16px; height: 16px; }
+    .field-label { display: block; font-size: 12px; font-weight: 600; color: var(--pm-text-2); margin-bottom: 6px; }
+    .pm-input.lg { height: 42px; width: 100%; font-size: 14px; }
+    .pm-btn-lg { height: 44px; font-size: 14px; border-radius: 10px; }
+  </style>
 </head>
 
-<body
-  class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
-
-  <!-- Left Side: Branding & Vision -->
-  <div
-    class="hidden lg:flex flex-1 flex-col justify-center px-24 relative overflow-hidden bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] transition-colors duration-200">
-    <!-- Decorative glow -->
-    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
-
-    <div class="relative z-10 space-y-6">
-      <div class="flex items-center gap-3 mb-8">
-        <div
-          class="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold shadow-lg shadow-orange-500/20">
-          <i data-lucide="shield-alert" class="w-6 h-6"></i>
-        </div>
-        <span class="text-2xl font-bold text-slate-900 dark:text-white tracking-wide">PAIMANA AI</span>
-      </div>
-
-      <h1 class="text-4xl font-bold text-slate-900 dark:text-white leading-tight">
-        Building a stronger India <br> through smarter decisions.
-      </h1>
-      <p class="text-slate-500 dark:text-slate-400 text-lg max-w-md leading-relaxed">
-        Infrastructure is the foundation for a brighter tomorrow.
+<body class="pm-app flex min-h-screen antialiased">
+  <!-- Left: what the admin area is for -->
+  <aside class="side hidden lg:flex flex-1 flex-col justify-between px-16 xl:px-24 py-12" aria-label="About the admin area">
+    <a href="index.html" class="pm-brand" aria-label="PAIMANA home" style="padding-left:0">
+      <span class="pm-brand-mark"><span data-icon="shield-alert" class="w-[17px] h-[17px]"></span></span>
+      <span class="pm-brand-name">PAIMANA<small>Infrastructure intelligence</small></span>
+    </a>
+    <div class="max-w-md pm-enter">
+      <p class="pm-eyebrow">Administrator</p>
+      <h1 class="side-title mt-3">Keep the portfolio current.</h1>
+      <p class="mt-4 text-[15px] leading-relaxed" style="color:var(--pm-text-2)">
+        Administrators add each month's official flash report. PAIMANA takes it from there.
       </p>
+      <ol class="steps mt-8">
+        <li><span class="step-icon"><span data-icon="file-up" class="w-4 h-4"></span></span>
+          <div><p class="pm-title" style="font-size:13.5px">Upload the flash report PDF</p><p class="pm-sub">The monthly project report, as published.</p></div></li>
+        <li><span class="step-icon"><span data-icon="sparkles" class="w-4 h-4"></span></span>
+          <div><p class="pm-title" style="font-size:13.5px">Extraction and risk scoring</p><p class="pm-sub">Project rows are stored and scored by the cost, schedule and survival models.</p></div></li>
+        <li><span class="step-icon"><span data-icon="bell" class="w-4 h-4"></span></span>
+          <div><p class="pm-title" style="font-size:13.5px">Early warnings update</p><p class="pm-sub">New signals appear in the warning center for review.</p></div></li>
+      </ol>
     </div>
-  </div>
+    <p class="pm-updated">PAIMANA · Infrastructure intelligence</p>
+  </aside>
 
-  <!-- Right Side: Login Form -->
-  <div class="flex-1 flex flex-col justify-center items-center px-4 sm:px-8 relative">
+  <!-- Right: sign-in form -->
+  <main id="main" class="flex-1 flex flex-col min-w-0">
+    <div class="flex items-center justify-between px-4 sm:px-8 pt-5">
+      <a href="index.html" class="pm-brand lg:invisible" aria-label="PAIMANA home" style="padding-left:0">
+        <span class="pm-brand-mark"><span data-icon="shield-alert" class="w-[17px] h-[17px]"></span></span>
+        <span class="pm-brand-name">PAIMANA</span>
+      </a>
+      <button id="theme-toggle" type="button" class="pm-btn pm-btn-ghost pm-icon-btn" aria-label="Toggle theme">
+        <span id="theme-dark-icon" data-icon="moon" class="w-4 h-4 hidden"></span>
+        <span id="theme-light-icon" data-icon="sun" class="w-4 h-4 hidden"></span>
+      </button>
+    </div>
 
-    <!-- Theme Toggle (Top Right) -->
-    <button id="theme-toggle"
-      class="absolute top-8 right-8 p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-      <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
-      <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
-    </button>
+    <div class="flex-1 flex items-center justify-center px-4 sm:px-8 py-10">
+      <div id="login-card" class="w-full max-w-[400px] pm-enter" style="--pm-delay:60ms">
+        <div class="pm-card p-6 sm:p-8">
+          <h2 class="text-[22px] font-bold tracking-tight" style="color:var(--pm-text);letter-spacing:-.015em">Admin sign in</h2>
+          <p class="pm-sub" style="font-size:13px;margin-top:4px">Sign in to manage projects and upload flash reports.</p>
 
-    <div id="login-card" class="w-full max-w-md space-y-8">
-      <div class="text-center">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Admin Login</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">Sign in to access project management</p>
+          <form id="loginForm" class="mt-7 space-y-5">
+            <div>
+              <label for="email-input" class="field-label">Email address</label>
+              <input id="email-input" type="email" value="admin@gov.in" required autocomplete="username" class="pm-input lg">
+            </div>
+            <div>
+              <label for="password-input" class="field-label">Password</label>
+              <input id="password-input" type="password" value="••••••••" required autocomplete="current-password" class="pm-input lg">
+            </div>
+            <button type="submit" class="pm-btn pm-btn-primary pm-btn-lg w-full">Sign in</button>
+          </form>
+          <p class="pm-updated mt-5" style="white-space:normal;line-height:1.5">Signing in enables the administrator tools (project upload) for this browser session.</p>
+        </div>
+        <div class="mt-5 flex flex-wrap justify-between gap-2 text-[12.5px]">
+          <a href="dashboard.html" class="pm-btn pm-btn-ghost pm-btn-sm" style="margin-left:-10px"><span aria-hidden="true">←</span> Return to public dashboard</a>
+          <a href="index.html" class="pm-btn pm-btn-ghost pm-btn-sm">About PAIMANA</a>
+        </div>
       </div>
-
-      <form id="loginForm" class="space-y-5">
-
-        <div class="space-y-2">
-          <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Email Address</label>
-          <input id="email-input" type="email" value="admin@gov.in" required
-            class="w-full bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-        </div>
-
-        <div class="space-y-2">
-          <div class="flex justify-between">
-            <label class="text-xs font-semibold text-slate-600 dark:text-slate-400">Password</label>
-            <a href="#" class="text-xs text-orange-600 dark:text-orange-500 hover:underline">Forgot password?</a>
-          </div>
-          <input type="password" value="••••••••" required
-            class="w-full bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] rounded-lg px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-        </div>
-
-        <button type="submit"
-          class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg transition-colors flex justify-center items-center mt-6">
-          Sign In
-        </button>
-
-        
-
-        <div class="mt-4 text-center">
-          <a href="dashboard.html"
-            class="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white transition">← Return to public
-            dashboard</a>
-        </div>
-      </form>
     </div>
-  </div>
+  </main>
 
-  <script src="js/animations.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/theme.js"></script>
   <script>
-    lucide.createIcons();
-
-    // Since this is now strictly an admin login, we removed the toggle buttons
-    // and just assign the admin role unconditionally upon form submission.
+    PM.hydrateIcons();
+    // Strictly an admin login: assigns the admin role for this session on submit.
     document.getElementById('loginForm').addEventListener('submit', (e) => {
       e.preventDefault();
       sessionStorage.setItem('paimana_role', 'admin');
@@ -113,5 +113,4 @@
     });
   </script>
 </body>
-
 </html>
