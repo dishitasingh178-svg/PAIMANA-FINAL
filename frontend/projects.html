@@ -3,301 +3,484 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PAIMANA AI - Project Portfolio</title>
-  
+  <title>Projects · PAIMANA</title>
+  <meta name="description" content="Search the monitored infrastructure portfolio by project, agency and sector, with the latest AI risk score for each project.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } }
-    }
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };
   </script>
-  
   <script>
-    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (localStorage.getItem('theme') === 'dark' ||
+      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
   </script>
+  <link rel="stylesheet" href="/css/custom.css">
+  <link rel="stylesheet" href="/css/paimana.css">
+  <style>
+    /* Toolbar */
+    .search-wrap { position: relative; flex: 1 1 320px; min-width: 0; max-width: 460px; }
+    .search-wrap .pm-input { width: 100%; padding-left: 36px; padding-right: 36px; }
+    .search-ico { position: absolute; left: 12px; top: 50%; width: 15px; height: 15px; transform: translateY(-50%); color: var(--pm-faint); pointer-events: none; }
+    .search-clear { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: var(--pm-muted); }
+    .search-clear:hover { background: var(--pm-surface-hover); color: var(--pm-text); }
+    .field-label { display: block; font-size: 11px; font-weight: 600; color: var(--pm-muted); margin-bottom: 6px; letter-spacing: .01em; }
+    .pm-select { padding-right: 30px; appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 9px center; background-size: 15px; }
+    .tool-sep { width: 1px; align-self: stretch; background: var(--pm-line); }
+    .tier-chips .pm-chip { height: 28px; padding: 0 10px; font-size: 11.5px; }
+    .tier-chips .pm-chip[disabled] { opacity: .45; cursor: default; }
 
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
-  <link rel="stylesheet" href="css/custom.css">
+    /* Loading line over the table while a new query runs */
+    .load-line { position: absolute; left: 0; right: 0; top: 0; height: 2px; overflow: hidden; opacity: 0; transition: opacity .2s; z-index: 3; }
+    .load-line.on { opacity: 1; }
+    .load-line::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; background: var(--pm-accent); animation: load-slide 1.1s var(--pm-ease) infinite; }
+    @keyframes load-slide { from { left: -30%; } to { left: 100%; } }
+    tbody.is-stale { opacity: .5; transition: opacity .2s var(--pm-ease); }
+
+    /* Table */
+    .table-scroll { overflow-x: auto; }
+    .pm-table { min-width: 940px; }
+    .pm-table td.num, .pm-table th.num { text-align: right; }
+    .p-name { color: var(--pm-text); font-weight: 600; font-size: 13px; line-height: 1.35; text-decoration: none;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 46ch; }
+    .p-name:hover { color: var(--pm-accent); }
+    .p-name:focus-visible { outline-offset: 3px; }
+    .p-meta { font-size: 11.5px; color: var(--pm-muted); margin-top: 3px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .p-meta .pm-mono { font-size: 11px; color: var(--pm-faint); }
+    .sector { font-size: 12px; color: var(--pm-text-2); }
+    .cost-main { color: var(--pm-text); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .cost-sub { font-size: 11.5px; color: var(--pm-muted); margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .delta { font-weight: 700; }
+    .delta.up { color: var(--pm-critical); }
+    .delta.down { color: var(--pm-low); }
+    .ms .ms-top, .ms .pm-meter { max-width: 160px; }
+    .ms-top { display: flex; justify-content: space-between; font-size: 11.5px; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+    .ms .pm-meter > span { background: color-mix(in srgb, var(--pm-info) 80%, var(--pm-surface)); }
+    .ms-none { font-size: 11.5px; color: var(--pm-faint); }
+    .risk-cell .pm-meter { width: 96px; height: 4px; margin-top: 7px; }
+    .pm-row-go { width: 16px; height: 16px; }
+
+    /* Small screens: rows become cards */
+    @media (max-width: 767px) {
+      .table-scroll { overflow: visible; }
+      .pm-table { min-width: 0; }
+      .pm-table thead { display: none; }
+      .pm-table, .pm-table tbody { display: block; }
+      .pm-table tbody tr { display: grid; grid-template-columns: 1fr auto; gap: 10px 14px; padding: 14px 16px; border-bottom: 1px solid var(--pm-line); }
+      .pm-table tbody tr:last-child { border-bottom: 0; }
+      .pm-table tbody td { display: block; padding: 0; border: 0; }
+      .pm-table td.c-project { grid-column: 1 / -1; }
+      .pm-table td.c-sector { grid-column: 1; }
+      .pm-table td.c-risk { grid-column: 2; grid-row: 2; justify-self: end; }
+      .pm-table td.c-cost { grid-column: 1; }
+      .pm-table td.c-ms { grid-column: 2; justify-self: end; }
+      .pm-table td.c-go { display: none; }
+      .pm-table td.num { text-align: left; }
+      .ms .ms-top, .ms .pm-meter { width: 130px; }
+      .pm-table colgroup { display: none; }
+      .p-name { max-width: none; }
+      .risk-cell .pm-meter { display: none; }
+    }
+  </style>
 </head>
 
-<body class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
-
-  <!-- Mobile sidebar backdrop -->
+<body class="pm-app flex min-h-screen antialiased">
+  <a href="#main" class="pm-skip">Skip to content</a>
   <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden"></div>
+  <aside id="sidebar" data-pm-shell
+    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 flex flex-col justify-between p-4 shrink-0 overflow-y-auto"></aside>
 
-  <!-- ================= SIDEBAR ================= -->
-  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 transition-colors duration-200 overflow-y-auto">
-    <div>
-      <div class="flex items-center gap-3 mb-10 pl-2">
-        <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
-          <i data-lucide="shield-alert" class="w-5 h-5"></i>
-        </div>
-        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">PAIMANA AI</span>
-      </div>
-
-      <nav class="space-y-1 text-sm font-medium">
-        <a href="dashboard.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
-        </a>
-        <a href="projects.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
-          <i data-lucide="folder-kanban" class="w-4 h-4"></i> Projects
-        </a>
-        <a href="add-project.html" data-role="admin" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Project
-        </a>
-        <a href="risk-analytics.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="line-chart" class="w-4 h-4"></i> Risk Analytics
-        </a>
-        <a href="early-warnings.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="bell" class="w-4 h-4"></i> Early Warnings
-        </a>
-        <a href="ai-assistant.html" data-hover-lift class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="bot" class="w-4 h-4"></i> AI Assistant
-        </a>
-      </nav>
-    </div>
-  </aside>
-
-  <!-- ================= MAIN CONTENT ================= -->
-  <main class="flex-1 flex flex-col overflow-y-auto h-screen min-w-0">
-    <header class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-4 md:px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
+  <main id="main" class="flex-1 flex flex-col h-screen overflow-y-auto min-w-0">
+    <header class="pm-header">
       <div class="flex items-center gap-3 min-w-0">
-        <button id="sidebar-toggle" class="lg:hidden shrink-0 p-2 -ml-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-          <i data-lucide="menu" class="w-5 h-5"></i>
+        <button id="sidebar-toggle" type="button" class="lg:hidden pm-btn pm-btn-ghost pm-icon-btn -ml-2" aria-label="Open navigation">
+          <span data-icon="menu" class="w-5 h-5"></span>
         </button>
         <div class="min-w-0">
-          <h1 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white truncate">Project Portfolio</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden sm:block">Explore and filter projects from the PAIMANA database.</p>
+          <p class="pm-eyebrow">Monitor</p>
+          <h1 class="pm-page-title truncate">Project portfolio</h1>
         </div>
       </div>
-      <button id="theme-toggle" class="shrink-0 p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-        <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
-        <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
-      </button>
+      <div class="flex items-center gap-2 shrink-0">
+        <span id="updated" class="pm-updated hidden sm:inline" aria-live="polite"></span>
+        <button id="theme-toggle" type="button" class="pm-btn pm-btn-ghost pm-icon-btn" aria-label="Toggle theme">
+          <span id="theme-dark-icon" data-icon="moon" class="w-4 h-4 hidden"></span>
+          <span id="theme-light-icon" data-icon="sun" class="w-4 h-4 hidden"></span>
+        </button>
+      </div>
     </header>
 
-    <div class="p-4 md:p-8 space-y-6 flex-1 flex flex-col">
-      
-      <!-- Filters Row -->
-      <div class="flex flex-wrap gap-4 items-center justify-between bg-white dark:bg-[#121826] p-4 rounded-xl border border-slate-200 dark:border-[#1E293B] shadow-sm transition-colors duration-200">
-        
-        <div class="relative w-full sm:w-72">
-          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
-          <input type="text" id="searchInput" placeholder="Search projects, agencies..." class="w-full bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg pl-9 pr-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-        </div>
-        
-        <div class="flex items-center gap-3">
-          <select id="statusFilter" class="bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-            <option value="all">All Statuses</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
-            <option value="delayed">Delayed</option>
-          </select>
-          
-          <select id="sectorFilter" class="bg-slate-50 dark:bg-[#0A0E17] border border-slate-200 dark:border-[#1E293B] rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors">
-            <option value="all">All Sectors</option>
-            <option value="STEEL">Steel</option>
-            <option value="RAILWAYS">Railways</option>
-            <option value="POWER">Power</option>
-            <option value="PETROLEUM">Petroleum</option>
-          </select>
-        </div>
+    <div class="px-4 md:px-8 py-6 md:py-8">
+      <div class="max-w-[1320px] mx-auto space-y-4">
+
+        <!-- ============ Search + filters ============ -->
+        <section class="pm-card pm-card-pad pm-enter" aria-labelledby="filters-title">
+          <h2 id="filters-title" class="pm-sr-only">Search and filter projects</h2>
+          <form id="search-form" class="flex flex-wrap items-end gap-3" role="search" onsubmit="return false">
+            <div class="search-wrap">
+              <label for="q" class="field-label">Search</label>
+              <div class="relative">
+                <span data-icon="search" class="search-ico"></span>
+                <input id="q" type="search" class="pm-input" autocomplete="off" spellcheck="false"
+                  placeholder="Project name, agency or project ID" aria-describedby="result-summary">
+                <button id="q-clear" type="button" class="search-clear hidden" aria-label="Clear search"><span data-icon="x" class="w-3.5 h-3.5"></span></button>
+              </div>
+            </div>
+            <div class="min-w-[200px] flex-1 sm:flex-none">
+              <label for="sector" class="field-label">Sector</label>
+              <select id="sector" class="pm-select w-full sm:w-[240px]">
+                <option value="all">All sectors</option>
+              </select>
+            </div>
+            <div class="tool-sep hidden lg:block" aria-hidden="true"></div>
+            <div class="min-w-[180px] flex-1 sm:flex-none">
+              <label for="sort" class="field-label">Sort loaded results</label>
+              <select id="sort" class="pm-select w-full sm:w-[210px]">
+                <option value="id">Project ID (server order)</option>
+                <option value="risk-desc">AI risk, highest first</option>
+                <option value="risk-asc">AI risk, lowest first</option>
+                <option value="cost-desc">Anticipated cost, largest first</option>
+                <option value="esc-desc">Cost escalation, largest first</option>
+                <option value="ms-asc">Milestone completion, lowest first</option>
+              </select>
+            </div>
+          </form>
+          <div class="mt-4 pt-4 flex flex-wrap items-center gap-x-3 gap-y-2" style="border-top:1px solid var(--pm-line)">
+            <span id="tier-label" class="text-[11.5px] font-semibold" style="color:var(--pm-muted)">Filter loaded results by risk tier</span>
+            <div id="tier-chips" class="tier-chips flex flex-wrap gap-1.5" role="group" aria-labelledby="tier-label"></div>
+            <span id="sector-note" class="pm-updated ml-auto" aria-live="polite"></span>
+          </div>
+        </section>
+
+        <!-- ============ Results ============ -->
+        <section class="pm-card overflow-hidden pm-enter" style="--pm-delay:60ms" aria-labelledby="results-title">
+          <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-2" style="border-bottom:1px solid var(--pm-line)">
+            <div class="min-w-0">
+              <h2 id="results-title" class="pm-title">Projects</h2>
+              <p id="result-summary" class="pm-sub" aria-live="polite">Loading projects…</p>
+            </div>
+            <p id="cap-note" class="hidden text-[12px] font-medium px-2.5 py-1.5 rounded-lg" style="color:var(--pm-watch);background:var(--pm-watch-bg)" role="note"></p>
+          </div>
+          <div class="relative">
+            <div id="load-line" class="load-line" aria-hidden="true"></div>
+            <div id="results" class="table-scroll"></div>
+          </div>
+        </section>
+
+        <p class="pm-sub px-1">
+          Search runs on the server across project ID, name and implementing agency; results come back in project-ID order, up to 100 at a time.
+          Risk tier filtering and sorting apply only to the results already loaded. AI risk is the latest composite score (0–100) per project:
+          40% cost-overrun model + 40% schedule-delay model + 20% survival (Cox) model.
+        </p>
       </div>
-
-      <p class="text-[11px] text-slate-400 sm:hidden flex items-center gap-1">
-        <i data-lucide="move-horizontal" class="w-3 h-3"></i> Swipe to see more columns
-      </p>
-
-      <!-- The Table Shell -->
-      <div class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col transition-colors duration-200">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-sm">
-            <thead>
-              <tr class="border-b border-slate-200 dark:border-[#1E293B] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#0A0E17]/50">
-                <th class="p-4 font-semibold text-xs uppercase tracking-wider">Project Name & Agency</th>
-                <th class="p-4 font-semibold text-xs uppercase tracking-wider">Sector</th>
-                <th class="p-4 font-semibold text-xs uppercase tracking-wider">Cost (Org → Anti)</th>
-                <th class="p-4 font-semibold text-xs uppercase tracking-wider">Milestones</th>
-                <th class="p-4 font-semibold text-xs uppercase tracking-wider">Status / AI Risk</th>
-                <th class="p-4 font-semibold text-xs uppercase tracking-wider text-right">Action</th>
-              </tr>
-            </thead>
-            <!-- THIS TBODY IS EMPTY ON PURPOSE! JS WILL FILL IT. -->
-            <tbody id="projectsTableBody" class="divide-y divide-slate-100 dark:divide-[#1E293B]">
-              <!-- Rows get injected here -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
     </div>
   </main>
 
-  <script src="js/theme.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/animations.js"></script>
-  
-  <!-- ================= DYNAMIC DATA LOGIC ================= -->
-  
-  <!-- ================= DYNAMIC DATA LOGIC ================= -->
+  <script src="js/theme.js"></script>
   <script>
-    lucide.createIcons();
+  (() => {
+    'use strict';
+    const { esc, fmt, num, icon, tier, tierBadge, TIERS, TIER_ORDER, stateHTML } = PM;
+    const $ = (id) => document.getElementById(id);
+    PM.hydrateIcons();
 
-    async function fetchProjectsFromAPI() {
-      const searchInput = document.getElementById('searchInput');
-      const sectorFilter = document.getElementById('sectorFilter');
-      const tbody = document.getElementById('projectsTableBody');
+    const LIMIT = 100;               // backend cap (api/routers/projects.py)
+    const qInput = $('q'), sectorSel = $('sector'), sortSel = $('sort');
+    const titleCase = (s) => String(s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\b(And|Of)\b/g, m => m.toLowerCase());
+    const sectorName = (s) => s === 'DPIIT' ? 'DPIIT' : titleCase(s);
 
-      const q = encodeURIComponent(searchInput ? searchInput.value.trim() : '');
-      const sector = encodeURIComponent(sectorFilter ? sectorFilter.value : 'all');
+    // ------------------------------------------------------------------
+    // State (q + sector live in the URL; tier + sort are view-only)
+    // ------------------------------------------------------------------
+    const params = new URLSearchParams(location.search);
+    const state = {
+      q: (params.get('q') || '').trim(),
+      sector: params.get('sector') || 'all',
+      tier: (params.get('tier') || 'all').toUpperCase(),
+      sort: params.get('sort') || 'id',
+      rows: [], loaded: false
+    };
+    if (state.tier !== 'ALL' && !TIERS[state.tier]) state.tier = 'ALL';
+    if (![...sortSel.options].some(o => o.value === state.sort)) state.sort = 'id';
+    qInput.value = state.q;
+    sortSel.value = state.sort;
+    ensureSectorOption(state.sector);
+    sectorSel.value = state.sector;
 
+    function syncURL() {
+      const p = new URLSearchParams();
+      if (state.q) p.set('q', state.q);
+      if (state.sector && state.sector !== 'all') p.set('sector', state.sector);
+      if (state.tier !== 'ALL') p.set('tier', state.tier.toLowerCase());
+      if (state.sort !== 'id') p.set('sort', state.sort);
+      const qs = p.toString();
+      history.replaceState(null, '', `${location.pathname}${qs ? `?${qs}` : ''}`);
+    }
+
+    function ensureSectorOption(value) {
+      if (!value || value === 'all' || [...sectorSel.options].some(o => o.value === value)) return;
+      sectorSel.add(new Option(sectorName(value), value));
+    }
+
+    // ------------------------------------------------------------------
+    // Sector options — every sector in the database (/analytics/sectors)
+    // ------------------------------------------------------------------
+    async function loadSectors() {
+      const note = $('sector-note');
       try {
-        // Show temporary loading state
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="p-8 text-center text-slate-400">
-              <div class="flex items-center justify-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-orange-500 animate-ping"></span>
-                Loading projects from database...
-              </div>
-            </td>
-          </tr>
-        `;
-
-        const response = await fetch(`${window.location.origin}/api/v1/projects/?q=${q}&sector=${sector}`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP Error ${response.status}`);
-        }
-        
-        const data = await response.json();
-        renderTable(data); 
-
-      } catch (error) {
-        console.error("Failed to fetch projects:", error);
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="p-6 text-center text-red-500">
-              Failed to load projects (${error.message}). Check terminal and browser console.
-            </td>
-          </tr>
-        `;
+        const res = await API.getSectorAnalytics();
+        const list = (res?.data || []).filter(s => s && s.sector).sort((a, b) => String(a.sector).localeCompare(String(b.sector)));
+        const current = sectorSel.value;
+        sectorSel.innerHTML = '<option value="all">All sectors</option>' +
+          list.map(s => `<option value="${esc(s.sector)}">${esc(sectorName(s.sector))} (${fmt.int(s.projects)})</option>`).join('');
+        ensureSectorOption(current);
+        sectorSel.value = current;
+        note.textContent = '';
+      } catch (err) {
+        note.innerHTML = `Sector list unavailable. <button type="button" class="underline" id="sector-retry">Retry</button>`;
+        $('sector-retry').addEventListener('click', loadSectors, { once: true });
       }
     }
 
-    function renderTable(data) {
-      const tbody = document.getElementById('projectsTableBody');
-      tbody.innerHTML = '';
+    // ------------------------------------------------------------------
+    // Server search: GET /projects/?q=&sector= (debounced, cancellable)
+    // ------------------------------------------------------------------
+    let controller = null, requestSeq = 0;
+    async function search() {
+      controller?.abort();
+      controller = new AbortController();
+      const seq = ++requestSeq;
+      const { q, sector } = state;
+      const results = $('results');
+      if (!state.loaded) results.innerHTML = skeletonTable();
+      else results.querySelector('tbody')?.classList.add('is-stale');
+      results.setAttribute('aria-busy', 'true');
+      $('load-line').classList.add('on');
+      $('result-summary').textContent = q ? `Searching for “${q}”…` : 'Loading projects…';
+      try {
+        const data = await API.getProjects({ q, sector }, { signal: controller.signal, cache: 'no-store' });
+        if (seq !== requestSeq) return;
+        state.rows = Array.isArray(data) ? data : [];
+        state.loaded = true;
+        render(true);
+        PM.markUpdated($('updated'));
+      } catch (err) {
+        if (err?.name === 'AbortError' || seq !== requestSeq) return;
+        state.loaded = false;
+        state.rows = [];
+        renderChips();
+        $('cap-note').classList.add('hidden');
+        $('result-summary').textContent = 'Projects could not be loaded.';
+        results.innerHTML = stateHTML({ kind: 'error', title: 'Could not load projects', message: err?.message || 'Unexpected error.' });
+        results.querySelector('[data-pm-retry]')?.addEventListener('click', search, { once: true });
+      } finally {
+        if (seq === requestSeq) { results.removeAttribute('aria-busy'); $('load-line').classList.remove('on'); }
+      }
+    }
+    const searchSoon = PM.debounce(search, 300);
 
-      if (!data || data.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="p-8 text-center text-slate-400">
-              No projects found matching the criteria.
-            </td>
-          </tr>
-        `;
+    // ------------------------------------------------------------------
+    // Rendering
+    // ------------------------------------------------------------------
+    const escalation = (p) => {
+      const o = num(p.original_cost), a = num(p.anticipated_cost);
+      return o && a !== null ? ((a - o) / o) * 100 : null;
+    };
+    const completion = (p) => num(p.milestones_total) > 0 ? (num(p.milestones_achieved) || 0) / num(p.milestones_total) * 100 : null;
+    const scoreOf = (p) => tier(p.risk_label, p.risk_score) === 'UNKNOWN' ? null : num(p.risk_score);
+
+    const SORTS = {
+      id: null,
+      'risk-desc': (a, b) => (scoreOf(b) ?? -1) - (scoreOf(a) ?? -1),
+      'risk-asc': (a, b) => (scoreOf(a) ?? 101) - (scoreOf(b) ?? 101),
+      'cost-desc': (a, b) => (num(b.anticipated_cost) ?? -1) - (num(a.anticipated_cost) ?? -1),
+      'esc-desc': (a, b) => (escalation(b) ?? -1e9) - (escalation(a) ?? -1e9),
+      'ms-asc': (a, b) => (completion(a) ?? 101) - (completion(b) ?? 101)
+    };
+
+    function visibleRows() {
+      let rows = state.rows;
+      if (state.tier !== 'ALL') rows = rows.filter(p => tier(p.risk_label, p.risk_score) === state.tier);
+      const cmp = SORTS[state.sort];
+      return cmp ? [...rows].sort(cmp) : rows;
+    }
+
+    function renderChips() {
+      const counts = { ALL: state.rows.length };
+      [...TIER_ORDER, 'UNKNOWN'].forEach(t => { counts[t] = state.rows.filter(p => tier(p.risk_label, p.risk_score) === t).length; });
+      const tiers = ['ALL', ...[...TIER_ORDER].reverse(), ...(counts.UNKNOWN ? ['UNKNOWN'] : [])];
+      $('tier-chips').innerHTML = tiers.map(t => {
+        const label = t === 'ALL' ? 'All' : TIERS[t].label;
+        const on = state.tier === t;
+        const dot = t === 'ALL' ? '' : `<span class="pm-tier-dot" data-tier="${t}"></span>`;
+        return `<button type="button" class="pm-chip" data-tier-filter="${t}" aria-pressed="${on}" ${!state.loaded ? 'disabled' : ''}>
+          ${dot}${label}${state.loaded ? `<span class="pm-chip-count">${fmt.int(counts[t])}</span>` : ''}</button>`;
+      }).join('');
+    }
+
+    function costCell(p) {
+      const o = num(p.original_cost), a = num(p.anticipated_cost);
+      const e = escalation(p);
+      let sub;
+      if (a === null) sub = 'Anticipated cost not reported';
+      else if (e === null || Math.abs(e) < 0.05) sub = `→ ${fmt.crore(a)} <span style="color:var(--pm-faint)">· no revision</span>`;
+      else sub = `→ ${fmt.crore(a)} <span class="delta ${e > 0 ? 'up' : 'down'}">${e > 0 ? '▲ +' : '▼ '}${e.toFixed(1)}%</span>`;
+      return `<p class="cost-main">${fmt.crore(o)}</p><p class="cost-sub">${sub}</p>`;
+    }
+
+    function milestoneCell(p) {
+      const total = num(p.milestones_total), done = num(p.milestones_achieved) || 0;
+      if (!total) return `<p class="ms-none">No milestones reported</p>`;
+      const pct = Math.min(100, (done / total) * 100);
+      return `<div class="ms-top"><span style="color:var(--pm-text-2)"><strong style="color:var(--pm-text)">${fmt.int(done)}</strong> / ${fmt.int(total)}</span><span style="color:var(--pm-muted)">${pct.toFixed(0)}%</span></div>
+        <div class="pm-meter" role="img" aria-label="${fmt.int(done)} of ${fmt.int(total)} milestones achieved"><span data-w="${pct}"></span></div>`;
+    }
+
+    function riskCell(p) {
+      const t = tier(p.risk_label, p.risk_score);
+      if (t === 'UNKNOWN') return `${tierBadge('UNASSESSED', null, { showScore: false })}`;
+      const s = Math.max(0, Math.min(100, num(p.risk_score) || 0));
+      return `${tierBadge(p.risk_label, p.risk_score)}<div class="pm-meter" data-tier="${t}" aria-hidden="true"><span data-w="${s}"></span></div>`;
+    }
+
+    const detailsURL = (id) => `project-details.html?id=${encodeURIComponent(id)}`;
+
+    function rowHTML(p) {
+      const agency = p.agency && p.agency !== 'Unknown Agency' ? p.agency : 'Agency not reported';
+      return `<tr class="pm-row" data-href="${esc(detailsURL(p.id))}">
+        <td class="c-project">
+          <a class="p-name" href="${esc(detailsURL(p.id))}" title="${esc(p.name)}">${esc(p.name || 'Unnamed project')}</a>
+          <p class="p-meta"><span>${esc(agency)}</span><span aria-hidden="true" style="color:var(--pm-faint)">·</span><span class="pm-mono">${esc(p.id)}</span></p>
+        </td>
+        <td class="c-sector"><span class="sector">${esc(sectorName(p.sector))}</span></td>
+        <td class="c-cost num">${costCell(p)}</td>
+        <td class="c-ms ms">${milestoneCell(p)}</td>
+        <td class="c-risk risk-cell">${riskCell(p)}</td>
+        <td class="c-go" style="width:40px;text-align:right"><span class="pm-row-go inline-block">${icon('chevron-right', 'w-4 h-4')}</span></td>
+      </tr>`;
+    }
+
+    const COLS = `<colgroup><col style="width:36%"><col style="width:13%"><col style="width:16%"><col style="width:15%"><col style="width:16%"><col style="width:48px"></colgroup>`;
+    const HEAD = COLS + `<thead><tr>
+        <th scope="col">Project</th><th scope="col">Sector</th>
+        <th scope="col" class="num">Cost <span style="text-transform:none;letter-spacing:0;font-weight:600">(original → anticipated)</span></th>
+        <th scope="col">Milestones</th><th scope="col">AI risk</th><th scope="col"><span class="pm-sr-only">Open</span></th>
+      </tr></thead>`;
+
+    function skeletonTable() {
+      const row = (i) => `<tr>
+        <td><div class="pm-skel pm-skel-line" style="width:${78 - (i % 3) * 14}%;height:12px"></div><div class="pm-skel pm-skel-line" style="width:38%"></div></td>
+        <td><div class="pm-skel pm-skel-line" style="width:70px"></div></td>
+        <td><div class="pm-skel pm-skel-line" style="width:90px;margin-left:auto"></div><div class="pm-skel pm-skel-line" style="width:120px;margin-left:auto"></div></td>
+        <td><div class="pm-skel pm-skel-line" style="width:120px"></div><div class="pm-skel" style="height:6px;width:140px;min-height:6px"></div></td>
+        <td><div class="pm-skel" style="width:110px;height:22px;border-radius:6px"></div></td><td></td></tr>`;
+      return `<table class="pm-table" aria-hidden="true">${HEAD}<tbody>${Array.from({ length: 9 }, (_, i) => row(i)).join('')}</tbody></table>`;
+    }
+
+    function summaryText(total, shown) {
+      const where = [
+        state.q ? `matching “${state.q}”` : '',
+        state.sector !== 'all' ? `in ${sectorName(state.sector)}` : ''
+      ].filter(Boolean).join(' ');
+      const w = where ? ` ${where}` : '';
+      if (state.tier === 'ALL') return `${fmt.int(total)} project${total === 1 ? '' : 's'}${w}`;
+      return `${fmt.int(shown)} ${TIERS[state.tier].label} of ${fmt.int(total)} loaded project${total === 1 ? '' : 's'}${w}`;
+    }
+
+    function render(fresh = false) {
+      const results = $('results');
+      const rows = visibleRows();
+      renderChips();
+      const capped = state.rows.length >= LIMIT;
+      const cap = $('cap-note');
+      cap.classList.toggle('hidden', !capped);
+      cap.textContent = `Showing the first ${LIMIT} matches — refine your search to narrow results`;
+      $('result-summary').textContent = summaryText(state.rows.length, rows.length);
+      $('results-title').textContent = state.q || state.sector !== 'all' ? 'Search results' : 'All projects';
+
+      if (!state.rows.length) {
+        const bits = [state.q ? `“${state.q}”` : '', state.sector !== 'all' ? `the ${sectorName(state.sector)} sector` : ''].filter(Boolean);
+        results.innerHTML = `<div class="pm-fade-swap">${stateHTML({ kind: 'empty', title: 'No projects found',
+          message: bits.length ? `Nothing in the database matches ${bits.join(' in ')}. Search covers project ID, name and implementing agency.` : 'The database returned no projects.' })}</div>`;
+        appendClear(results);
         return;
       }
-
-      data.forEach(project => {
-        const achieved = Number(project.milestones_achieved) || 0;
-        const total = Number(project.milestones_total) > 0 ? Number(project.milestones_total) : 100;
-        const progressPct = Math.min(100, Math.round((achieved / total) * 100));
-        
-        // AI Risk tier coloring
-        // In projects.html inside renderTable(data):
-        // In projects.html inside renderTable(data):
-        let badgeColor = "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-        const label = (project.risk_label || '').toUpperCase();
-
-        if (label.includes("CRITICAL")) {
-          badgeColor = "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20";
-        } else if (label.includes("ELEVATED") || label.includes("HIGH")) {
-          badgeColor = "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20";
-        } else if (label.includes("WATCH") || label.includes("MEDIUM")) {
-          badgeColor = "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20";
-        }
-
-        const orgCost = Number(project.original_cost || 0).toLocaleString();
-        const antiCost = Number(project.anticipated_cost || project.original_cost || 0).toLocaleString();
-        const riskScore = Number(project.risk_score || 0).toFixed(1);
-
-        const row = `
-          <tr class="hover:bg-slate-50 dark:hover:bg-[#1E293B]/50 transition-colors group">
-            <td class="p-4">
-              <p class="font-semibold text-slate-900 dark:text-white text-xs truncate max-w-xs" title="${project.name || 'Unnamed Project'}">
-                ${project.name || 'Unnamed Project'}
-              </p>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                ${project.agency || 'N/A'} • ID: ${project.id}
-              </p>
-            </td>
-            <td class="p-4 text-xs font-medium text-slate-600 dark:text-slate-300">
-              ${project.sector || 'General'}
-            </td>
-            <td class="p-4 text-xs">
-              <p class="font-semibold text-slate-900 dark:text-white">₹${orgCost} Cr</p>
-              <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">→ ₹${antiCost} Cr</p>
-            </td>
-            <td class="p-4 w-48">
-              <div class="flex items-center justify-between text-[10px] mb-1">
-                <span class="text-slate-500 dark:text-slate-400">${achieved} / ${total} Achieved</span>
-                <span class="font-bold text-slate-700 dark:text-slate-300">${progressPct}%</span>
-              </div>
-              <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                <div class="bg-orange-500 h-full" style="width: ${progressPct}%"></div>
-              </div>
-            </td>
-            <td class="p-4">
-              <span class="px-2 py-1 border rounded-md text-[10px] font-bold uppercase tracking-wider ${badgeColor}">
-                ${riskScore}/100 • ${project.risk_label || 'LOW'}
-              </span>
-            </td>
-            <td class="p-4 text-right">
-              <a href="project-details.html?id=${project.id}" class="text-orange-600 dark:text-orange-500 hover:underline text-xs font-semibold">
-                View Details →
-              </a>
-            </td>
-          </tr>
-        `;
-        
-        tbody.innerHTML += row;
-      });
-
-      PaimanaFX.staggerFadeIn(tbody.querySelectorAll('tr'));
+      if (!rows.length) {
+        results.innerHTML = `<div class="pm-fade-swap">${stateHTML({ kind: 'empty', title: `No ${TIERS[state.tier].label} projects in these results`,
+          message: `None of the ${fmt.int(state.rows.length)} loaded projects is in the ${TIERS[state.tier].label} tier.` })}</div>`;
+        appendClear(results, 'Show all tiers', () => setTier('ALL'));
+        return;
+      }
+      results.innerHTML = `<table class="pm-table"><caption class="pm-sr-only">Projects: ${esc(summaryText(state.rows.length, rows.length))}</caption>${HEAD}<tbody>${rows.map(rowHTML).join('')}</tbody></table>`;
+      const trs = results.querySelectorAll('tbody tr');
+      if (fresh) PM.stagger(trs, 18, 'pm-fade-swap');
+      requestAnimationFrame(() => requestAnimationFrame(() => results.querySelectorAll('.pm-meter > span[data-w]').forEach(s => { s.style.width = `${s.dataset.w}%`; })));
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      fetchProjectsFromAPI();
+    function appendClear(host, label = 'Clear search and filters', fn = clearAll) {
+      const box = host.querySelector('.pm-state');
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'pm-btn pm-btn-sm'; btn.innerHTML = `${icon('x', 'w-3.5 h-3.5')}${esc(label)}`;
+      btn.addEventListener('click', fn);
+      box?.appendChild(btn);
+    }
 
-      const searchInput = document.getElementById('searchInput');
-      const sectorFilter = document.getElementById('sectorFilter');
+    function clearAll() {
+      state.q = ''; state.sector = 'all'; state.tier = 'ALL';
+      qInput.value = ''; sectorSel.value = 'all';
+      $('q-clear').classList.add('hidden');
+      syncURL(); search(); qInput.focus();
+    }
+    function setTier(t) { state.tier = t; syncURL(); render(); }
 
-      let debounceTimer;
-      if (searchInput) {
-        searchInput.addEventListener('input', () => {
-          clearTimeout(debounceTimer);
-          debounceTimer = setTimeout(fetchProjectsFromAPI, 300);
-        });
-      }
-
-      if (sectorFilter) {
-        sectorFilter.addEventListener('change', fetchProjectsFromAPI);
-      }
+    // ------------------------------------------------------------------
+    // Events
+    // ------------------------------------------------------------------
+    $('q-clear').classList.toggle('hidden', !state.q);
+    qInput.addEventListener('input', () => {
+      $('q-clear').classList.toggle('hidden', !qInput.value);
+      const q = qInput.value.trim();
+      if (q === state.q) return;
+      state.q = q; syncURL(); searchSoon();
     });
+    qInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); const q = qInput.value.trim(); if (q !== state.q || !state.loaded) { state.q = q; syncURL(); } search(); }
+      if (e.key === 'Escape' && qInput.value) { e.preventDefault(); qInput.value = ''; qInput.dispatchEvent(new Event('input')); }
+    });
+    $('q-clear').addEventListener('click', () => { qInput.value = ''; qInput.dispatchEvent(new Event('input')); qInput.focus(); });
+    sectorSel.addEventListener('change', () => { state.sector = sectorSel.value; syncURL(); search(); });
+    sortSel.addEventListener('change', () => { state.sort = sortSel.value; syncURL(); render(); });
+    $('tier-chips').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tier-filter]');
+      if (!b || b.disabled) return;
+      const t = b.dataset.tierFilter;
+      setTier(state.tier === t && t !== 'ALL' ? 'ALL' : t);
+    });
+
+    // Whole row opens the project; the name is a real link for keyboard,
+    // middle-click and screen readers.
+    $('results').addEventListener('click', (e) => {
+      const tr = e.target.closest('tr[data-href]');
+      if (!tr || e.target.closest('a, button')) return;
+      if (window.getSelection && String(window.getSelection()).length) return;
+      if (e.metaKey || e.ctrlKey) { window.open(tr.dataset.href, '_blank'); return; }
+      location.href = tr.dataset.href;
+    });
+
+    renderChips();
+    loadSectors();
+    search();
+  })();
   </script>
 </body>
 </html>

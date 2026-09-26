@@ -1,70 +1,34 @@
-/* PAIMANA AI — shared micro-interactions
+/* PAIMANA AI — shared micro-interactions (compatibility layer)
    ---------------------------------------------------------------
-   Built on two CDN libraries, no bundler/React needed:
-     - anime.js (window.anime)  -> number count-ups
-     - Motion / motion.dev (window.Motion) -> fades, stagger, hover
-   Every helper checks the library exists first, so a page still
-   works if a CDN script is slow, blocked, or missing. */
+   Keeps the original PaimanaFX API used by existing pages, now built
+   on the dependency-free helpers in js/ui.js (window.PM) and CSS, so
+   pages no longer need the anime.js / Motion CDN bundles. Every helper
+   degrades to an instant update if ui.js is missing or the user prefers
+   reduced motion. */
 
 const PaimanaFX = (() => {
+  const pm = () => window.PM;
 
   // Staggered fade/rise-in for a list of elements (alert cards, KPI cards).
   function staggerIn(elements) {
-    const items = Array.from(elements || []).filter(Boolean);
-    if (!window.Motion || !items.length) return;
-    window.Motion.animate(
-      items,
-      { opacity: [0, 1], y: [10, 0] },
-      { duration: 0.3, delay: window.Motion.stagger(0.05) }
-    );
+    if (pm()) pm().stagger(elements, 45, 'pm-pop-in');
   }
 
-  // Opacity-only stagger, safe for <tr> elements (transforms don't apply to table rows).
+  // Opacity-only stagger, safe for <tr> elements.
   function staggerFadeIn(elements) {
-    const items = Array.from(elements || []).filter(Boolean);
-    if (!window.Motion || !items.length) return;
-    window.Motion.animate(
-      items,
-      { opacity: [0, 1] },
-      { duration: 0.3, delay: window.Motion.stagger(0.04) }
-    );
+    if (pm()) pm().stagger(elements, 30, 'pm-fade-swap');
   }
 
-  // Animate a number from 0 (or its current text) up to `target`.
-  // `format` optionally wraps the rounded value (e.g. for currency/suffixes).
-  function countUp(el, target, { decimals = 0, duration = 900, format } = {}) {
+  // Animate a number up to `target`; `format` optionally wraps the value.
+  function countUp(el, target, options = {}) {
     if (!el) return;
-    const targetNum = Number(target);
-    if (Number.isNaN(targetNum)) { el.textContent = target; return; }
-
-    if (!window.anime) { el.textContent = format ? format(targetNum) : targetNum.toLocaleString(); return; }
-
-    const obj = { val: 0 };
-    window.anime({
-      targets: obj,
-      val: targetNum,
-      round: decimals === 0 ? 1 : false,
-      easing: 'easeOutExpo',
-      duration,
-      update: () => {
-        const v = decimals === 0 ? Math.round(obj.val) : Number(obj.val.toFixed(decimals));
-        el.textContent = format ? format(v) : v.toLocaleString();
-      }
-    });
+    if (pm()) { pm().countUp(el, target, options); return; }
+    const n = Number(target);
+    el.textContent = Number.isNaN(n) ? target : (options.format ? options.format(n) : n.toLocaleString());
   }
 
-  // Subtle hover lift for elements marked data-hover-lift (nav links, buttons, cards).
-  function initHoverLift() {
-    if (!window.Motion) return;
-    document.querySelectorAll('[data-hover-lift]').forEach((el) => {
-      el.addEventListener('mouseenter', () => window.Motion.animate(el, { scale: 1.02 }, { duration: 0.15 }));
-      el.addEventListener('mouseleave', () => window.Motion.animate(el, { scale: 1 }, { duration: 0.15 }));
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    initHoverLift();
-  });
+  // Hover feedback is handled in CSS now; kept so existing calls don't break.
+  function initHoverLift() {}
 
   return { staggerIn, staggerFadeIn, countUp, initHoverLift };
 })();

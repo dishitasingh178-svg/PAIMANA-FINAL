@@ -1,1160 +1,616 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PAIMANA AI - Risk Analytics</title>
-
+  <title>Risk Analytics · PAIMANA</title>
+  <meta name="description" content="Portfolio risk trend, sector and state breakdown of PAIMANA composite risk predictions.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif']
-          }
-        }
-      }
-    }
+    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'] } } } };
   </script>
-
-  <!-- Prevent Flash of Unstyled Content -->
   <script>
-    if (
-      localStorage.getItem('theme') === 'dark' ||
-      (
-        !('theme' in localStorage) &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches
-      )
-    ) {
+    if (localStorage.getItem('theme') === 'dark' ||
+      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
   </script>
+  <link rel="stylesheet" href="/css/custom.css">
+  <link rel="stylesheet" href="/css/paimana.css">
+  <style>
+    /* Segmented toggle (counts / share, ranges) */
+    .seg { display: inline-flex; padding: 2px; border-radius: 9px; border: 1px solid var(--pm-line); background: var(--pm-surface-2); }
+    .seg button { height: 26px; padding: 0 10px; border-radius: 7px; font-size: 12px; font-weight: 600; color: var(--pm-muted); transition: background .15s var(--pm-ease), color .15s var(--pm-ease); }
+    .seg button:hover { color: var(--pm-text); }
+    .seg button[aria-pressed="true"] { background: var(--pm-surface); color: var(--pm-text); box-shadow: var(--pm-shadow), inset 0 0 0 1px var(--pm-line-strong); }
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/motion@11.13.5/dist/motion.js"></script>
+    /* Trend */
+    .trend-box { position: relative; height: 320px; }
+    @media (max-width: 767px) { .trend-box { height: 260px; } }
+    .readouts { display: grid; grid-template-columns: repeat(3, auto); }
+    .readout { padding: 0 18px; min-width: 0; }
+    .readout + .readout { border-left: 1px solid var(--pm-line); }
+    .readout:first-child { padding-left: 0; }
+    @media (max-width: 639px) {
+      .readouts { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+      .readout { padding: 0 10px; } .readout .pm-kpi-value { font-size: 18px; } .readout .pm-kpi-label { font-size: 10.5px; line-height: 1.3; }
+    }
+    .readout .pm-kpi-value { font-size: 22px; }
+    .key { display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--pm-muted); }
+    .key i { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--c); }
+    .key i.dot { width: 7px; height: 7px; border: 0; border-radius: 50%; background: var(--c); }
+    .key i.dash { border-top-style: dashed; }
 
-  <link rel="stylesheet" href="css/custom.css">
+    /* Ranked bars (sector + state) */
+    .rank-head, .rank-row { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 6.5rem; gap: 14px; align-items: center; }
+    #states .rank-head, #states .rank-row { grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr) 6rem; }
+    .rank-head { font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--pm-faint); padding: 0 8px 8px; border-bottom: 1px solid var(--pm-line); }
+    .rank-row { padding: 7px 8px; border-radius: 8px; transition: background .14s var(--pm-ease); outline-offset: -2px; }
+    .rank-row:hover, .rank-row:focus-visible, .rank-row.is-hot { background: var(--pm-surface-hover); }
+    .rank-name { font-size: 12.5px; color: var(--pm-text-2); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rank-name small { display: block; font-size: 11px; color: var(--pm-faint); margin-top: 1px; }
+    .rank-val { text-align: right; font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--pm-muted); white-space: nowrap; }
+    .rank-val strong { color: var(--pm-text); font-weight: 700; }
+    @media (max-width: 520px) {
+      .rank-head, .rank-row, #states .rank-head, #states .rank-row { grid-template-columns: minmax(0, 1fr) 5.5rem; gap: 6px 10px; }
+      .rank-row .bar { grid-column: 1 / -1; grid-row: 2; }
+      .rank-head span:nth-child(2) { display: none; }
+    }
+    .bar { display: flex; gap: 2px; height: 12px; border-radius: 4px; background: var(--pm-surface-hover); overflow: hidden; }
+    .bar > span { display: block; height: 100%; width: 0; flex: none; background: var(--pm-tier-fill); transition: width .8s var(--pm-ease-out); transition-delay: var(--d, 0ms); }
+    .bar > span:first-child { border-radius: 4px 0 0 4px; }
+    .bar > span[data-w="0"] { display: none; }
+    .bar.single > span { border-radius: 4px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--pm-muted); }
+    .foot { font-size: 11.5px; color: var(--pm-muted); line-height: 1.55; border-top: 1px solid var(--pm-line); padding-top: 12px; margin-top: 14px; }
+    .foot strong { color: var(--pm-text-2); font-weight: 600; }
+
+    /* Interpretation */
+    .take { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 14px 0; border-top: 1px solid var(--pm-line); }
+    .take:first-child { border-top: 0; padding-top: 4px; }
+    .take-icon { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--pm-surface-hover); color: var(--pm-muted); }
+    .take-icon svg { width: 15px; height: 15px; }
+    .take p { font-size: 13.5px; line-height: 1.55; color: var(--pm-text-2); }
+    .take p strong { color: var(--pm-text); font-weight: 650; }
+    .take .src { font-size: 11px; color: var(--pm-faint); margin-top: 3px; }
+  </style>
 </head>
 
-<body
-  class="bg-slate-50 dark:bg-[#0A0E17] text-slate-800 dark:text-slate-300 flex min-h-screen antialiased transition-colors duration-200">
-
-  <!-- Mobile sidebar backdrop -->
+<body class="pm-app flex min-h-screen antialiased">
+  <a href="#main" class="pm-skip">Skip to content</a>
   <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden"></div>
+  <aside id="sidebar" data-pm-shell
+    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 flex flex-col justify-between p-4 shrink-0 overflow-y-auto"></aside>
 
-  <!-- ================= SIDEBAR ================= -->
-  <aside id="sidebar"
-    class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 bg-white dark:bg-[#121826] border-r border-slate-200 dark:border-[#1E293B] flex flex-col justify-between p-5 shrink-0 overflow-y-auto">
-
-    <div>
-
-      <!-- Logo -->
-      <div class="flex items-center gap-3 mb-10 pl-2">
-
-        <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
-          <i data-lucide="shield-alert" class="w-5 h-5"></i>
-        </div>
-
-        <span class="text-lg font-bold text-slate-900 dark:text-white tracking-wide">
-          PAIMANA AI
-        </span>
-
-      </div>
-
-      <!-- Navigation -->
-      <nav class="space-y-1 text-sm font-medium">
-
-        <a href="dashboard.html" data-hover-lift
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-          Overview
-        </a>
-
-        <a href="projects.html" data-hover-lift
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="folder-kanban" class="w-4 h-4"></i>
-          Projects
-        </a>
-
-        <a href="add-project.html" data-role="admin" data-hover-lift
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i>
-          Add Project
-        </a>
-
-        <a href="risk-analytics.html"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
-          <i data-lucide="line-chart" class="w-4 h-4"></i>
-          Risk Analytics
-        </a>
-
-        <a href="early-warnings.html" data-hover-lift
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="bell" class="w-4 h-4"></i>
-          Early Warnings
-        </a>
-
-        <a href="ai-assistant.html" data-hover-lift
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-          <i data-lucide="bot" class="w-4 h-4"></i>
-          AI Assistant
-        </a>
-
-      </nav>
-    </div>
-
-  </aside>
-
-
-  <!-- ================= MAIN CONTENT ================= -->
-  <main class="flex-1 flex flex-col overflow-y-auto h-screen min-w-0">
-
-    <!-- Header -->
-    <header
-      class="h-20 border-b border-slate-200 dark:border-[#1E293B] px-4 md:px-8 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-[#0A0E17]/80 backdrop-blur z-20 transition-colors duration-200">
-
+  <main id="main" class="flex-1 flex flex-col h-screen overflow-y-auto min-w-0">
+    <header class="pm-header">
       <div class="flex items-center gap-3 min-w-0">
-
-        <button id="sidebar-toggle"
-          class="lg:hidden shrink-0 p-2 -ml-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-          <i data-lucide="menu" class="w-5 h-5"></i>
+        <button id="sidebar-toggle" type="button" class="lg:hidden pm-btn pm-btn-ghost pm-icon-btn -ml-2" aria-label="Open navigation">
+          <span data-icon="menu" class="w-5 h-5"></span>
         </button>
-
         <div class="min-w-0">
-
-          <h1 class="text-lg md:text-xl font-bold text-slate-900 dark:text-white truncate">
-            Portfolio Risk Analytics
-          </h1>
-
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 hidden sm:block">
-            Deep insights into AI-predicted project risks across sectors.
-          </p>
-
+          <p class="pm-eyebrow">Analyze</p>
+          <h1 class="pm-page-title truncate">Portfolio risk analytics</h1>
         </div>
-
       </div>
-
-
-      <!-- Theme Button -->
-      <div class="flex items-center gap-4 shrink-0">
-
-        <button id="theme-toggle"
-          class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition ml-2">
-          <i id="theme-dark-icon" data-lucide="moon" class="w-5 h-5 hidden"></i>
-          <i id="theme-light-icon" data-lucide="sun" class="w-5 h-5 hidden"></i>
+      <div class="flex items-center gap-2 shrink-0">
+        <span id="updated" class="pm-updated hidden sm:inline" aria-live="polite"></span>
+        <button id="refresh" type="button" class="pm-btn pm-btn-sm" aria-label="Refresh analytics data">
+          <span data-icon="refresh-cw" class="w-3.5 h-3.5"></span><span class="hidden sm:inline">Refresh</span>
         </button>
-
+        <button id="theme-toggle" type="button" class="pm-btn pm-btn-ghost pm-icon-btn" aria-label="Toggle theme">
+          <span id="theme-dark-icon" data-icon="moon" class="w-4 h-4 hidden"></span>
+          <span id="theme-light-icon" data-icon="sun" class="w-4 h-4 hidden"></span>
+        </button>
       </div>
-
     </header>
 
+    <div class="px-4 md:px-8 py-6 md:py-8">
+      <div class="max-w-[1320px] mx-auto space-y-6">
 
-    <!-- ================= PAGE CONTENT ================= -->
-    <div class="p-4 md:p-8 space-y-6">
-
-
-      <!-- ================= TOP ROW ================= -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start"></div>
-
-
-        <!-- ================= RISK BY SECTOR ================= -->
-        <div
-          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
-
-          <div class="mb-5">
-
-            <h2 class="text-sm font-semibold text-slate-900 dark:text-white">
-              Risk Distribution by Sector
-            </h2>
-
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Number of projects by predicted risk level
-            </p>
-
+        <!-- ============ 1. Portfolio trend: /analytics/trends ============ -->
+        <section class="pm-card pm-card-pad pm-enter" aria-labelledby="trend-title">
+          <div class="pm-card-head flex-wrap">
+            <div class="min-w-0">
+              <p class="pm-eyebrow">Portfolio trend</p>
+              <h2 id="trend-title" class="pm-title mt-1">Average composite risk score by report month · all scored predictions</h2>
+              <p id="trend-sub" class="pm-sub">Mean 0–100 composite score of the predictions recorded for each report month.</p>
+            </div>
+            <div class="seg" role="group" aria-label="Time range" id="trend-range">
+              <button type="button" data-range="all" aria-pressed="true">All</button>
+              <button type="button" data-range="120">10 yrs</button>
+              <button type="button" data-range="60">5 yrs</button>
+            </div>
           </div>
+          <div id="trend"></div>
+        </section>
 
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <!-- ============ 2. Sector breakdown: /analytics/sectors ============ -->
+          <section class="pm-card pm-card-pad xl:col-span-7 pm-enter" style="--pm-delay:60ms" aria-labelledby="sector-title">
+            <div class="pm-card-head flex-wrap">
+              <div class="min-w-0">
+                <p class="pm-eyebrow">Sector breakdown</p>
+                <h2 id="sector-title" class="pm-title mt-1">Projects by risk tier, per sector · latest prediction per project</h2>
+                <p class="pm-sub">Sorted by projects at Elevated or Critical (score ≥ 50).</p>
+              </div>
+              <div class="seg" role="group" aria-label="Sector bar scale" id="sector-mode">
+                <button type="button" data-mode="count" aria-pressed="true">Projects</button>
+                <button type="button" data-mode="share">% of sector</button>
+              </div>
+            </div>
+            <div id="sector-legend" class="legend mb-3"></div>
+            <div id="sectors"></div>
+          </section>
 
-          <!-- IMPORTANT:
-               Increased height because we are now using
-               horizontal bars and long sector names.
-          -->
-          <div class="relative h-[430px] md:h-[470px]">
-
-            <canvas id="sectorChart"></canvas>
-
-          </div>
-
+          <!-- ============ 3. State breakdown: /analytics/states ============ -->
+          <section class="pm-card pm-card-pad xl:col-span-5 pm-enter" style="--pm-delay:120ms" aria-labelledby="state-title">
+            <div class="pm-card-head flex-wrap">
+              <div class="min-w-0">
+                <p class="pm-eyebrow">Geographic breakdown</p>
+                <h2 id="state-title" class="pm-title mt-1">Projects scoring ≥ 50, top 12 states · latest prediction per project</h2>
+                <p class="pm-sub">Elevated + Critical projects recorded against each state.</p>
+              </div>
+              <div class="seg" role="group" aria-label="Rank states by" id="state-mode">
+                <button type="button" data-mode="count" aria-pressed="true">Count</button>
+                <button type="button" data-mode="share">Share</button>
+              </div>
+            </div>
+            <div id="states"></div>
+          </section>
         </div>
 
-
-
-        <!-- ================= TOP DRIVERS ================= -->
-        <div
-          class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200 flex flex-col justify-center"
-
-            <h2 class="text-sm font-semibold text-slate-900 dark:text-white">
-              Top AI Cost Escalation Drivers
-            </h2>
-
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Factors associated with higher project cost escalation
-            </p>
-
+        <!-- ============ 4. Interpretation (computed from the three responses) ============ -->
+        <section class="pm-card pm-card-pad pm-reveal" aria-labelledby="take-title">
+          <div class="pm-card-head">
+            <div>
+              <p class="pm-eyebrow">Interpretation</p>
+              <h2 id="take-title" class="pm-title mt-1">What the loaded data shows</h2>
+              <p class="pm-sub">Computed in the browser from the three responses above; nothing here is written by hand.</p>
+            </div>
           </div>
-
-
-          <div class="space-y-6 text-xs">
-
-
-            <!-- Driver 1 -->
-            <div>
-
-              <div class="flex justify-between mb-2">
-
-                <span class="text-slate-700 dark:text-slate-300 font-medium">
-                  Prolonged Schedule Delay
-                </span>
-
-                <span class="text-slate-900 dark:text-white font-bold">
-                  72% correlation
-                </span>
-
-              </div>
-
-              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-
-                <div class="bg-red-500 h-full w-[72%] rounded-full"></div>
-
-              </div>
-
-            </div>
-
-
-            <!-- Driver 2 -->
-            <div>
-
-              <div class="flex justify-between mb-2">
-
-                <span class="text-slate-700 dark:text-slate-300 font-medium">
-                  Low Physical Milestone Completion
-                </span>
-
-                <span class="text-slate-900 dark:text-white font-bold">
-                  58% correlation
-                </span>
-
-              </div>
-
-              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-
-                <div class="bg-orange-500 h-full w-[58%] rounded-full"></div>
-
-              </div>
-
-            </div>
-
-
-            <!-- Driver 3 -->
-            <div>
-
-              <div class="flex justify-between mb-2">
-
-                <span class="text-slate-700 dark:text-slate-300 font-medium">
-                  High Cumulative Expenditure Variance
-                </span>
-
-                <span class="text-slate-900 dark:text-white font-bold">
-                  46% correlation
-                </span>
-
-              </div>
-
-              <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-
-                <div class="bg-amber-500 h-full w-[46%] rounded-full"></div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
+          <div id="takeaways"></div>
+          <p class="foot">Composite risk = 40% cost-overrun model (XGBoost) + 40% schedule-delay model (XGBoost) + 20% survival (Cox) model, scored 0–100. Tiers: Low 0–25, Watch 25–50, Elevated 50–75, Critical 75–100. Portfolio-level cost-driver attribution is not available from the API; per-project drivers are shown on each project page.</p>
+        </section>
       </div>
-
-
-
-      <!-- ================= HISTORICAL TREND ================= -->
-      <div
-        class="bg-white dark:bg-[#121826] border border-slate-200 dark:border-[#1E293B] p-6 rounded-xl shadow-sm transition-colors duration-200">
-
-        <div class="mb-5">
-
-          <h2 class="text-sm font-semibold text-slate-900 dark:text-white">
-            Historical Risk Trend Over Time
-          </h2>
-
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Historical cost escalation observed across analyzed projects
-          </p>
-
-        </div>
-
-
-        <div class="relative h-72">
-
-          <canvas id="trendChart"></canvas>
-
-        </div>
-
-      </div>
-
     </div>
-
   </main>
 
-
-  <!-- ================= JS FILES ================= -->
-
-  <script src="js/theme.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/animations.js"></script>
-
-
+  <script src="js/theme.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
   <script>
+  (() => {
+    'use strict';
+    const { esc, fmt, num, icon, TIERS, section, skeleton } = PM;
+    const $ = (id) => document.getElementById(id);
+    PM.hydrateIcons();
 
-    // ============================================================
-    // INITIALIZATION
-    // ============================================================
-
-    lucide.createIcons();
-
-
-    // ============================================================
-    // CHART DEFAULTS
-    // ============================================================
-
-    Chart.defaults.font.family = "'Inter', sans-serif";
-
-    Chart.defaults.color = '#64748B';
-
-
-    // ============================================================
-    // THEME COLORS
-    // ============================================================
-
-    const getGridColor = () => {
-
-      return document.documentElement.classList.contains('dark')
-        ? '#1E293B'
-        : '#E2E8F0';
-
+    // ------------------------------------------------------------------
+    // Data: one cached request per endpoint; a failure clears the cache so Retry refetches.
+    // ------------------------------------------------------------------
+    const cache = {};
+    const fetchers = {
+      trends: () => API.getRiskTrends({ cache: 'no-store' }),
+      sectors: () => API.getSectorAnalytics({ cache: 'no-store' }),
+      states: () => API.getStateAnalytics({ cache: 'no-store' })
     };
-
-
-    const getTextColor = () => {
-
-      return document.documentElement.classList.contains('dark')
-        ? '#94A3B8'
-        : '#475569';
-
-    };
-
-
-    // ============================================================
-    // 1. SECTOR RISK CHART
-    // ============================================================
-
-    const ctxSector =
-      document.getElementById('sectorChart').getContext('2d');
-
-
-    const sectorChart = new Chart(ctxSector, {
-
-      type: 'bar',
-
-
-      data: {
-
-        labels: [],
-
-
-        datasets: [
-
-          {
-            label: 'Critical Risk',
-
-            data: [],
-
-            backgroundColor: '#ef4444',
-
-            borderRadius: {
-              topLeft: 6,
-              bottomLeft: 6,
-              topRight: 0,
-              bottomRight: 0
-            },
-
-            borderSkipped: false,
-
-            barPercentage: 0.70,
-
-            categoryPercentage: 0.78
-          },
-
-
-          {
-            label: 'High Risk',
-
-            data: [],
-
-            backgroundColor: '#f97316',
-
-            borderRadius: 0,
-
-            borderSkipped: false,
-
-            barPercentage: 0.70,
-
-            categoryPercentage: 0.78
-          },
-
-
-          {
-            label: 'Medium Risk',
-
-            data: [],
-
-            backgroundColor: '#3b82f6',
-
-            borderRadius: {
-              topLeft: 0,
-              bottomLeft: 0,
-              topRight: 6,
-              bottomRight: 6
-            },
-
-            borderSkipped: false,
-
-            barPercentage: 0.70,
-
-            categoryPercentage: 0.78
-          }
-
-        ]
-
-      },
-
-
-      options: {
-
-        // ========================================================
-        // THIS IS THE MAIN FIX
-        // Makes the chart horizontal.
-        // ========================================================
-
-        indexAxis: 'y',
-
-
-        responsive: true,
-
-        maintainAspectRatio: false,
-
-
-        interaction: {
-
-          mode: 'index',
-
-          intersect: false
-
-        },
-
-
-        scales: {
-
-
-          // ======================================================
-          // Y AXIS
-          // Contains sector names
-          // ======================================================
-
-          y: {
-
-            stacked: true,
-
-            offset: true,
-
-
-            border: {
-
-              display: false
-
-            },
-
-
-            grid: {
-
-              display: false
-
-            },
-
-
-            ticks: {
-
-              color: getTextColor(),
-
-              padding: 8,
-
-
-              font: {
-
-                size: 10,
-
-                weight: '500'
-
-              },
-
-
-              // Wrap long sector names
-              callback: function (value) {
-
-                const label =
-                  this.getLabelForValue(value);
-
-
-                if (!label) {
-
-                  return '';
-
-                }
-
-
-                const words =
-                  String(label).split(' ');
-
-
-                const lines = [];
-
-                let currentLine = '';
-
-
-                words.forEach(word => {
-
-                  const testLine =
-                    currentLine.length > 0
-                      ? currentLine + ' ' + word
-                      : word;
-
-
-                  if (testLine.length > 24) {
-
-                    if (currentLine) {
-
-                      lines.push(currentLine);
-
-                    }
-
-                    currentLine = word;
-
-                  } else {
-
-                    currentLine = testLine;
-
-                  }
-
-                });
-
-
-                if (currentLine) {
-
-                  lines.push(currentLine);
-
-                }
-
-
-                return lines;
-
-              }
-
-            }
-
-          },
-
-
-          // ======================================================
-          // X AXIS
-          // Contains number of projects
-          // ======================================================
-
-          x: {
-
-            stacked: true,
-
-            beginAtZero: true,
-
-
-            border: {
-
-              display: false
-
-            },
-
-
-            grid: {
-
-              color: getGridColor(),
-
-              drawTicks: false
-
-            },
-
-
-            ticks: {
-
-              color: getTextColor(),
-
-              precision: 0,
-
-              padding: 6
-
-            }
-
-          }
-
-        },
-
-
-        // ========================================================
-        // PLUGINS
-        // ========================================================
-
-        plugins: {
-
-
-          // ======================================================
-          // LEGEND
-          // ======================================================
-
-          legend: {
-
-            position: 'top',
-
-            align: 'start',
-
-
-            labels: {
-
-              color: getTextColor(),
-
-              boxWidth: 10,
-
-              boxHeight: 10,
-
-              usePointStyle: true,
-
-              pointStyle: 'circle',
-
-              padding: 18,
-
-
-              font: {
-
-                size: 11,
-
-                weight: '500'
-
-              }
-
-            }
-
-          },
-
-
-          // ======================================================
-          // TOOLTIP
-          // ======================================================
-
-          tooltip: {
-
-            backgroundColor: '#111827',
-
-            titleColor: '#ffffff',
-
-            bodyColor: '#CBD5E1',
-
-            borderColor: '#334155',
-
-            borderWidth: 1,
-
-            padding: 12,
-
-            displayColors: true,
-
-
-            callbacks: {
-
-
-              title: function (context) {
-
-                return context[0].label;
-
-              },
-
-
-              label: function (context) {
-
-                const value =
-                  context.raw ?? 0;
-
-
-                return ` ${context.dataset.label}: ${value} projects`;
-
-              }
-
-            }
-
-          }
-
-        }
-
-      }
-
-    });
-
-
-
-    // ============================================================
-    // 2. LOAD LIVE SECTOR ANALYTICS
-    // ============================================================
-
-    async function loadDynamicSectorAnalytics() {
-
-      try {
-
-        const response =
-          await fetch('/api/v1/dashboard/sector-breakdown');
-
-
-        if (!response.ok) {
-
-          throw new Error(
-            "Analytics API offline"
-          );
-
-        }
-
-
-        const data =
-          await response.json();
-
-
-        // Update labels
-        sectorChart.data.labels =
-          data.labels;
-
-
-        // Critical
-        sectorChart.data.datasets[0].data =
-          data.critical;
-
-
-        // High
-        sectorChart.data.datasets[1].data =
-          data.high;
-
-
-        // Medium
-        sectorChart.data.datasets[2].data =
-          data.medium;
-
-
-        sectorChart.update();
-
-      }
-
-
-      catch (err) {
-
-        console.warn(
-          "Using fallback data for Sector Analytics:",
-          err
-        );
-
-
-        // ========================================================
-        // FALLBACK DATA
-        // Used only if API is unavailable
-        // ========================================================
-
-        sectorChart.data.labels = [
-
-          'Railways',
-
-          'Road Transport and Highways',
-
-          'Petroleum',
-
-          'Power',
-
-          'Coal',
-
-          'Urban Development',
-
-          'Water Resources',
-
-          'Steel',
-
-          'Health and Family Welfare',
-
-          'Civil Aviation'
-
-        ];
-
-
-        sectorChart.data.datasets[0].data = [
-
-          4,
-
-          2,
-
-          3,
-
-          1,
-
-          2,
-
-          0,
-
-          1,
-
-          1,
-
-          0,
-
-          0
-
-        ];
-
-
-        sectorChart.data.datasets[1].data = [
-
-          8,
-
-          5,
-
-          4,
-
-          3,
-
-          2,
-
-          1,
-
-          2,
-
-          2,
-
-          1,
-
-          1
-
-        ];
-
-
-        sectorChart.data.datasets[2].data = [
-
-          12,
-
-          10,
-
-          8,
-
-          5,
-
-          3,
-
-          2,
-
-          2,
-
-          2,
-
-          1,
-
-          1
-
-        ];
-
-
-        sectorChart.update();
-
-      }
-
+    const get = (key) => (cache[key] ??= fetchers[key]().then(r => {
+      if (!r || !Array.isArray(r.data)) throw new Error('The analytics response was not in the expected format.');
+      return r.data;
+    }).catch(err => { delete cache[key]; throw err; }));
+
+    const ACRONYMS = new Set(['DPIIT', 'A', 'N', 'D']);
+    const titleCase = (s) => String(s || '').split(/\s+/).map(w => ACRONYMS.has(w.toUpperCase()) || w === '&' ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ').replace(/\b(And|Of)\b/g, m => m.toLowerCase());
+    const pct = (a, b) => b ? (a / b) * 100 : 0;
+    const monthIndex = (ym) => { const m = /^(\d{4})-(\d{2})$/.exec(String(ym || '')); return m ? Number(m[1]) * 12 + Number(m[2]) - 1 : null; };
+    const alpha = (hex, a) => /^#[0-9a-f]{6}$/i.test(hex) ? hex + Math.round(a * 255).toString(16).padStart(2, '0') : hex;
+    const monthLabel = (idx) => new Date(Math.floor(idx / 12), idx % 12, 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+
+    // Hover/focus tooltip shared by the HTML bar rows
+    const tip = document.createElement('div');
+    tip.className = 'pm-tooltip'; tip.style.opacity = '0'; tip.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(tip);
+    function bindTips(root) {
+      const show = (row, x, y) => {
+        tip.innerHTML = row.dataset.tip; tip.style.opacity = '1';
+        const r = tip.getBoundingClientRect();
+        tip.style.left = `${Math.max(8, Math.min(x + 14, innerWidth - r.width - 8))}px`;
+        tip.style.top = `${Math.max(8, Math.min(y + 14, innerHeight - r.height - 8))}px`;
+        tip.style.position = 'fixed';
+      };
+      root.querySelectorAll('[data-tip]').forEach(row => {
+        row.addEventListener('pointermove', e => show(row, e.clientX, e.clientY));
+        row.addEventListener('pointerleave', () => { tip.style.opacity = '0'; });
+        row.addEventListener('focus', () => { const b = row.getBoundingClientRect(); show(row, b.left + b.width / 2, b.bottom - 6); });
+        row.addEventListener('blur', () => { tip.style.opacity = '0'; });
+      });
+    }
+    const tipHTML = (title, lines) => `<p style="font-weight:650;margin-bottom:4px">${esc(title)}</p>` + lines.map(([k, v, t]) =>
+      `<p style="display:flex;gap:14px;justify-content:space-between;color:var(--pm-muted)"><span style="display:inline-flex;align-items:center;gap:6px">${t ? `<span class="pm-tier-dot" data-tier="${t}"></span>` : ''}${esc(k)}</span><span class="pm-num" style="color:var(--pm-text)">${esc(v)}</span></p>`).join('');
+
+    // Bars grow once, when the section scrolls into view
+    function growWhenVisible(el) {
+      const grow = () => requestAnimationFrame(() => requestAnimationFrame(() => el.querySelectorAll('.bar > span').forEach(s => { s.style.width = `${s.dataset.w}%`; })));
+      if (PM.reducedMotion() || !('IntersectionObserver' in window)) return grow();
+      const io = new IntersectionObserver((es) => { if (es.some(e => e.isIntersecting)) { io.disconnect(); grow(); } }, { threshold: 0.1 });
+      io.observe(el);
     }
 
-
-
-    // ============================================================
-    // 3. HISTORICAL TREND LINE CHART
-    // ============================================================
-
-    const ctxTrend =
-      document.getElementById('trendChart').getContext('2d');
-
-
-    const trendChart = new Chart(ctxTrend, {
-
-      type: 'line',
-
-
-      data: {
-
-        labels: [
-
-          '2016',
-
-          '2017',
-
-          '2018',
-
-          '2019',
-
-          '2020',
-
-          '2021',
-
-          '2022',
-
-          '2023',
-
-          '2024'
-
-        ],
-
-
-        datasets: [
-
-          {
-
-            label: 'Cost Escalation (Lakh Cr)',
-
-
-            data: [
-
-              2.1,
-
-              2.4,
-
-              2.9,
-
-              3.2,
-
-              3.8,
-
-              4.5,
-
-              5.1,
-
-              5.0,
-
-              5.4
-
-            ],
-
-
-            borderColor: '#f97316',
-
-            backgroundColor: 'rgba(249, 115, 22, 0.1)',
-
-            borderWidth: 2,
-
-            fill: true,
-
-            tension: 0.4,
-
-            pointRadius: 4,
-
-            pointHoverRadius: 6
-
-          }
-
-        ]
-
-      },
-
-
-      options: {
-
-        responsive: true,
-
-        maintainAspectRatio: false,
-
-
-        scales: {
-
-          x: {
-
-            grid: {
-
-              display: false
-
-            },
-
-
-            ticks: {
-
-              color: getTextColor()
-
-            }
-
-          },
-
-
-          y: {
-
-            border: {
-
-              display: false
-
-            },
-
-
-            grid: {
-
-              color: getGridColor()
-
-            },
-
-
-            ticks: {
-
-              color: getTextColor()
-
-            }
-
-          }
-
-        },
-
-
-        plugins: {
-
-          legend: {
-
-            position: 'top',
-
-
-            labels: {
-
-              boxWidth: 20,
-
-              color: getTextColor()
-
-            }
-
-          }
-
+    // ------------------------------------------------------------------
+    // 1. Trend — /analytics/trends  {report_month:"YYYY-MM", average_risk_score}
+    //    Linear month axis: gaps stay gaps (the line breaks), nothing is interpolated.
+    // ------------------------------------------------------------------
+    let takeMissing = [];
+    const refreshTakeaways = (key) => { if (takeMissing.includes(key)) loadTakeaways(); };
+    let trendChart = null, trendRows = null, trendRange = 'all';
+
+    function trendSeries(rows) {
+      const pts = rows.map(r => ({ x: monthIndex(r.report_month), y: num(r.average_risk_score) }))
+        .filter(p => p.x !== null && p.y !== null).sort((a, b) => a.x - b.x);
+      // Monthly line with a null inserted wherever a month has no data -> visible break
+      const line = [];
+      pts.forEach((p, i) => { if (i && p.x - pts[i - 1].x > 1) line.push({ x: p.x - 0.5, y: null }); line.push(p); });
+      // 12-month trailing mean over the months that have data (needs >= 6 of 12)
+      const mean = pts.map((p) => {
+        const win = pts.filter(q => q.x <= p.x && q.x > p.x - 12);
+        return { x: p.x, y: win.length >= 6 ? win.reduce((s, q) => s + q.y, 0) / win.length : null };
+      });
+      const gaps = pts.reduce((n, p, i) => n + (i && p.x - pts[i - 1].x > 1 ? 1 : 0), 0);
+      return { pts, line, mean, gaps };
+    }
+
+    function drawTrend(animate) {
+      const box = $('trend-canvas-box');
+      if (!box || !trendRows) return;
+      if (typeof Chart === 'undefined') throw new Error('Chart.js could not be loaded from the CDN.');
+      const t = PM.chartTheme();
+      const all = trendSeries(trendRows);
+      const last = all.pts[all.pts.length - 1].x;
+      const minX = trendRange === 'all' ? all.pts[0].x : last - Number(trendRange) + 1;
+      const inRange = (p) => p.x >= minX;
+      const monthly = all.line.filter(inRange), mean = all.mean.filter(inRange);
+      const shown = all.pts.filter(inRange);
+      const maxY = Math.max(60, Math.ceil(Math.max(...shown.map(p => p.y)) / 10) * 10);
+      const span = last - minX;
+      // Tick step (months) chosen so labels stay >= ~64px apart at the current width
+      const pxPerMonth = Math.max(box.clientWidth - 60, 120) / Math.max(span, 1);
+      const step = [3, 6, 12, 24, 36, 60, 120].find(m => m * pxPerMonth >= (m < 12 ? 70 : 52)) || 120;
+      const accent = t.accent, dotC = t.info;
+      const thresholds = {
+        id: 'tiers',
+        beforeDatasetsDraw(chart) {
+          const { ctx, chartArea: a, scales: { y } } = chart;
+          [[25, 'WATCH'], [50, 'ELEVATED'], [75, 'CRITICAL']].forEach(([v, tier]) => {
+            if (v > y.max) return;
+            const py = y.getPixelForValue(v);
+            ctx.save();
+            ctx.strokeStyle = PM.tierColor(tier); ctx.globalAlpha = .55; ctx.setLineDash([3, 4]); ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(a.left, py); ctx.lineTo(a.right, py); ctx.stroke();
+            ctx.globalAlpha = 1; ctx.setLineDash([]); ctx.fillStyle = t.muted; ctx.font = `600 10.5px ${t.font.family}`;
+            ctx.textAlign = 'right'; ctx.fillText(`${TIERS[tier].label} ≥ ${v}`, a.right - 4, py - 5);
+            ctx.restore();
+          });
         }
+      };
+      if (trendChart) trendChart.destroy();
+      box.innerHTML = '<canvas id="trend-canvas" role="img"></canvas>';
+      const canvas = $('trend-canvas');
+      canvas.setAttribute('aria-label', `Line chart of average composite risk score by report month, ${monthLabel(shown[0].x)} to ${monthLabel(last)}, ${shown.length} months with data. Values range from ${fmt.dec(Math.min(...shown.map(p => p.y)))} to ${fmt.dec(Math.max(...shown.map(p => p.y)))}.`);
+      trendChart = new Chart(canvas, {
+        type: 'line',
+        data: { datasets: [
+          { label: 'Monthly average', data: monthly, borderColor: alpha(dotC, .55), backgroundColor: dotC, borderWidth: 1.1,
+            pointRadius: (c) => c.raw && c.raw.x === last ? 4.5 : shown.length > 120 ? (box.clientWidth < 520 ? 1.1 : 1.7) : 2.6,
+            pointBorderColor: t.surface, pointBorderWidth: (c) => c.raw && c.raw.x === last ? 2 : 0,
+            pointHoverRadius: 5, pointHitRadius: 6, tension: 0, spanGaps: false, order: 2 },
+          { label: '12-month trailing mean', data: mean, borderColor: accent, backgroundColor: accent, borderWidth: 2.25,
+            pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 4, tension: 0.25, spanGaps: false, order: 1 }
+        ] },
+        options: {
+          responsive: true, maintainAspectRatio: false, parsing: false, normalized: true,
+          animation: animate && !PM.reducedMotion() ? { duration: 900, easing: 'easeOutQuart' } : false,
+          interaction: { mode: 'nearest', axis: 'x', intersect: false },
+          layout: { padding: { top: 6, right: 4 } },
+          scales: {
+            x: { type: 'linear', min: minX - 0.5, max: last + 0.5, grid: { display: false }, border: { color: t.line },
+              ticks: { color: t.tick, font: t.font, autoSkip: false, maxRotation: 0,
+                callback: (v) => {
+                  if (!Number.isInteger(v)) return '';
+                  return step >= 12 ? String(v / 12) : monthLabel(v);
+                } },
+              afterBuildTicks: (axis) => {
+                const first = Math.ceil(axis.min / step) * step;
+                const ticks = []; for (let v = first; v <= axis.max; v += step) ticks.push({ value: v });
+                axis.ticks = ticks;
+              } },
+            y: { min: 0, max: maxY, border: { display: false }, grid: { color: t.grid, drawTicks: false },
+              ticks: { color: t.tick, font: t.font, padding: 8, stepSize: 10 },
+              title: { display: true, text: 'Avg composite score (0–100)', color: t.muted, font: { ...t.font, size: 11 } } }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { ...PM.chartTooltip(),
+              filter: (item) => item.raw && item.raw.y !== null,
+              callbacks: {
+                title: (items) => items.length ? monthLabel(Math.round(items[0].raw.x)) : '',
+                label: (item) => ` ${item.dataset.label}: ${fmt.dec(item.raw.y, 1)}`
+              } }
+          }
+        },
+        plugins: [thresholds]
+      });
+    }
 
+    const loadTrend = () => section($('trend'), {
+      loader: () => get('trends'),
+      skeleton: `<div class="flex gap-6 mb-5">${Array.from({ length: 3 }, () => '<div style="width:140px"><div class="pm-skel pm-skel-line" style="width:70%"></div><div class="pm-skel" style="height:22px;width:80%;margin-top:8px"></div></div>').join('')}</div>${skeleton.block(300)}`,
+      isEmpty: rows => !rows.some(r => monthIndex(r.report_month) !== null && num(r.average_risk_score) !== null),
+      empty: { title: 'No scored predictions yet', message: 'The trend appears once models have scored project reports.' },
+      errorTitle: 'Risk trend unavailable',
+      render: (rows, el) => {
+        trendRows = rows;
+        refreshTakeaways('trends');
+        const { pts, gaps } = trendSeries(rows);
+        const latest = pts[pts.length - 1];
+        const prior = [...pts].reverse().find(p => p.x <= latest.x - 12);
+        const overall = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+        $('trend-sub').textContent = `Mean 0–100 composite score of the predictions recorded for each report month · ${monthLabel(pts[0].x)} – ${monthLabel(latest.x)} · ${fmt.int(pts.length)} months with data.`;
+        el.innerHTML = `
+          <div class="flex flex-wrap items-end justify-between gap-4 mb-4">
+            <div class="readouts">
+              <div class="readout"><p class="pm-kpi-label">Latest month · ${esc(monthLabel(latest.x))}</p><p class="pm-kpi-value mt-1" id="t-latest">—</p></div>
+              <div class="readout"><p class="pm-kpi-label">${prior ? `Nearest month ≥ 1 yr earlier · ${esc(monthLabel(prior.x))}` : 'A year earlier'}</p><p class="pm-kpi-value mt-1" id="t-prior">${prior ? '—' : 'n/a'}</p></div>
+              <div class="readout"><p class="pm-kpi-label">Mean of all ${fmt.int(pts.length)} months</p><p class="pm-kpi-value mt-1" id="t-mean">—</p></div>
+            </div>
+            <div class="flex flex-wrap gap-x-4 gap-y-1">
+              <span class="key"><i class="dot" style="--c:var(--pm-info)"></i>Monthly average</span>
+              <span class="key"><i style="--c:var(--pm-accent)"></i>12-month trailing mean</span>
+              <span class="key"><i class="dash" style="--c:var(--pm-muted)"></i>Tier threshold</span>
+            </div>
+          </div>
+          <div class="trend-box" id="trend-canvas-box"></div>
+          <p class="foot">Each point is the unweighted mean of that month's predictions; the API does not report how many predictions fall in each month, so thinly covered months can swing sharply. The line breaks across the <strong>${fmt.int(gaps)}</strong> gaps where a month has no scored predictions; no values are interpolated. The trailing mean is shown only where at least 6 of the preceding 12 months have data.</p>`;
+        PM.countUp($('t-latest'), latest.y, { decimals: 1 });
+        if (prior) PM.countUp($('t-prior'), prior.y, { decimals: 1 });
+        PM.countUp($('t-mean'), overall, { decimals: 1 });
+        drawTrend(true);
       }
-
     });
 
+    $('trend-range').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-range]');
+      if (!b) return;
+      trendRange = b.dataset.range;
+      $('trend-range').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      if (trendRows) drawTrend(true);
+    });
+    window.addEventListener('themeChanged', () => { if (trendRows && $('trend-canvas-box')) drawTrend(false); });
+    let lastW = 0;
+    window.addEventListener('resize', PM.debounce(() => {
+      const box = $('trend-canvas-box');
+      if (!trendRows || !box || Math.abs(box.clientWidth - lastW) < 40) return;
+      lastW = box.clientWidth; drawTrend(false);
+    }, 250));
 
+    // ------------------------------------------------------------------
+    // 2. Sectors — /analytics/sectors {sector, projects, low, watch, elevated, critical}
+    // ------------------------------------------------------------------
+    const SERIES = [['critical', 'CRITICAL'], ['elevated', 'ELEVATED'], ['watch', 'WATCH'], ['low', 'LOW']];
+    let sectorRows = null, sectorMode = 'count', sectorAll = false;
+    const SECTOR_TOP = 12;
 
-    // ============================================================
-    // 4. THEME CHANGE HANDLER
-    // ============================================================
+    function sectorModel(rows) {
+      return rows.map(r => {
+        const v = Object.fromEntries(SERIES.map(([k]) => [k, Math.max(0, num(r[k]) || 0)]));
+        const n = num(r.projects) ?? SERIES.reduce((s, [k]) => s + v[k], 0);
+        return { name: r.sector, label: /^unknown$/i.test(String(r.sector || '').trim()) ? 'Sector not recorded' : titleCase(r.sector), n, ...v, risk: v.critical + v.elevated };
+      }).filter(r => r.n > 0).sort((a, b) => b.risk - a.risk || b.critical - a.critical || b.n - a.n);
+    }
 
-    window.addEventListener(
-      'themeChanged',
-      () => {
+    function renderSectors() {
+      const el = $('sectors');
+      const all = sectorModel(sectorRows);
+      const list = sectorAll ? all : all.slice(0, SECTOR_TOP);
+      const max = Math.max(...all.map(r => r.n), 1);
+      el.innerHTML = `
+        <div class="rank-head"><span>Sector · projects</span><span>${sectorMode === 'share' ? 'Share of the sector’s projects' : 'Projects by tier'}</span><span style="text-align:right">Elevated+</span></div>
+        <div role="list">${list.map((r, i) => {
+          const w = (k) => sectorMode === 'share' ? pct(r[k], r.n) : (r[k] / max) * 100;
+          return `<div class="rank-row" role="listitem" tabindex="0"
+            aria-label="${esc(r.label)}: ${fmt.int(r.n)} projects; ${SERIES.map(([k, t]) => `${fmt.int(r[k])} ${TIERS[t].label}`).join(', ')}; ${fmt.pct(pct(r.risk, r.n), 1)} at Elevated or above"
+            data-tip="${esc(tipHTML(`${r.label} · ${fmt.int(r.n)} projects`, SERIES.map(([k, t]) => [TIERS[t].label, `${fmt.int(r[k])} · ${fmt.pct(pct(r[k], r.n), 1)}`, t])))}">
+            <div class="rank-name" title="${esc(r.label)}">${esc(r.label)}<small>${fmt.int(r.n)} project${r.n === 1 ? '' : 's'}</small></div>
+            <div class="bar" aria-hidden="true">${SERIES.map(([k, t]) => `<span data-tier="${t}" data-w="${w(k) ? w(k).toFixed(2) : 0}" style="--d:${Math.min(i, 14) * 35}ms"></span>`).join('')}</div>
+            <div class="rank-val"><strong>${fmt.int(r.risk)}</strong> · ${fmt.pct(pct(r.risk, r.n), 1)}</div>
+          </div>`;
+        }).join('')}</div>
+        ${all.length > SECTOR_TOP ? `<button type="button" id="sector-more" class="pm-btn pm-btn-ghost pm-btn-sm mt-2" aria-expanded="${sectorAll}">${sectorAll ? `Show top ${SECTOR_TOP} only` : `Show all ${all.length} sectors`}</button>` : ''}
+        <p class="foot">Share = Elevated + Critical projects as a percentage of the sector’s scored projects. ${sectorMode === 'share' ? 'In “% of sector” each bar spans the sector’s own total, so small sectors can look extreme — check the project count.' : 'Bars share one scale: the longest bar is the largest sector.'}</p>`;
+      bindTips(el);
+      growWhenVisible(el);
+      const more = $('sector-more');
+      if (more) more.addEventListener('click', () => { sectorAll = !sectorAll; renderSectors(); });
+    }
 
-        const gridColor =
-          getGridColor();
-
-
-        const textColor =
-          getTextColor();
-
-
-        // ======================================================
-        // SECTOR CHART
-        // ======================================================
-
-        // Horizontal chart:
-        // X = numeric values
-        // Y = sector names
-
-        sectorChart.options.scales.x.ticks.color =
-          textColor;
-
-        sectorChart.options.scales.x.grid.color =
-          gridColor;
-
-        sectorChart.options.scales.y.ticks.color =
-          textColor;
-
-
-        sectorChart.options.plugins.legend.labels.color =
-          textColor;
-
-
-        sectorChart.update();
-
-
-        // ======================================================
-        // TREND CHART
-        // ======================================================
-
-        trendChart.options.scales.x.ticks.color =
-          textColor;
-
-        trendChart.options.scales.y.ticks.color =
-          textColor;
-
-        trendChart.options.scales.y.grid.color =
-          gridColor;
-
-        trendChart.options.plugins.legend.labels.color =
-          textColor;
-
-
-        trendChart.update();
-
+    const loadSectors = () => section($('sectors'), {
+      loader: () => get('sectors'),
+      skeleton: Array.from({ length: 9 }, () => `<div class="py-2 flex gap-4 items-center"><div class="pm-skel pm-skel-line" style="width:9rem;margin:0"></div><div class="pm-skel flex-1" style="height:12px"></div><div class="pm-skel pm-skel-line" style="width:4rem;margin:0"></div></div>`).join(''),
+      isEmpty: rows => !sectorModel(rows).length,
+      empty: { title: 'No sector data', message: 'Sector totals appear once projects have predictions.' },
+      errorTitle: 'Sector breakdown unavailable',
+      render: (rows) => {
+        sectorRows = rows;
+        refreshTakeaways('sectors');
+        $('sector-legend').innerHTML = SERIES.map(([, t]) => `<span data-tier="${t}"><span class="pm-tier-dot"></span>${TIERS[t].label} <span class="pm-updated">${TIERS[t].range}</span></span>`).join('');
+        renderSectors();
       }
-    );
+    });
+    $('sector-mode').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-mode]');
+      if (!b) return;
+      sectorMode = b.dataset.mode;
+      $('sector-mode').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      if (sectorRows) renderSectors();
+    });
 
+    // ------------------------------------------------------------------
+    // 3. States — /analytics/states {state, projects, high_risk (score >= 50)}
+    // ------------------------------------------------------------------
+    let stateRows = null, stateMode = 'count';
+    const STATE_TOP = 12, SHARE_MIN = 20;
+    const malformed = (s) => /\d/.test(s) || /^[^A-Za-z]/.test(s);
+    const isUnknown = (s) => /^(unknown|n\/?a|none|null|-)$/i.test(s);
+    const isMulti = (s) => /^multi[\s-]*state/i.test(s);
 
+    function stateModel(rows) {
+      const clean = [], bad = [], unknown = [], multi = [];
+      rows.forEach(r => {
+        const name = String(r.state ?? '').trim();
+        const row = { name, label: titleCase(name), n: Math.max(0, num(r.projects) || 0), high: Math.max(0, num(r.high_risk) || 0) };
+        if (!name || malformed(name)) bad.push(row);
+        else if (isUnknown(name)) unknown.push(row);
+        else if (isMulti(name)) multi.push(row);
+        else if (row.n > 0) clean.push(row);
+      });
+      return { clean, bad, unknown, multi };
+    }
 
-    // ============================================================
-    // 5. LOAD DATA WHEN PAGE LOADS
-    // ============================================================
+    function renderStates() {
+      const el = $('states');
+      const m = stateModel(stateRows);
+      const byShare = stateMode === 'share';
+      const pool = byShare ? m.clean.filter(r => r.n >= SHARE_MIN) : m.clean;
+      const list = [...pool].sort((a, b) => byShare ? pct(b.high, b.n) - pct(a.high, a.n) || b.high - a.high : b.high - a.high || b.n - a.n).slice(0, STATE_TOP);
+      const max = byShare ? Math.max(...list.map(r => pct(r.high, r.n)), 1) : Math.max(...list.map(r => r.high), 1);
+      const sum = (arr, k) => arr.reduce((s, r) => s + r[k], 0);
+      const outside = [];
+      if (m.multi.length) outside.push(`<strong>Multi-state</strong> ${fmt.int(sum(m.multi, 'high'))} of ${fmt.int(sum(m.multi, 'n'))} projects`);
+      if (m.unknown.length) outside.push(`<strong>no state recorded</strong> ${fmt.int(sum(m.unknown, 'high'))} of ${fmt.int(sum(m.unknown, 'n'))}`);
+      el.innerHTML = `
+        <div class="rank-head"><span>State · projects</span><span>${byShare ? 'Share ≥ 50' : 'Scoring ≥ 50'}</span><span style="text-align:right">≥ 50 · share</span></div>
+        <div role="list">${list.map((r, i) => {
+          const w = byShare ? (pct(r.high, r.n) / max) * 100 : (r.high / max) * 100;
+          return `<div class="rank-row" role="listitem" tabindex="0"
+            aria-label="${esc(r.label)}: ${fmt.int(r.high)} of ${fmt.int(r.n)} projects score 50 or more (${fmt.pct(pct(r.high, r.n), 1)})"
+            data-tip="${esc(tipHTML(r.label, [['Projects', fmt.int(r.n)], ['Scoring ≥ 50', fmt.int(r.high), 'ELEVATED'], ['Share', fmt.pct(pct(r.high, r.n), 1)]]))}">
+            <div class="rank-name" title="${esc(r.label)}">${esc(r.label)}<small>${fmt.int(r.n)} project${r.n === 1 ? '' : 's'}</small></div>
+            <div class="bar single" aria-hidden="true"><span data-tier="ELEVATED" data-w="${w.toFixed(2)}" style="--d:${i * 35}ms"></span></div>
+            <div class="rank-val"><strong>${fmt.int(r.high)}</strong> · ${fmt.pct(pct(r.high, r.n), 1)}</div>
+          </div>`;
+        }).join('') || PM.stateHTML({ kind: 'empty', title: 'No states to rank', inline: true })}</div>
+        <p class="foot">${byShare ? `Share ranking includes only states with at least ${SHARE_MIN} scored projects. ` : ''}Not attributable to one state: ${outside.join('; ') || 'none'}.
+          ${m.bad.length ? `<strong>${fmt.int(m.bad.length)}</strong> source row${m.bad.length > 1 ? 's' : ''} with an unparseable state name (${fmt.int(sum(m.bad, 'n'))} project${sum(m.bad, 'n') === 1 ? '' : 's'}) excluded.` : ''}
+          State names are shown as recorded in the source data; spelling variants are not merged.</p>`;
+      bindTips(el);
+      growWhenVisible(el);
+    }
 
-    document.addEventListener(
-      'DOMContentLoaded',
-      () => {
+    const loadStates = () => section($('states'), {
+      loader: () => get('states'),
+      skeleton: Array.from({ length: 9 }, () => `<div class="py-2 flex gap-4 items-center"><div class="pm-skel pm-skel-line" style="width:7rem;margin:0"></div><div class="pm-skel flex-1" style="height:12px"></div><div class="pm-skel pm-skel-line" style="width:3.5rem;margin:0"></div></div>`).join(''),
+      isEmpty: rows => !stateModel(rows).clean.length,
+      empty: { title: 'No state data', message: 'State totals appear once projects with a recorded state are scored.' },
+      errorTitle: 'State breakdown unavailable',
+      render: (rows) => { stateRows = rows; renderStates(); refreshTakeaways('states'); }
+    });
+    $('state-mode').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-mode]');
+      if (!b) return;
+      stateMode = b.dataset.mode;
+      $('state-mode').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      if (stateRows) renderStates();
+    });
 
-        loadDynamicSectorAnalytics();
-
+    // ------------------------------------------------------------------
+    // 4. Interpretation — sentences computed from whatever loaded
+    // ------------------------------------------------------------------
+    function takeaways({ trends, sectors, states }) {
+      const out = [];
+      if (sectors) {
+        const s = sectorModel(sectors);
+        const tot = s.reduce((a, r) => a + r.n, 0), risk = s.reduce((a, r) => a + r.risk, 0), crit = s.reduce((a, r) => a + r.critical, 0);
+        if (tot) out.push({ icon: 'chart-line', src: 'Sector analytics · latest prediction per project',
+          html: `<strong>${fmt.int(risk)}</strong> of ${fmt.int(tot)} scored projects (${fmt.pct(pct(risk, tot), 1)}) are at Elevated or Critical risk; <strong>${fmt.int(crit)}</strong> are Critical.` });
+        const top = s[0];
+        const big = s.filter(r => r.n >= 50).sort((a, b) => pct(b.risk, b.n) - pct(a.risk, a.n))[0];
+        if (top && top.risk) out.push({ icon: 'triangle-alert', src: 'Sector analytics',
+          html: `<strong>${esc(top.label)}</strong> has the most Elevated+ projects (${fmt.int(top.risk)}, ${fmt.pct(pct(top.risk, top.n), 1)} of its ${fmt.int(top.n)})${big && big.name !== top.name ? `; among sectors with 50+ projects, <strong>${esc(big.label)}</strong> has the highest share (${fmt.pct(pct(big.risk, big.n), 1)} of ${fmt.int(big.n)}).` : '.'}` });
       }
-    );
+      if (states) {
+        const m = stateModel(states);
+        const top = [...m.clean].sort((a, b) => b.high - a.high)[0];
+        const multi = m.multi.reduce((a, r) => ({ n: a.n + r.n, high: a.high + r.high }), { n: 0, high: 0 });
+        if (top && top.high) out.push({ icon: 'map-pin', src: 'State analytics · score ≥ 50',
+          html: `Among single states, <strong>${esc(top.label)}</strong> has the most projects scoring ≥ 50 (${fmt.int(top.high)} of ${fmt.int(top.n)}, ${fmt.pct(pct(top.high, top.n), 1)})${multi.n ? `; multi-state projects account for ${fmt.int(multi.high)} more (${fmt.pct(pct(multi.high, multi.n), 1)} of ${fmt.int(multi.n)}).` : '.'}` });
+      }
+      if (trends) {
+        const { pts } = trendSeries(trends);
+        if (pts.length) {
+          const latest = pts[pts.length - 1];
+          const prior = [...pts].reverse().find(p => p.x <= latest.x - 12);
+          const d = prior ? latest.y - prior.y : null;
+          out.push({ icon: 'eye', src: 'Risk trend · average composite score by report month',
+            html: prior
+              ? `Average risk in the latest reported month (${esc(monthLabel(latest.x))}) is <strong>${fmt.dec(latest.y)}</strong> vs <strong>${fmt.dec(prior.y)}</strong> in ${esc(monthLabel(prior.x))}, the nearest month at least a year earlier (${d >= 0 ? '+' : '−'}${fmt.dec(Math.abs(d))} points)${latest.x - prior.x > 13 ? `; no months between them have scored predictions` : ''}.`
+              : `Average risk in the latest reported month (${esc(monthLabel(latest.x))}) is <strong>${fmt.dec(latest.y)}</strong>; no month a year or more earlier has data to compare.` });
+        }
+      }
+      return out;
+    }
 
+    const loadTakeaways = () => section($('takeaways'), {
+      loader: async () => {
+        const keys = ['trends', 'sectors', 'states'];
+        const res = await Promise.allSettled(keys.map(get));
+        if (res.every(r => r.status === 'rejected')) throw res[0].reason;
+        return Object.fromEntries(keys.map((k, i) => [k, res[i].status === 'fulfilled' ? res[i].value : null]));
+      },
+      skeleton: skeleton.rows(3),
+      isEmpty: d => !takeaways(d).length,
+      empty: { title: 'Nothing to interpret yet', message: 'Takeaways appear once predictions exist.' },
+      errorTitle: 'Interpretation unavailable',
+      render: (d, el) => {
+        const missing = takeMissing = Object.entries(d).filter(([, v]) => !v).map(([k]) => k);
+        el.innerHTML = takeaways(d).map(t => `<div class="take"><span class="take-icon">${icon(t.icon)}</span><div><p>${t.html}</p><p class="src">${esc(t.src)}</p></div></div>`).join('') +
+          (missing.length ? `<p class="pm-updated mt-2">Not included because the ${missing.join(' and ')} request failed; it is added here as soon as that section loads.</p>` : '');
+        PM.stagger(el.children, 70, 'pm-fade-swap');
+      }
+    });
+
+    // ------------------------------------------------------------------
+    // Boot: trend + sectors now; states and interpretation when approached
+    // ------------------------------------------------------------------
+    function lazy(el, fn) {
+      if (!('IntersectionObserver' in window)) return fn();
+      const io = new IntersectionObserver((es) => { if (es.some(e => e.isIntersecting)) { io.disconnect(); fn(); } }, { rootMargin: '240px' });
+      io.observe(el);
+    }
+    const stamp = () => PM.markUpdated($('updated'));
+    Promise.allSettled([loadTrend(), loadSectors()]).then(stamp);
+    lazy($('states'), loadStates);
+    lazy($('takeaways'), loadTakeaways);
+
+    $('refresh').addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      Object.keys(cache).forEach(k => delete cache[k]);
+      await Promise.allSettled([loadTrend(), loadSectors(), loadStates()]);
+      await loadTakeaways();
+      stamp();
+      btn.disabled = false;
+      PM.toast('Analytics refreshed from the latest predictions.', 'success', 2600);
+    });
+  })();
   </script>
-
 </body>
-
 </html>
