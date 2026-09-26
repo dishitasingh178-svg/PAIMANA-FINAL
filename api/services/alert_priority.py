@@ -47,7 +47,8 @@ def clamp(value):
 
 
 def effective_status(alert):
-    return "RESOLVED" if alert.is_resolved else (alert.status or "NEW")
+    status = getattr(alert, "status", None)
+    return "RESOLVED" if getattr(alert, "is_resolved", False) else (status if status in STATUSES else "NEW")
 
 
 def transition_status(alert, status, note=None):
@@ -236,7 +237,7 @@ class TriageContext:
                     reasons.append("Insufficient reporting history to verify the trajectory warning.")
         add("Original approved cost", number(project.original_cost_crore), unit="crore")
         match = re.match(r"\[(\d{4}-\d{2})\]", alert.message or "")
-        changed = alert.message
+        changed = alert.message or "Unavailable"
         if priority["risk_delta"] is not None and priority["risk_delta"] >= 10:
             changed += f" Latest model comparison: risk increased {priority['risk_delta']:g} points ({previous.report_month} to {prediction.report_month})."
         result = dict(alert_id=alert.alert_id, project_id=alert.project_id.strip(), project_name=project.project_name, sector=project.sector or "Infrastructure", implementing_agency=project.implementing_agency, state=project.state,
@@ -250,7 +251,7 @@ class TriageContext:
                       previous_prediction_report_month=previous.report_month if previous else None, alert_report_month=match.group(1) if match else None, portfolio_report_month=self.portfolio_month, **priority)
         for field in ("cost_risk_probability", "schedule_risk_probability", "cox_risk_probability"):
             result[field] = number(getattr(prediction, field, None))
-        for field in ("triggered_at", "status_updated_at", "acknowledged_at", "resolved_at", "dismissed_at"):
+        for field in ("triggered_at", "status_updated_at", "acknowledged_at", "resolved_at", "dismissed_at", "evidence_updated_at"):
             value = getattr(alert, field)
             result[field] = value.isoformat() if value else None
         return result

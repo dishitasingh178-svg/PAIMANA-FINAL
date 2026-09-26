@@ -63,6 +63,15 @@ app = FastAPI(
 )
 
 
+@app.middleware("http")
+async def revalidate_warning_assets(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.endswith(".html") or request.url.path.startswith("/js/") or request.url.path.startswith("/api/v1/alerts"):
+        response.headers["Cache-Control"] = "no-store"
+    response.headers["X-PAIMANA-Revision"] = os.getenv("PAIMANA_REVISION", "unknown")
+    return response
+
+
 # 1. CORS Middleware
 app.add_middleware(
     CORSMiddleware,
@@ -141,6 +150,8 @@ def health_check():
 
     return {
         "status": "online",
+        "revision": os.getenv("PAIMANA_REVISION", "unknown"),
+        "early_warning_contract": 2,
         "model_version": getattr(
             predictor,
             "manifest",

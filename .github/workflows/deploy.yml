@@ -27,18 +27,28 @@ jobs:
 
             echo "Pulling latest code..."
             git fetch origin main
-            git reset --hard origin/main
+            git reset --hard ${{ github.sha }}
+            export GIT_COMMIT=$(git rev-parse HEAD)
+            test "$GIT_COMMIT" = "${{ github.sha }}"
 
             echo "Rebuilding PAIMANA API..."
-            docker compose build paimana-api
+            docker compose build --pull paimana-api
+            docker compose run --rm paimana-api python -m scripts.migrate_alert_workflow
 
             echo "Updating PAIMANA API..."
-            docker compose up -d paimana-api
+            docker compose up -d --no-deps --force-recreate paimana-api
 
             echo "Checking containers..."
             docker compose ps
 
             echo "Checking API health..."
-            curl -k https://127.0.0.1:8443/health
+            for attempt in $(seq 1 30); do
+              if docker compose exec -T paimana-api python -m scripts.verify_warning_deployment --revision "$GIT_COMMIT"; then
+                break
+              fi
+              test "$attempt" -lt 30
+              sleep 2
+            done
+            docker compose exec -T paimana-api python -m scripts.verify_warning_deployment --revision "$GIT_COMMIT"
 
             echo "Deployment completed successfully."

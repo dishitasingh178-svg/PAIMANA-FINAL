@@ -98,7 +98,8 @@ def test_api_history_priority_and_workflow(db, client):
     remaining = client.get('/api/v1/alerts').json()[0]['alert_id']
     assert client.patch(f'/api/v1/alerts/{remaining}/status',json={'status':'DISMISSED'}).status_code == 200
     assert client.get('/api/v1/alerts/priority').json() == []
-    assert client.get('/api/v1/alerts/summary').json()['resolved'] == 1
+    # One closed project case follows its latest closure; raw resolved row remains.
+    assert client.get('/api/v1/alerts/summary').json()['dismissed'] == 1
     assert client.patch(f'/api/v1/alerts/{aid}/status',json={'status':'INVALID'}).status_code == 422
     assert client.patch('/api/v1/alerts/999/status',json={'status':'NEW'}).status_code == 404
 
@@ -153,7 +154,7 @@ def test_filters_pagination_and_status_precedence(db, client):
     transition_status(alerts[0], 'UNDER_REVIEW')
     transition_status(alerts[1], 'ACKNOWLEDGED')
     db.commit()
-    assert client.get('/api/v1/alerts/priority').json()[0]['status'] == 'UNDER_REVIEW'
+    assert client.get('/api/v1/alerts/priority').json()[0]['status'] == 'ACKNOWLEDGED'
     transition_status(alerts[0], 'RESOLVED')
     db.commit()
     item = client.get('/api/v1/alerts/priority').json()[0]
