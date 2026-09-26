@@ -17,14 +17,17 @@
   let active = 'new', rows = [], refreshFlight = null, mutating = false, loadedOnce = false, lastSummary = null;
   const refine = {severity:'', sector:'', days:''};
   const expanded = new Set(projectId ? [projectId] : []);
+  const EVIDENCE_ON_CARD = 3;
 
   const icon = (name, cls = 'w-4 h-4') => P ? P.icon(name, cls) : '';
   const badge = (sev, score, showScore = false) => P ? P.tierBadge(sev, score, {showScore}) : esc(sev);
   const tierOf = (sev, score) => P ? P.tier(sev, score) : 'UNKNOWN';
+  const motion = () => Boolean(P && !P.reducedMotion());
   const title = s => U.safeText(s, '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\b(And|Of)\b/g, m => m.toLowerCase());
   const money = value => value == null ? '—' : `₹${fmt(value)} Cr`;
-  const delta = value => value == null ? 'Previous period unavailable.' : `${value > 0 ? '+' : ''}${fmt(value)} points`;
-  const month = ym => P && ym ? P.fmt.month(ym) : U.safeText(ym, '—');
+  const signed = value => value == null ? '—' : `${value > 0 ? '+' : value < 0 ? '−' : ''}${fmt(Math.abs(value))}`;
+  const delta = value => value == null ? 'Previous period unavailable.' : `${signed(value)} points`;
+  const month = ym => U.monthLabel(ym) || '—';
   const when = iso => {
     const d = new Date(U.safeText(iso, ''));
     if (!Number.isFinite(d.getTime())) return {rel:'—', abs:'Time unavailable'};
@@ -35,6 +38,7 @@
   };
   const section = (heading, text) => `<section><h4 class="d-h">${heading}</h4><p class="d-p">${esc(U.safeText(text))}</p></section>`;
   const wfPill = status => `<span class="wf" data-wf="${esc(status)}">${esc(U.statusLabels[status] || humanize(status))}</span>`;
+  const domId = value => U.safeText(value, '').replace(/[^A-Za-z0-9_-]/g, '_') || Math.random().toString(36).slice(2);
 
   function matches(item) {
     const query = filters.find(f => f[0] === active)[2];
@@ -66,11 +70,50 @@
   }
 
   // ------------------------------------------------------------------
+  // Evidence (always visible on the card)
+  // ------------------------------------------------------------------
+  // Model comparison from the case's own fields: previous -> current composite score.
+  function modelLine(item) {
+    if (item.risk_delta == null && item.previous_risk_score == null) return '';
+    const from = item.previous_risk_score, to = item.risk_score;
+    const pm = U.monthLabel(item.previous_prediction_report_month), cm = U.monthLabel(item.prediction_report_month || item.report_month);
+    const scores = from != null && to != null
+      ? `<span class="ev-prev">${esc(fmt(from))}</span><span class="ev-arr" aria-label="to">→</span><b>${esc(fmt(to))}</b>`
+      : to != null ? `<b>${esc(fmt(to))}</b>` : '';
+    return `<p class="model"><span class="model-k">Model comparison</span>
+      <span class="model-v pm-num">Composite risk ${scores}${item.risk_delta != null ? ` <span class="ev-c">(${esc(signed(item.risk_delta))} pts)</span>` : ''}</span>
+      ${pm || cm ? `<span class="ev-m">${esc(pm && cm && pm !== cm ? `${pm} → ${cm}` : cm || pm)}</span>` : ''}</p>`;
+  }
+  function evRow(e) {
+    const cur = U.evidenceValue(e.current, e.unit);
+    const same = e.previous != null && String(e.previous) === String(e.current);
+    const prev = e.previous != null && !same ? U.evidenceValue(e.previous, e.unit) : '';
+    const chg = e.series ? '' : U.evidenceChange(e.change, e.unit) || (same ? 'no change' : '');
+    const months = U.evidenceMonths(e);
+    return `<div class="ev-row">
+      <span class="ev-l">${esc(e.label)}${e.series ? ` <span class="ev-tag">${esc(fmt(e.series))} reports</span>` : ''}</span>
+      <span class="ev-v pm-num">${prev ? `<span class="ev-prev">${esc(prev)}</span><span class="ev-arr" aria-label="to">→</span>` : ''}<b>${esc(cur)}</b>${chg ? ` <span class="ev-c">(${esc(chg)})</span>` : ''}</span>
+      <span class="ev-m">${esc(months)}</span></div>`;
+  }
+  function evidenceHTML(item, did) {
+    const hasModel = item.risk_delta != null || item.previous_risk_score != null;
+    const {top, rest, total} = U.pickEvidence(item.evidence, item.dominant_alert_type || item.alert_type, {limit:EVIDENCE_ON_CARD, exclude: hasModel ? ['Composite risk'] : []});
+    const head = `<p class="ev-head">${icon('chart-line', 'w-3.5 h-3.5')}<span>Evidence · latest available data</span>${total ? `<span class="ev-n">${esc(fmt(total))} metric${total === 1 ? '' : 's'}</span>` : ''}</p>`;
+    if (!total) return `<section class="ev" aria-label="Evidence">${head}${modelLine(item)}<p class="ev-none">No evidence metrics recorded for this case.</p></section>`;
+    return `<section class="ev" aria-label="Evidence, latest available data">${head}${modelLine(item)}
+      <div class="ev-rows">${top.map(evRow).join('')}</div>
+      ${rest.length ? `<div class="ev-rows ev-rest" id="ev-${did}" hidden>${rest.map(evRow).join('')}</div>
+        <button type="button" class="ev-more" data-ev-more aria-expanded="false" aria-controls="ev-${did}"><span data-label>+${esc(fmt(rest.length))} more metric${rest.length === 1 ? '' : 's'}</span>${icon('chevron-right', 'w-3.5 h-3.5')}</button>` : ''}
+    </section>`;
+  }
+
+  // ------------------------------------------------------------------
   // Case cards
   // ------------------------------------------------------------------
   function detailHTML(item) {
     const closed = U.closed(item);
     const riskMonth = item.prediction_report_month || item.report_month;
+    const issue = U.splitMonth(item.what_changed);
     return `
       <div class="facts">
         <div><p class="pm-kpi-label">Model risk</p><div class="v">${badge(item.risk_tier, item.risk_score, true)}</div><p class="s">Composite, report ${esc(month(riskMonth))}</p></div>
@@ -78,31 +121,22 @@
         <div><p class="pm-kpi-label">Financial exposure</p><p class="v">${esc(money(item.financial_exposure_crore))}</p><p class="s">Latest anticipated cost</p></div>
         <div><p class="pm-kpi-label">Data confidence</p><p class="v">${esc(humanize(item.data_confidence))}</p><p class="s">${esc(item.data_confidence_reasons.join(' ') || '—')}</p></div>
       </div>
-      <div class="d-grid">${section('What changed', item.what_changed)}${section('Why flagged', item.why_flagged)}
+      <div class="d-grid">${section('What changed', issue.text || item.what_changed)}${section('Why flagged', item.why_flagged)}
         ${section('Potential consequence', item.potential_consequence)}${section('Recommended investigation', item.recommended_investigation)}</div>
-      <div class="d-grid mt-5">
-        <section>
-          <h4 class="d-h">Contributing signals (${esc(fmt(item.signal_count))})</h4>
-          <div>${item.underlying_signals.map(s => {
-            const sm = U.splitMonth(s.what_changed);
-            return `<div class="sig"><div class="pt-0.5">${badge(s.severity)}</div><div><p style="color:var(--pm-text);font-weight:600">${esc(U.typeLabel(s.alert_type))}${sm.month ? ` <span class="pm-updated">· report ${esc(month(sm.month))}</span>` : ''}</p><p class="mt-0.5" style="color:var(--pm-text-2)">${esc(sm.text || s.what_changed)}</p></div></div>`;
-          }).join('') || '<p class="d-p">Signal details unavailable.</p>'}</div>
-        </section>
-        <section>
-          <details class="more"><summary>${icon('chevron-right')}Evidence · latest available data (${item.evidence.length})</summary>
-            <p class="pm-updated mt-2">Each metric is dated independently of the recorded trigger.</p>
-            <div class="ev">${item.evidence.map(e => `<div><p style="color:var(--pm-text);font-weight:600">${esc(e.label)}</p><p class="pm-num mt-1" style="color:var(--pm-text-2)">${e.previous != null ? esc(e.previous) + ' → ' : ''}${esc(e.current)} ${esc(e.unit)}</p>${e.change != null ? `<p class="pm-num" style="color:var(--pm-muted)">Change: ${e.change > 0 ? '+' : ''}${fmt(e.change)}</p>` : ''}<p class="pm-updated mt-1">${esc(e.previous_report_month)} ${e.previous_report_month ? '→' : ''} ${esc(e.current_report_month)}</p></div>`).join('') || '<p class="d-p">Evidence unavailable.</p>'}</div>
-          </details>
-        </section>
-      </div>
-      <div class="mt-5 pt-4" style="border-top:1px solid var(--pm-line)">
+      <section class="mt-5">
+        <h4 class="d-h">Contributing signals (${esc(fmt(item.signal_count))})</h4>
+        <div class="sigs">${item.underlying_signals.map(s => {
+          const sm = U.splitMonth(s.what_changed);
+          return `<div class="sig"><div class="pt-0.5">${badge(s.severity)}</div><div class="min-w-0"><p style="color:var(--pm-text);font-weight:600">${esc(U.typeLabel(s.alert_type))}${sm.month ? ` <span class="pm-updated">· report ${esc(month(sm.month))}</span>` : ''}</p><p class="mt-0.5" style="color:var(--pm-text-2)">${esc(sm.text || s.what_changed)}</p></div></div>`;
+        }).join('') || '<p class="d-p">Signal details unavailable.</p>'}</div>
+      </section>
+      <div class="act-panel">
         <label class="block text-[12px] font-semibold" style="color:var(--pm-muted)">Optional officer note
           <textarea maxlength="5000" rows="2" class="note mt-1.5 mb-3">${esc(item.review_note)}</textarea></label>
         <div class="flex flex-wrap items-center gap-2">
           ${(closed ? [['NEW','Reopen']] : [['ACKNOWLEDGED','Acknowledge'],['UNDER_REVIEW','Under Review'],['DISMISSED','Dismiss'],['RESOLVED','Resolve']]).map(([status, label]) =>
             `<button type="button" data-status="${status}" ${!item.project_id || status === item.workflow_status ? 'disabled' : ''} class="pm-btn pm-btn-sm ${status === 'RESOLVED' ? 'pm-btn-primary' : ''}">${label}</button>`).join('')}
-          <span class="pm-updated">Moves the whole case and its open signals.</span>
-          <a class="pm-btn pm-btn-ghost pm-btn-sm ml-auto" href="project-details.html?id=${encodeURIComponent(item.project_id)}">Open project ${icon('arrow-right', 'w-3.5 h-3.5')}</a>
+          <span class="pm-updated" style="white-space:normal">Moves the whole case and its open signals.</span>
         </div>
       </div>`;
   }
@@ -111,27 +145,36 @@
     const closed = U.closed(item);
     const open = expanded.has(item.project_id);
     const issue = U.splitMonth(item.what_changed);
+    const hasModel = item.risk_delta != null || item.previous_risk_score != null;
+    // The model comparison sentence is shown as its own line inside Evidence; the headline keeps the problem.
+    const text = issue.text || item.what_changed;
+    const headline = hasModel ? text.split(/\s*Latest model comparison:/)[0] || text : text;
+    const reportMonth = issue.month || (item.report_month !== 'Unavailable' ? item.report_month : '');
     const t = when(item.triggered_at);
     const others = item.alert_classifications.filter(c => c !== item.dominant_classification).map(c => U.classLabels[c]);
-    const did = `case-${esc(item.project_id || Math.random().toString(36).slice(2))}`;
-    return `<article class="case ${open ? 'is-open' : ''}" data-project-id="${esc(item.project_id)}" data-tier="${tierOf(item.severity)}" data-closed="${closed}">
+    const did = `case-${esc(domId(item.project_id))}`;
+    const href = `project-details.html?id=${encodeURIComponent(item.project_id)}`;
+    return `<article class="case ${open ? 'is-open' : ''}" data-project-id="${esc(item.project_id)}" data-tier="${tierOf(item.severity)}" data-closed="${closed}" aria-labelledby="${did}-name">
       <div class="case-main">
-        <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2 mb-2">${badge(item.severity)}${wfPill(item.workflow_status)}
-            ${item.has_new_evidence === true ? `<span class="pm-tier" data-tier="ELEVATED">${icon('sparkles')}New evidence since review</span>` : ''}</div>
-          <a class="case-name" href="project-details.html?id=${encodeURIComponent(item.project_id)}">${esc(item.project_name)}</a>
-          <p class="case-meta">${esc([title(item.sector), title(item.state), item.project_id].filter(v => v && v !== 'Unavailable').join(' · '))}</p>
-          <p class="case-issue">${esc(issue.text || item.what_changed)}</p>
-          <p class="case-why"><span>Trigger <b>${esc(U.classLabels[item.dominant_classification])}</b> · ${esc(U.typeLabel(item.dominant_alert_type || item.alert_type))}</span>
-            <span>${esc(fmt(item.signal_count))} contributing signal${item.signal_count === 1 ? '' : 's'}</span>
-            ${issue.month || item.report_month ? `<span>Report ${esc(month(issue.month || item.report_month))}</span>` : ''}
-            ${others.length ? `<span>Other signals: ${esc(others.join(', '))}</span>` : ''}</p>
-          ${item.review_note ? `<p class="case-why"><span><b>Officer Note:</b> ${esc(item.review_note)}</span><span>Updated ${esc(U.date(item.status_updated_at))}</span></p>` : ''}
+        <div class="case-top">
+          <div class="case-flags">${badge(item.severity)}${wfPill(item.workflow_status)}
+            ${item.has_new_evidence === true ? `<span class="flag">${icon('sparkles', 'w-3 h-3')}New evidence since review</span>` : ''}</div>
+          <p class="prio-tag" title="Warning priority score (0–100)"><span class="pm-num">${esc(fmt(item.priority_score))}</span><span class="prio-tag-l" data-p="${esc(item.priority_label)}">${esc(humanize(item.priority_label).toLowerCase())} priority</span></p>
         </div>
-        <div class="case-side">
-          <div><p class="score" title="Warning priority score (0–100)">${esc(fmt(item.priority_score))}</p><p class="score-lbl" data-p="${esc(item.priority_label)}">Priority · ${esc(humanize(item.priority_label).toLowerCase())}</p></div>
-          <p class="case-time"><time datetime="${esc(item.triggered_at)}" title="Raised ${esc(t.abs)}">Raised ${esc(t.rel)}</time></p>
-          <button type="button" class="pm-btn pm-btn-sm toggle" data-toggle aria-expanded="${open}" aria-controls="${did}">${icon('chevron-right', 'w-3.5 h-3.5')}${open ? 'Hide case' : 'Review case'}</button>
+        <h3 class="case-h"><a id="${did}-name" class="case-name" href="${href}">${esc(item.project_name)}</a></h3>
+        <p class="case-meta">${esc([title(item.sector), title(item.state), item.project_id].filter(v => v && v !== 'Unavailable').join(' · '))}</p>
+        <p class="case-issue">${reportMonth ? `<span class="rm" title="Report month of the triggering data">${esc(month(reportMonth))}</span>` : ''}<span>${esc(headline)}</span></p>
+        ${evidenceHTML(item, did)}
+        ${item.review_note ? `<p class="case-note"><span><b>Officer Note:</b> ${esc(item.review_note)}</span><span class="pm-updated">Updated ${esc(U.date(item.status_updated_at))}</span></p>` : ''}
+        <div class="case-foot">
+          <p class="case-why"><span class="case-time"><time datetime="${esc(item.triggered_at)}" title="Raised ${esc(t.abs)}">Raised ${esc(t.rel)}</time></span>
+            <span>Trigger <b>${esc(U.classLabels[item.dominant_classification])}</b> · ${esc(U.typeLabel(item.dominant_alert_type || item.alert_type))}</span>
+            <span>${esc(fmt(item.signal_count))} contributing signal${item.signal_count === 1 ? '' : 's'}</span>
+            ${others.length ? `<span>Other signals: ${esc(others.join(', '))}</span>` : ''}</p>
+          <div class="case-acts">
+            <a class="pm-btn pm-btn-ghost pm-btn-sm" href="${href}">Open project</a>
+            <button type="button" class="pm-btn pm-btn-sm toggle" data-toggle aria-expanded="${open}" aria-controls="${did}">${icon('chevron-right', 'w-3.5 h-3.5')}<span data-label>${open ? 'Hide review' : 'Review case'}</span></button>
+          </div>
         </div>
       </div>
       <div class="case-detail" id="${did}" ${open ? '' : 'hidden'}>${open ? detailHTML(item) : ''}</div>
@@ -164,8 +207,19 @@
     detail.hidden = !open;
     card.classList.toggle('is-open', open);
     btn.setAttribute('aria-expanded', String(open));
-    btn.lastChild.textContent = open ? 'Hide case' : 'Review case';
-    if (open && P && !P.reducedMotion()) { detail.classList.remove('pm-fade-swap'); void detail.offsetWidth; detail.classList.add('pm-fade-swap'); }
+    btn.querySelector('[data-label]').textContent = open ? 'Hide review' : 'Review case';
+    if (open && motion()) { detail.classList.remove('reveal-in'); void detail.offsetWidth; detail.classList.add('reveal-in'); }
+  }
+  function toggleEvidence(btn) {
+    if (typeof btn.getAttribute !== 'function') return;
+    const panel = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!panel) return;
+    const open = btn.getAttribute('aria-expanded') !== 'true';
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    const n = panel.children.length;
+    btn.querySelector('[data-label]').textContent = open ? 'Show fewer metrics' : `+${fmt(n)} more metric${n === 1 ? '' : 's'}`;
+    if (open && motion()) P.stagger(panel.children, 22, 'pm-fade-swap');
   }
 
   function syncSectorOptions() {
@@ -178,13 +232,13 @@
   // ------------------------------------------------------------------
   // Summary + priority
   // ------------------------------------------------------------------
-  const SUMMARY = [['new','New','new','Awaiting triage'],['immediate','Immediate priority','immediate','Priority label Immediate'],
+  const SUMMARY = [['new','New','new','Awaiting triage'],['immediate','Immediate','immediate','Priority label Immediate'],
     ['acknowledged','Acknowledged','acknowledged','Seen by an officer'],['under_review','Under review','review','Being investigated'],
     ['resolved','Resolved','resolved','Closed · addressed'],['dismissed','Dismissed','dismissed','Closed · not actionable']];
   function renderSummary(data) {
     lastSummary = data;
-    el('warning-summary').innerHTML = SUMMARY.map(([key, label, filter, foot]) => `<button type="button" class="sum-cell" data-filter="${filter}" aria-pressed="${filter === active}" aria-label="${esc(label)}: ${esc(fmt(data?.[key]))}. Show this queue.">
-      <p class="pm-kpi-label">${label}</p><p class="pm-kpi-value mt-1.5" data-count="${key}">${fmt(data?.[key])}</p><p class="pm-updated mt-1" style="white-space:normal">${foot}</p></button>`).join('');
+    el('warning-summary').innerHTML = SUMMARY.map(([key, label, filter, foot]) => `<button type="button" class="sum-cell" data-filter="${filter}" aria-pressed="${filter === active}" title="${esc(foot)}" aria-label="${esc(label)}: ${esc(fmt(data?.[key]))}. ${esc(foot)}. Show this queue.">
+      <span class="sum-l">${label}</span><p class="sum-v" data-count="${key}">${fmt(data?.[key])}</p></button>`).join('');
     const parts = [];
     if (data?.total_cases != null) parts.push(`${fmt(data.total_cases)} cases`);
     if (data?.raw_alert_count != null) parts.push(`${fmt(data.raw_alert_count)} raw signals`);
@@ -197,29 +251,38 @@
     el('priority-projects').innerHTML = list.map((c, i) => {
       const raw = U.safeText(c.attention_reason, '');
       const rm = /\[(\d{4}-\d{2})\]/.exec(raw);
-      const reason = {month: rm ? rm[1] : null, text: raw.replace(/^\s*\d+ contributing signals?\.\s*/i, '').replace(/\[\d{4}-\d{2}\]\s*/g, '')};
-      return `<a href="project-details.html?id=${encodeURIComponent(c.project_id)}" class="prio" aria-label="${esc(c.project_name)}, priority ${esc(fmt(c.priority_score))}. Open project.">
-        <div><p class="score">${fmt(c.priority_score)}</p><p class="score-lbl" data-p="${esc(c.priority_label)}">${esc(humanize(c.priority_label).toLowerCase())}</p></div>
-        <div class="min-w-0">
-          <p class="text-[13.5px] font-semibold sm:truncate" style="color:var(--pm-text)"><span class="pm-updated mr-1.5">#${i + 1}</span>${esc(c.project_name)}</p>
-          <p class="pm-updated mt-0.5" style="white-space:normal">${esc(title(c.sector))} · ${esc(U.statusLabels[c.workflow_status] || humanize(c.workflow_status))} · ${fmt(c.active_signal_count)} open signals · risk ${fmt(c.risk_score)}/100 · ${delta(c.risk_delta)} · ${money(c.financial_exposure_crore)}</p>
-          <p class="prio-reason">${esc(reason.text || c.attention_reason)}${reason.month ? ` <span class="pm-updated">· report ${esc(month(reason.month))}</span>` : ''}</p>
-        </div>
-        <span class="go">${icon('arrow-right')}</span></a>`;
-    }).join('') || (P ? P.stateHTML({kind:'empty', title:'No projects currently require immediate attention', inline:true}) : 'No projects currently require immediate attention.');
+      const text = raw.replace(/^\s*\d+ contributing signals?\.\s*/i, '').replace(/\[\d{4}-\d{2}\]\s*/g, '');
+      const reason = {month: rm ? rm[1] : null, text: c.risk_delta != null ? text.split(/\s*Latest model comparison:/)[0] || text : text};
+      return `<li><a href="project-details.html?id=${encodeURIComponent(c.project_id)}" class="prio" aria-label="${esc(c.project_name)}, priority ${esc(fmt(c.priority_score))}. Open project.">
+        <span class="prio-rank pm-num">${i + 1}</span>
+        <span class="prio-body">
+          <span class="prio-name">${esc(c.project_name)}</span>
+          <span class="prio-meta">${badge(null, c.risk_score, true)}${c.risk_delta != null ? `<span class="pm-num">${esc(signed(c.risk_delta))} pts</span>` : ''}<span>${esc(title(c.sector))}</span></span>
+          <span class="prio-reason">${esc(reason.text || c.attention_reason)}</span>
+          <span class="prio-foot">${esc(U.statusLabels[c.workflow_status] || humanize(c.workflow_status))} · ${fmt(c.active_signal_count)} open signals · ${money(c.financial_exposure_crore)}${reason.month ? ` · report ${esc(month(reason.month))}` : ''}</span>
+        </span>
+        <span class="prio-score"><b class="pm-num">${fmt(c.priority_score)}</b><span data-p="${esc(c.priority_label)}">${esc(humanize(c.priority_label).toLowerCase())}</span></span></a></li>`;
+    }).join('') || `<li>${P ? P.stateHTML({kind:'empty', title:'No projects currently require immediate attention', inline:true}) : 'No projects currently require immediate attention.'}</li>`;
     if (P) P.stagger(el('priority-projects').children, 50, 'pm-fade-swap');
   }
 
   // ------------------------------------------------------------------
   // Loading states
   // ------------------------------------------------------------------
-  const skelCases = () => Array.from({length:4}, () => `<div class="case case-skel" aria-hidden="true" style="padding:18px 20px"><div class="flex gap-2 mb-3"><div class="pm-skel" style="width:78px;height:22px"></div><div class="pm-skel" style="width:60px;height:22px;border-radius:99px"></div></div><div class="pm-skel pm-skel-line" style="width:48%;height:13px"></div><div class="pm-skel pm-skel-line" style="width:30%"></div><div class="pm-skel pm-skel-line" style="width:86%;margin-top:14px"></div><div class="pm-skel pm-skel-line" style="width:40%"></div></div>`).join('');
+  const skelRow = w => `<div class="ev-row"><div class="pm-skel pm-skel-line" style="width:${w}%;margin:3px 0"></div><div class="pm-skel pm-skel-line" style="width:90px;margin:3px 0"></div><div class="pm-skel pm-skel-line ev-m" style="width:60px;margin:3px 0"></div></div>`;
+  const skelCases = () => Array.from({length:3}, () => `<div class="case case-skel" aria-hidden="true"><div class="case-main">
+    <div class="case-top"><div class="flex gap-2"><div class="pm-skel" style="width:84px;height:22px"></div><div class="pm-skel" style="width:52px;height:22px;border-radius:99px"></div></div><div class="pm-skel" style="width:92px;height:22px"></div></div>
+    <div class="pm-skel pm-skel-line" style="width:46%;height:14px;margin-top:12px"></div><div class="pm-skel pm-skel-line" style="width:24%"></div>
+    <div class="pm-skel pm-skel-line" style="width:78%;margin-top:12px"></div>
+    <div class="ev"><div class="pm-skel pm-skel-line" style="width:32%;margin:0 0 8px"></div>${skelRow(40)}${skelRow(34)}${skelRow(46)}</div>
+    <div class="case-foot"><div class="pm-skel pm-skel-line" style="width:90px"></div><div class="pm-skel" style="width:190px;height:30px"></div></div>
+  </div></div>`).join('');
   function showSkeletons() {
     if (!P) { el('alerts-container').textContent = 'Loading warnings...'; return; }
     el('alerts-container').innerHTML = skelCases();
     if (!loadedOnce) {
-      el('warning-summary').innerHTML = SUMMARY.map(() => `<div class="sum-cell"><div class="pm-skel pm-skel-line" style="width:60%"></div><div class="pm-skel" style="height:24px;width:45%;margin-top:10px"></div><div class="pm-skel pm-skel-line" style="width:70%"></div></div>`).join('');
-      el('priority-projects').innerHTML = P.skeleton.rows(5);
+      el('warning-summary').innerHTML = SUMMARY.map(() => `<div class="sum-cell"><div class="pm-skel pm-skel-line" style="width:64%;margin:2px 0 8px"></div><div class="pm-skel" style="height:20px;width:44%"></div></div>`).join('');
+      el('priority-projects').innerHTML = Array.from({length:5}, () => `<li class="prio prio-skel" aria-hidden="true"><div class="pm-skel" style="width:18px;height:18px;border-radius:5px"></div><div><div class="pm-skel pm-skel-line" style="width:80%;margin-top:0"></div><div class="pm-skel pm-skel-line" style="width:50%"></div><div class="pm-skel pm-skel-line" style="width:92%"></div></div><div class="pm-skel" style="width:34px;height:20px"></div></li>`).join('');
     }
   }
   function showError(message) {
@@ -230,8 +293,8 @@
     }
     el('alerts-container').innerHTML = P.stateHTML({kind:'error', title:'Unable to load cases', message});
     if (!loadedOnce) {
-      el('warning-summary').innerHTML = `<div class="col-span-full">${P.stateHTML({kind:'error', title:'Counts unavailable', message, inline:true})}</div>`;
-      el('priority-projects').innerHTML = P.stateHTML({kind:'error', title:'Priority projects unavailable', message, inline:true});
+      el('warning-summary').innerHTML = `<div class="sum-err">${P.stateHTML({kind:'error', title:'Counts unavailable', message, inline:true})}</div>`;
+      el('priority-projects').innerHTML = `<li>${P.stateHTML({kind:'error', title:'Priority projects unavailable', message, inline:true})}</li>`;
     }
     if (typeof document.querySelectorAll === 'function') {
       document.querySelectorAll('[data-pm-retry]').forEach(b => b.addEventListener('click', () => { if (!mutating) refresh(); }, {once:true}));
@@ -254,13 +317,15 @@
     el('alert-filters').querySelectorAll('button').forEach(b => b.disabled = disabled);
     el('warning-summary').querySelectorAll('button').forEach(b => b.disabled = disabled);
   }
-  function refresh(append = false) {
+  // quiet: keep the current list on screen (after a status change) instead of flashing skeletons.
+  function refresh(append = false, {quiet = false} = {}) {
     if (refreshFlight) return refreshFlight;
     controls(true);
     setFeedback('');
     const query = {...filters.find(f => f[0] === active)[2], limit:50, offset:append ? rows.length : 0, ...(projectId ? {project_id:projectId} : {})};
     el('alerts-container').setAttribute('aria-busy','true');
-    if (!append) showSkeletons();
+    if (!append && !quiet) showSkeletons();
+    const before = append ? rows.length : 0;
     refreshFlight = (async () => {
       try {
         const data = await API.getWarningWorkspace(query);
@@ -272,12 +337,13 @@
         renderRows(); renderSummary(data.summary); renderPriority(data.priority);
         el('load-more-warnings').hidden = data.has_more !== true;
         if (P) P.markUpdated(el('updated'));
-        if (!append && P) P.stagger(el('alerts-container').children, 35, 'pm-pop-in');
+        if (P && !quiet) P.stagger(Array.from(el('alerts-container').children).slice(before), 40, 'pm-pop-in');
         if (projectId && !append) { const open = el('alerts-container').querySelector('.case.is-open'); if (open) open.scrollIntoView({block:'nearest'}); }
       } catch (error) {
         if (!append) rows = [];
         el('load-more-warnings').hidden = true;
-        const message = `${U.safeText(error?.message)} Retry, or use Refresh.`;
+        const base = U.safeText(error?.message);
+        const message = /retry/i.test(base) ? base : `${base} Retry, or use Refresh.`;
         showError(message);
         setFeedback(message, 'error');
       }
@@ -299,6 +365,15 @@
     active = key; highlight(); setFeedback(''); refresh();
   }
 
+  // Status change feedback: the card folds out of the queue before the list re-renders.
+  function leave(card) {
+    if (!card.classList || !card.style || !motion()) return Promise.resolve();
+    card.style.height = `${card.offsetHeight}px`;
+    void card.offsetHeight;
+    card.classList.add('is-leaving');
+    return new Promise(resolve => setTimeout(resolve, 320));
+  }
+
   // ------------------------------------------------------------------
   // Wiring
   // ------------------------------------------------------------------
@@ -313,6 +388,7 @@
   const onRefine = () => {
     refine.severity = el('f-severity').value; refine.sector = el('f-sector').value; refine.days = el('f-time').value;
     renderRows();
+    if (P) P.stagger(el('alerts-container').children, 25, 'pm-fade-swap');
   };
   ['f-severity', 'f-sector', 'f-time'].forEach(id => el(id).addEventListener('change', onRefine));
   const clearRefine = () => { el('f-severity').value = ''; el('f-sector').value = ''; el('f-time').value = ''; onRefine(); };
@@ -327,11 +403,12 @@
   }
 
   el('alerts-container').addEventListener('click', async event => {
-    const control = event.target.closest('[data-status], [data-toggle], [data-clear-refine]');
+    const control = event.target.closest('[data-status], [data-toggle], [data-clear-refine], [data-ev-more]');
     if (!control) return;
     const data = control.dataset || {};
     if ('clearRefine' in data) { clearRefine(); return; }
     if ('toggle' in data) { toggleCase(control.closest('[data-project-id]')); return; }
+    if ('evMore' in data) { toggleEvidence(control); return; }
     const button = control;
     if (!data.status || mutating || refreshFlight) return;
     const card = button.closest('[data-project-id]'), id = card.dataset.projectId;
@@ -340,13 +417,15 @@
     try {
       const updated = U.normalize(await API.updateProjectAlertStatus(id, button.dataset.status, card.querySelector('textarea').value));
       if (!updated) throw new Error('Invalid case update response.');
+      if (!matches(updated)) await leave(card);
       rows = rows.map(c => c.project_id === id ? updated : c).filter(matches); renderRows();
       setFeedback(`${updated.project_name} moved to ${U.statusLabels[updated.workflow_status] || humanize(updated.workflow_status)}. Officer note saved.`, 'success');
       if (P) P.toast(`Case moved to ${U.statusLabels[updated.workflow_status] || humanize(updated.workflow_status)}.`, 'success', 2600);
       const note = el('warning-feedback').textContent;
-      await refresh();
+      await refresh(false, {quiet:true});
       setFeedback(note, 'success');
     } catch (error) {
+      if (card.classList) { card.classList.remove('is-leaving'); if (card.style) card.style.height = ''; }
       setFeedback(`Update failed: ${U.safeText(error?.message)}. Your note is retained; retry.`, 'error');
       card.querySelectorAll('button').forEach(b => b.disabled = false);
     } finally { mutating = false; controls(false); }

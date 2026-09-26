@@ -79,6 +79,7 @@ const API = {
   getSectorAnalytics: (options) => fetchAPI("/analytics/sectors", options),
   getStateAnalytics: (options) => fetchAPI("/analytics/states", options),
   getRiskTrends: (options) => fetchAPI("/analytics/trends", options),
+  getStateSummary: (options) => fetchAPI("/analytics/state-summary", options),
   getAlerts: (filters = {}) => fetchAPI(`/alerts?${new URLSearchParams(filters)}`),
   // ~1 MB and 3–15 s under load, so it gets a longer timeout than the 30 s default would need for others.
   getWarningWorkspace: (filters = {}) => fetchAPI(`/alerts/workspace?${new URLSearchParams(filters)}`, {cache:'no-store', timeout:45000}),
