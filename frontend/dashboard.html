@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script>
-    if (localStorage.getItem('theme') === 'dark' ||
-      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    // Light by default; dark only when the visitor chose it (saved by js/theme.js).
+    if (localStorage.getItem('theme') === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
@@ -98,20 +98,23 @@
     .state-row .bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: var(--pm-surface-hover); overflow: hidden; }
     .state-row .bar > span { display: block; height: 100%; background: var(--pm-accent); opacity: .7; }
 
-    /* State information card (hover / selection) */
+    /* State information card (hover / selection). Docked on the right edge in the list panel's
+       place (same width); it slides in from the edge and the list collapses to its header meanwhile.
+       --sc-top (set in JS) keeps it below that header when the panel is docked on the right. */
     .state-card {
-      position: absolute; left: 12px; bottom: 12px; z-index: 460; width: 264px; padding: 12px 14px 12px;
+      position: absolute; right: 12px; top: var(--sc-top, 12px); z-index: 460; width: 252px; max-width: calc(100% - 24px); padding: 12px 14px 12px;
       background: var(--pm-bg-elev); border: 1px solid var(--pm-line-strong); border-radius: 10px; box-shadow: var(--pm-shadow-pop);
-      pointer-events: none; transition: opacity .16s var(--pm-ease), transform .16s var(--pm-ease);
+      pointer-events: none; transition: opacity .2s var(--pm-ease), transform .28s var(--pm-ease-out);
     }
-    .state-card.is-hidden { opacity: 0; transform: translateY(4px); }
+    @media (max-width: 1023px) { .state-card { width: 224px; } }
+    .state-card.is-hidden { opacity: 0; transform: translateX(calc(100% + 16px)); }
     /* Informational only: never blocks panning or clicks on the map beneath it. */
     .state-card .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 10px; }
     .state-card .sc-v { font-size: 17px; font-weight: 600; color: var(--pm-text); font-variant-numeric: tabular-nums; line-height: 1.15; margin-top: 2px; }
     .state-card .sc-l { font-size: 10.5px; color: var(--pm-muted); letter-spacing: .02em; }
     /* Phones: the map is short, so the card sits below it instead of covering it. */
     @media (max-width: 767px) {
-      .state-card { position: static; width: auto; border: 0; border-top: 1px solid var(--pm-line); border-radius: 0; box-shadow: none; }
+      .state-card { position: static; width: auto; max-width: none; border: 0; border-top: 1px solid var(--pm-line); border-radius: 0; box-shadow: none; transform: none; }
       .state-card.is-hidden { display: none; }
     }
     /* Choropleth chrome */
@@ -139,6 +142,15 @@
     .state-card .sc-hero { margin-top: 8px; padding: 8px 10px; border-radius: 7px; background: var(--pm-surface-2); border: 1px solid var(--pm-line); }
     .state-card .sc-hero .sc-v { font-size: 20px; }
     .state-card .sc-foot { margin-top: 10px; font-size: 10.5px; color: var(--pm-faint); }
+    /* Tablets: the map is 380px tall, so tighter spacing keeps the whole card inside it. */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .state-card { padding: 10px 12px; }
+      .state-card .sc-grid { gap: 6px 12px; margin-top: 8px; }
+      .state-card .sc-v { font-size: 15px; }
+      .state-card .sc-hero { margin-top: 6px; padding: 6px 8px; }
+      .state-card .sc-hero .sc-v { font-size: 17px; }
+      .state-card .sc-foot { margin-top: 6px; }
+    }
     .leaflet-states-pane path:focus { outline: none; }
     .leaflet-states-pane path:focus-visible { stroke: var(--pm-accent); stroke-width: 3px; }
     .leaflet-states-pane path { transition: fill .35s var(--pm-ease), fill-opacity .25s, stroke-width .15s; }
@@ -775,15 +787,20 @@
         <p class="sc-foot">Data as of ${esc(fmt.date(summaryMeta?.as_of))} · latest generated prediction per project</p>`;
     }
     const geoName = (k) => geoData?.features.find(f => norm(f.properties.name) === k)?.properties.name;
-    function showStateCard(key) {
+    // The card and the list share the right edge (see 3c). Hovering a row of the open list only
+    // highlights the state: the card would otherwise take the list's place under the pointer.
+    function showStateCard(key, { fromList = false } = {}) {
       const card = $('state-card'), k = key || selectedState;
-      if (!k) { card.classList.add('is-hidden'); return; }
+      if (!k) { undockStateCard(card); return; }
+      if (listPinned || (fromList && listOpen())) { card.classList.add('is-hidden'); return; }
       card.innerHTML = stateCardHTML(k);
+      dockStateCard(card);
       card.classList.remove('is-hidden');
     }
-    function hover(key) { hoverState = key; restyleStates(); showStateCard(key); }
+    function hover(key, opts) { hoverState = key; restyleStates(); showStateCard(key, opts); }
     function selectState(key, { fly = false } = {}) {
       selectedState = key && key === selectedState && !fly ? null : key;
+      if (selectedState) listPinned = false;
       restyleStates(); showStateCard(null);
       document.querySelectorAll('.state-row').forEach(r => r.classList.toggle('is-active', r.dataset.key === selectedState));
       if (fly && selectedState && statesLayer) {
@@ -882,10 +899,10 @@
       el.querySelectorAll('.state-row').forEach(b => {
         b.classList.toggle('is-active', b.dataset.key === selectedState);
         b.addEventListener('click', () => selectState(b.dataset.key, { fly: true }));
-        b.addEventListener('mouseenter', () => hover(b.dataset.key));
-        b.addEventListener('mouseleave', () => hover(null));
-        b.addEventListener('focus', () => hover(b.dataset.key));
-        b.addEventListener('blur', () => hover(null));
+        b.addEventListener('mouseenter', () => hover(b.dataset.key, { fromList: true }));
+        b.addEventListener('mouseleave', () => hover(null, { fromList: true }));
+        b.addEventListener('focus', () => hover(b.dataset.key, { fromList: true }));
+        b.addEventListener('blur', () => hover(null, { fromList: true }));
       });
       const off = stateMeta.off, v = (r) => r ? `${M.format(r[{ exposure: 'risk_exposure_crore', ongoing: 'ongoing', cost: 'ongoing_latest_cost_crore', high: 'ongoing_high_risk' }[metric]])}` : null, bits = [];
       if (off.multi) bits.push(`multi-state ${v(off.multi)}`);
@@ -958,11 +975,49 @@
       t.addEventListener('click', () => selectTab(i));
       t.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); selectTab(i ? 0 : 1, true); } });
     });
-    $('panel-collapse').addEventListener('click', (e) => {
-      const collapsed = panel.classList.toggle('is-collapsed');
-      e.currentTarget.setAttribute('aria-expanded', String(!collapsed));
-      e.currentTarget.setAttribute('aria-label', collapsed ? 'Expand list' : 'Collapse list');
+    function setCollapsed(collapsed) {
+      const btn = $('panel-collapse');
+      panel.classList.toggle('is-collapsed', collapsed);
+      btn.setAttribute('aria-expanded', String(!collapsed));
+      btn.setAttribute('aria-label', collapsed ? 'Expand list' : 'Collapse list');
+    }
+    $('panel-collapse').addEventListener('click', () => {
+      const collapsed = !panel.classList.contains('is-collapsed'), card = $('state-card');
+      setCollapsed(collapsed);
+      autoCollapsed = false;
+      // Opening the list while a state card is shown hands the right edge back to the list
+      // until the state is released; collapsing it again brings the card back.
+      if (!collapsed && !card.classList.contains('is-hidden')) { listPinned = true; card.classList.add('is-hidden'); }
+      else if (collapsed && listPinned) { listPinned = false; showStateCard(hoverState); }
     });
+
+    // Right edge: one thing at a time. While a state card is shown the list collapses to its
+    // header (tabs and expand button stay usable) and the card sits below it; when no state is
+    // hovered or selected the card slides out and a list collapsed this way reopens.
+    // Phones stack both below the map, so nothing is collapsed there.
+    let autoCollapsed = false, listPinned = false, undockTimer = 0;
+    const listOpen = () => floating() && !panel.classList.contains('is-collapsed');
+    function dockStateCard(card) {
+      clearTimeout(undockTimer);
+      if (listOpen()) {
+        const refocus = $('panel-body').contains(document.activeElement);
+        autoCollapsed = true; setCollapsed(true);
+        if (refocus) $('panel-collapse').focus({ preventScroll: true });
+      }
+      const fr = card.parentElement.getBoundingClientRect(), pr = panel.getBoundingClientRect();
+      const sharesEdge = floating() && pr.right > fr.right - card.offsetWidth - 24 && pr.top - fr.top < fr.height / 2;
+      card.style.setProperty('--sc-top', `${sharesEdge ? Math.round(pr.bottom - fr.top + 8) : 12}px`);
+    }
+    function undockStateCard(card) {
+      clearTimeout(undockTimer);
+      // Short hover-intent delay: crossing a border or gap between states must not flash the list.
+      undockTimer = setTimeout(() => {
+        if (hoverState || selectedState) return;
+        card.classList.add('is-hidden');
+        listPinned = false;
+        if (autoCollapsed) { autoCollapsed = false; setCollapsed(false); }
+      }, 150);
+    }
 
     const POS_KEY = 'pm.dashboard.panel';
     function clampPanel(x, y) {
