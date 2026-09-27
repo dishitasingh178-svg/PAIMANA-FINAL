@@ -50,8 +50,10 @@ TOOL_REGISTRY = {
     "get_project_alerts": {
         "function": get_project_alerts,
         "description": (
-            "Get alerts generated for a specific PAIMANA project. "
-            "Can optionally return only unresolved alerts."
+            "Get the early-warning alerts for ONE specific PAIMANA project "
+            "(requires its project_id; use search_projects to find it). "
+            "Can optionally return only unresolved alerts. For warnings "
+            "across the whole portfolio use get_critical_projects."
         ),
     },
 
@@ -75,7 +77,9 @@ TOOL_REGISTRY = {
         "function": get_critical_projects,
         "description": (
             "Get projects whose latest stored prediction is classified "
-            "as critical risk."
+            "as critical risk. Use for questions about current early "
+            "warnings, alerts or the highest-risk projects across the "
+            "portfolio."
         ),
     },
 
@@ -224,7 +228,10 @@ LLM_TOOL_SCHEMAS = [
     {
         "name": "get_project_alerts",
         "description": (
-            "Get alerts generated for a specific PAIMANA project."
+            "Get the early-warning alerts for ONE specific PAIMANA project "
+            "(requires its project_id; use search_projects to find it). "
+            "For warnings across the whole portfolio use "
+            "get_critical_projects."
         ),
         "parameters": {
             "type": "object",
@@ -292,7 +299,9 @@ LLM_TOOL_SCHEMAS = [
         "name": "get_critical_projects",
         "description": (
             "Get projects whose latest stored prediction is classified "
-            "as critical risk."
+            "as critical risk. Use for questions about current early "
+            "warnings, alerts or the highest-risk projects across the "
+            "portfolio."
         ),
         "parameters": {
             "type": "object",

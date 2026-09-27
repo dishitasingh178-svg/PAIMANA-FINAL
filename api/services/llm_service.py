@@ -77,6 +77,27 @@ IMPORTANT RULES:
 
 17. Once sufficient tool information is available, answer the user's
     question directly instead of repeatedly calling unrelated tools.
+
+18. Only call tools whose exact names are provided in the available tool
+    definitions. Never invent, guess, rename, or substitute a tool name.
+    If no available tool can provide the requested information, say that
+    the requested data is currently unavailable rather than attempting
+    to call a nonexistent tool.
+
+19. Tool selection guide (use these exact tools):
+    - Current early warnings, alerts or warning signals across the
+      portfolio, or the highest-risk / critical projects:
+      get_critical_projects, plus get_portfolio_risk_summary for the
+      number of projects in each risk tier.
+    - Early-warning alerts for one specific project: find its project_id
+      with search_projects (unless it is already known), then call
+      get_project_alerts with that project_id.
+    - A project's current risk: get_latest_prediction. Its risk over time:
+      get_risk_history. Its monthly reported figures: get_project_updates.
+    - Portfolio totals: get_portfolio_risk_summary. Sector or state
+      comparisons: get_sector_analytics / get_state_analytics. Portfolio
+      risk over time: get_risk_trends.
+    - There is no portfolio-wide alert-listing tool; do not invent one.
 """
 
 
@@ -107,7 +128,8 @@ class LLMService:
 
         if self.api_key:
             self.client = genai.Client(
-                api_key=self.api_key
+                api_key=self.api_key,
+                http_options=types.HttpOptions(timeout=45000),
             )
 
     # =========================================================
@@ -125,7 +147,18 @@ class LLMService:
     # =========================================================
 
     def build_system_prompt(self) -> str:
-        return SYSTEM_PROMPT
+        return (
+            SYSTEM_PROMPT
+            + "\nAvailable tools (exact names): "
+            + ", ".join(self.get_available_tools())
+            + "\n"
+        )
+
+    def _unknown_tool_error(self, tool_name: str) -> str:
+        return (
+            f"Tool '{tool_name}' is not available. "
+            f"Available tools: {', '.join(self.get_available_tools())}."
+        )
 
     # =========================================================
     # AVAILABLE TOOLS
@@ -219,9 +252,7 @@ class LLMService:
             return {
                 "success": False,
                 "tool": tool_name,
-                "error": (
-                    f"Tool '{tool_name}' is not available."
-                ),
+                "error": self._unknown_tool_error(tool_name),
             }
 
         tool_entry = self.tool_registry[tool_name]
@@ -399,6 +430,9 @@ Now provide the final answer directly to the user.
             config=types.GenerateContentConfig(
                 system_instruction=self.build_system_prompt(),
                 temperature=0.2,
+                thinking_config=types.ThinkingConfig(
+                    thinking_level=types.ThinkingLevel.MINIMAL,
+                ),
             ),
         )
 
@@ -433,6 +467,7 @@ Now provide the final answer directly to the user.
             }
 
         tool_calls_log = []
+        rejected_tool_calls = []
 
         try:
 
@@ -488,8 +523,11 @@ Now provide the final answer directly to the user.
                             system_instruction=(
                                 self.build_system_prompt()
                             ),
-                            tools=gemini_tools,
+                            tools=gemini_tools if round_number == 0 else None,
                             temperature=0.2,
+                            thinking_config=types.ThinkingConfig(
+                                thinking_level=types.ThinkingLevel.MINIMAL,
+                            ),
                         ),
                     )
                 )
@@ -508,6 +546,7 @@ Now provide the final answer directly to the user.
                         "success": True,
                         "answer": answer,
                         "tool_calls": tool_calls_log,
+                        "rejected_tool_calls": rejected_tool_calls,
                     }
 
                 # -------------------------------------------------
@@ -530,9 +569,35 @@ Now provide the final answer directly to the user.
                 # Execute tools
                 # -------------------------------------------------
 
-                function_response_parts = []
+                # Only registered tools may run. Names the model invents
+                # (e.g. when later rounds carry no tool declarations) are
+                # rejected here, before anything executes.
+                valid_calls = []
 
                 for function_call in function_calls:
+
+                    if function_call.name in self.tool_registry:
+                        valid_calls.append(function_call)
+                        continue
+
+                    print(
+                        f"[LLM] Rejected unknown tool: "
+                        f"{function_call.name}"
+                    )
+
+                    rejected_tool_calls.append(
+                        {
+                            "tool": function_call.name,
+                            "arguments": dict(function_call.args or {}),
+                            "error": self._unknown_tool_error(
+                                function_call.name
+                            ),
+                        }
+                    )
+
+                function_response_parts = []
+
+                for function_call in valid_calls:
 
                     tool_name = function_call.name
 
@@ -578,6 +643,23 @@ Now provide the final answer directly to the user.
                         )
                     )
 
+                # An invented tool means the model has run out of useful
+                # tool calls: stop here and answer from the valid results
+                # instead of spending further rounds on guesses.
+                if rejected_tool_calls:
+
+                    print(
+                        "[LLM] Unknown tool requested; answering from "
+                        "valid tool results."
+                    )
+
+                    return self._answer_from_collected_results(
+                        user_query=user_query,
+                        tool_calls_log=tool_calls_log,
+                        rejected_tool_calls=rejected_tool_calls,
+                        conversation_history=conversation_history,
+                    )
+
                 # -------------------------------------------------
                 # Send function results back
                 # -------------------------------------------------
@@ -604,22 +686,12 @@ Now provide the final answer directly to the user.
                 "[LLM] Maximum tool rounds reached."
             )
 
-            print(
-                "[LLM] Generating final answer "
-                "from collected tool results."
-            )
-
-            final_answer = self._generate_final_answer(
+            return self._answer_from_collected_results(
                 user_query=user_query,
                 tool_calls_log=tool_calls_log,
+                rejected_tool_calls=rejected_tool_calls,
                 conversation_history=conversation_history,
             )
-
-            return {
-                "success": True,
-                "answer": final_answer,
-                "tool_calls": tool_calls_log,
-            }
 
         except Exception as exc:
 
@@ -631,7 +703,38 @@ Now provide the final answer directly to the user.
                 ),
                 "error": str(exc),
                 "tool_calls": tool_calls_log,
+                "rejected_tool_calls": rejected_tool_calls,
             }
+
+    def _answer_from_collected_results(
+        self,
+        user_query: str,
+        tool_calls_log: list,
+        rejected_tool_calls: list,
+        conversation_history: Optional[list] = None,
+    ):
+        """
+        Final answer from the tool results already collected, with no tools
+        offered (so no further tool calls can be requested).
+        """
+
+        print(
+            "[LLM] Generating final answer "
+            "from collected tool results."
+        )
+
+        final_answer = self._generate_final_answer(
+            user_query=user_query,
+            tool_calls_log=tool_calls_log,
+            conversation_history=conversation_history,
+        )
+
+        return {
+            "success": True,
+            "answer": final_answer,
+            "tool_calls": tool_calls_log,
+            "rejected_tool_calls": rejected_tool_calls,
+        }
 
     # =========================================================
     # SERIALIZATION

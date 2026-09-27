@@ -475,15 +475,25 @@ def get_critical_projects(
     return critical_projects[:limit]
 
 
-def get_sector_analytics(
+ASSISTANT_SECTOR_LIMIT = 8
+
+
+def _sector_analytics_rows(
     db: Session,
 ):
     """
-    Get latest project risk statistics grouped by sector.
+    Latest project risk statistics grouped by sector (full list, ranked by
+    average composite risk). One query: prediction fields and the project's
+    sector are fetched together instead of one Project query per prediction.
     """
 
-    predictions = (
-        db.query(Prediction)
+    rows = (
+        db.query(
+            Prediction.project_id,
+            Prediction.risk_tier,
+            Prediction.composite_risk_score,
+            Project.sector,
+        )
         .join(Project, Prediction.project_id == Project.project_id)
         .order_by(
             Prediction.project_id.asc(),
@@ -495,24 +505,15 @@ def get_sector_analytics(
 
     latest_by_project = {}
 
-    for prediction in predictions:
-        if prediction.project_id not in latest_by_project:
-            latest_by_project[prediction.project_id] = prediction
+    for row in rows:
+        if row.project_id not in latest_by_project:
+            latest_by_project[row.project_id] = row
 
     sector_data = {}
 
-    for prediction in latest_by_project.values():
+    for row in latest_by_project.values():
 
-        project = (
-            db.query(Project)
-            .filter(Project.project_id == prediction.project_id)
-            .first()
-        )
-
-        if not project:
-            continue
-
-        sector = project.sector or "Unknown"
+        sector = row.sector or "Unknown"
 
         if sector not in sector_data:
             sector_data[sector] = {
@@ -529,17 +530,17 @@ def get_sector_analytics(
         data["total_projects"] += 1
 
         tier = (
-            prediction.risk_tier.lower()
-            if prediction.risk_tier
+            row.risk_tier.lower()
+            if row.risk_tier
             else None
         )
 
         if tier in ["critical", "high", "medium", "low"]:
             data[tier] += 1
 
-        if prediction.composite_risk_score is not None:
+        if row.composite_risk_score is not None:
             data["risk_scores"].append(
-                float(prediction.composite_risk_score)
+                float(row.composite_risk_score)
             )
 
     results = []
@@ -576,6 +577,24 @@ def get_sector_analytics(
     )
 
     return results
+
+
+def get_sector_analytics(
+    db: Session,
+):
+    """
+    AI-assistant tool: compact ranked sector summary.
+
+    Same rows and ranking as _sector_analytics_rows(), without the "Unknown"
+    bucket and limited to the top ASSISTANT_SECTOR_LIMIT sectors, so the
+    model receives a small payload. The dashboard's /api/v1/analytics/sectors
+    endpoint is separate (api/routers/analytics.py) and unaffected.
+    """
+
+    return [
+        row for row in _sector_analytics_rows(db)
+        if row["sector"] != "Unknown"
+    ][:ASSISTANT_SECTOR_LIMIT]
 
 
 def get_state_analytics(
