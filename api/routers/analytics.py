@@ -62,6 +62,14 @@ ONGOING_DEFINITION = (
     "Latest reported anticipated (else revised) commissioning date is today or later, "
     "or no commissioning date has been reported."
 )
+RISK_EXPOSURE_DEFINITION = (
+    "Sum over ongoing projects of latest cost (crore) x composite risk score / 100. "
+    "Ongoing projects without a prediction contribute nothing and are counted in ongoing_unscored."
+)
+PREDICTION_BASIS = (
+    "Most recently generated prediction per project (same convention as /analytics/sectors and "
+    "/analytics/states); this is not necessarily the latest report month."
+)
 
 
 @router.get("/state-summary")
@@ -72,6 +80,7 @@ def get_state_summary(db: Session = Depends(get_db)):
     - latest_cost_crore: latest update's anticipated cost, else revised cost,
       else the original sanctioned cost.
     - Risk counts use the same latest prediction per project as /analytics/states.
+    - risk_exposure_crore: see RISK_EXPOSURE_DEFINITION.
     - Projects with a blank state are returned with state=None, never reassigned.
     """
     today = date.today()
@@ -92,6 +101,7 @@ def get_state_summary(db: Session = Depends(get_db)):
             "projects": 0, "ongoing": 0,
             "original_cost_crore": 0.0, "latest_cost_crore": 0.0, "ongoing_latest_cost_crore": 0.0,
             "high_risk": 0, "critical": 0, "ongoing_high_risk": 0, "unscored": 0,
+            "risk_exposure_crore": 0.0, "ongoing_unscored": 0,
         })
         update = latest_updates.get(pid)
         target = (update.anticipated_commissioning_date or update.revised_commissioning_date) if update else None
@@ -110,6 +120,11 @@ def get_state_summary(db: Session = Depends(get_db)):
 
         pred = preds.get(pid)
         score = float(pred.composite_risk_score) if pred is not None and pred.composite_risk_score is not None else None
+        if ongoing:
+            if score is None:
+                b["ongoing_unscored"] += 1
+            else:
+                b["risk_exposure_crore"] += latest_cost * score / 100.0
         if score is None:
             b["unscored"] += 1
         elif score >= 50:
@@ -125,4 +140,10 @@ def get_state_summary(db: Session = Depends(get_db)):
             "state": state,
             **{k: (round(v, 2) if isinstance(v, float) else v) for k, v in b.items()},
         })
-    return {"as_of": today.isoformat(), "ongoing_definition": ONGOING_DEFINITION, "data": rows}
+    return {
+        "as_of": today.isoformat(),
+        "ongoing_definition": ONGOING_DEFINITION,
+        "risk_exposure_definition": RISK_EXPOSURE_DEFINITION,
+        "prediction_basis": PREDICTION_BASIS,
+        "data": rows,
+    }

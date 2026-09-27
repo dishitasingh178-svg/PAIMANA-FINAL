@@ -64,6 +64,9 @@
 
   --pm-chart-grid: rgba(23, 25, 28, .07);
   --pm-chart-tick: #686c72;
+  /* Sequential magnitude scale (choropleths). Deliberately not a risk-tier hue. */
+  --pm-seq-lo: #e4e9ef;
+  --pm-seq-hi: #1d3a5f;
 
   color-scheme: light;
 }
@@ -114,6 +117,8 @@ html.dark {
 
   --pm-chart-grid: rgba(236, 235, 230, .07);
   --pm-chart-tick: #92938f;
+  --pm-seq-lo: #1f252d;
+  --pm-seq-hi: #93b8e3;   /* brighter = more, on a dark base */
 
   color-scheme: dark;
 }
