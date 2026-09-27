@@ -1,11 +1,13 @@
 import os
 import sys
+import time
 from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 
@@ -73,6 +75,25 @@ async def revalidate_warning_assets(request: Request, call_next):
         response.headers["Cache-Control"] = "no-store"
     response.headers["X-PAIMANA-Revision"] = os.getenv("PAIMANA_REVISION", "unknown")
     return response
+
+
+@app.middleware("http")
+async def api_timing(request: Request, call_next):
+    # Server-side duration of each API request: logged, and exposed as a
+    # Server-Timing header so browser DevTools show server time directly.
+    if not request.url.path.startswith("/api/"):
+        return await call_next(request)
+    started = time.perf_counter()
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    response.headers["Server-Timing"] = f"app;dur={elapsed_ms:.1f}"
+    print(f"[PERF] {request.method} {request.url.path} {response.status_code} {elapsed_ms:.1f} ms", flush=True)
+    return response
+
+
+# Compress larger JSON responses (the warning workspace is ~1 MB). Starlette
+# never compresses text/event-stream, so live PDF job streams are unaffected.
+app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
 
 
 # 1. CORS Middleware

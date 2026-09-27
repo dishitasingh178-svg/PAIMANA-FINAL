@@ -8,10 +8,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'], mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'] } } } };
-  </script>
   <script>
     if (localStorage.getItem('theme') === 'dark' ||
       (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -210,6 +206,8 @@
     .note { width: 100%; min-height: 64px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--pm-line-strong); background: var(--pm-surface); color: var(--pm-text); font-size: 13px; resize: vertical; }
     .note:focus { outline: none; border-color: var(--pm-accent); box-shadow: 0 0 0 3px var(--pm-accent-soft); }
   </style>
+  <!-- Pre-built Tailwind (frontend/tailwind.config.js). Last in <head>: same cascade position the Play CDN used. -->
+  <link rel="stylesheet" href="/css/tailwind.css">
 </head>
 
 <body class="pm-app flex min-h-screen antialiased">

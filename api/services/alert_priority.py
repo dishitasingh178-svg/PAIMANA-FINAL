@@ -4,11 +4,12 @@ from datetime import datetime, timezone
 import math
 import re
 
-from sqlalchemy import func
+from sqlalchemy import func, select, true
 from sqlalchemy.orm import aliased
 
 from api.models.models import Alert, Prediction, Project, ProjectUpdate
 from api.services.alert_engine import _get_cost_baseline
+from api.services import read_cache
 
 STATUSES = {"NEW", "ACKNOWLEDGED", "UNDER_REVIEW", "RESOLVED", "DISMISSED"}
 CLOSED = {"RESOLVED", "DISMISSED"}
@@ -161,6 +162,20 @@ def calculate_data_confidence(project, update, prediction, portfolio_month, aler
 
 
 def recent_rows(db, model, id_column, limit):
+    if model is ProjectUpdate and db.get_bind().dialect.name == "postgresql":
+        # (project_id, report_month) is unique, so there are no reruns to
+        # deduplicate: take each project's `limit` latest months straight
+        # from the (project_id, report_month) index, instead of two window
+        # functions over the whole update history.
+        recent = (
+            select(ProjectUpdate)
+            .where(ProjectUpdate.project_id == Project.project_id)
+            .order_by(ProjectUpdate.report_month.desc())
+            .limit(limit)
+            .lateral("recent_update")
+        )
+        row = aliased(ProjectUpdate, recent)
+        return db.query(row).select_from(Project).join(recent, true()).order_by(row.report_month.desc()).all()
     # Deduplicate prediction reruns per month before selecting recent distinct months.
     revision_order = (model.generated_at.desc().nullslast(), id_column.desc()) if model is Prediction else (id_column.desc(),)
     ranked = db.query(model, func.row_number().over(partition_by=(model.project_id, model.report_month), order_by=revision_order).label("revision")).subquery()
@@ -258,6 +273,12 @@ class TriageContext:
 
 
 def actionable_alerts(db):
+    # Pure function of the database rows; see api/services/read_cache.py for
+    # when a cached result may be reused. Callers must not mutate the items.
+    return read_cache.cached("actionable_alerts", db, lambda: _compute_actionable_alerts(db))
+
+
+def _compute_actionable_alerts(db):
     context = TriageContext(db)
     items = [context.serialize(a) for a in db.query(Alert).all() if a.project_id in context.projects]
     return sorted(items, key=lambda a: (a["status"] not in CLOSED, a["priority_score"], a["triggered_at"] or "", a["alert_id"]), reverse=True)

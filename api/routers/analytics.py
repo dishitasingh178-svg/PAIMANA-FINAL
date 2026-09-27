@@ -3,6 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.dialects.postgresql import distinct_on
 
 from database import get_db
 from api.models.models import Project, Prediction, ProjectUpdate
@@ -10,18 +11,32 @@ from api.models.models import Project, Prediction, ProjectUpdate
 router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics"])
 
 
+def _postgres(db: Session) -> bool:
+    return db.get_bind().dialect.name == "postgresql"
+
+
 def latest_predictions(db: Session):
-    rows = db.query(Prediction).order_by(Prediction.project_id, Prediction.generated_at.desc(), Prediction.prediction_id.desc()).all()
+    # Most recently generated prediction per project. Only the score is read by
+    # these endpoints, and PostgreSQL keeps just one row per project.
+    query = db.query(Prediction.project_id, Prediction.composite_risk_score)
+    if _postgres(db):
+        query = query.ext(distinct_on(Prediction.project_id))
+    rows = query.order_by(Prediction.project_id, Prediction.generated_at.desc(), Prediction.prediction_id.desc()).all()
     result = {}
     for row in rows:
         result.setdefault(str(row.project_id).strip(), row)
     return result
 
 
+def _project_rows(db: Session):
+    """The project columns these analytics read (not whole ORM objects)."""
+    return db.query(Project.project_id, Project.sector, Project.state, Project.original_cost_crore).all()
+
+
 @router.get("/sectors")
 def get_sector_analytics(db: Session = Depends(get_db)):
     preds = latest_predictions(db)
-    projects = {str(p.project_id).strip(): p for p in db.query(Project).all()}
+    projects = {str(p.project_id).strip(): p for p in _project_rows(db)}
     data = {}
     for pid, pred in preds.items():
         p = projects.get(pid)
@@ -40,7 +55,7 @@ def get_sector_analytics(db: Session = Depends(get_db)):
 @router.get("/states")
 def get_state_analytics(db: Session = Depends(get_db)):
     preds = latest_predictions(db)
-    projects = {str(p.project_id).strip(): p for p in db.query(Project).all()}
+    projects = {str(p.project_id).strip(): p for p in _project_rows(db)}
     data = {}
     for pid, pred in preds.items():
         p = projects.get(pid)
@@ -87,14 +102,22 @@ def get_state_summary(db: Session = Depends(get_db)):
     preds = latest_predictions(db)
     # Only the columns needed (plain rows, not ORM objects): the updates table is large.
     latest_updates = {}
-    for update in db.query(
+    update_query = db.query(
         ProjectUpdate.project_id, ProjectUpdate.anticipated_cost_crore, ProjectUpdate.revised_cost_crore,
         ProjectUpdate.anticipated_commissioning_date, ProjectUpdate.revised_commissioning_date,
-    ).order_by(ProjectUpdate.project_id, ProjectUpdate.report_month.desc(), ProjectUpdate.id.desc()):
+    )
+    if _postgres(db):
+        # (project_id, report_month) is unique: one row per project, read by
+        # walking the (project_id, report_month) index backwards.
+        update_query = update_query.ext(distinct_on(ProjectUpdate.project_id)).order_by(
+            ProjectUpdate.project_id.desc(), ProjectUpdate.report_month.desc())
+    else:
+        update_query = update_query.order_by(ProjectUpdate.project_id, ProjectUpdate.report_month.desc(), ProjectUpdate.id.desc())
+    for update in update_query:
         latest_updates.setdefault(str(update.project_id).strip(), update)
 
     buckets = {}
-    for project in db.query(Project).all():
+    for project in _project_rows(db):
         pid = str(project.project_id).strip()
         key = (project.state or "").strip().upper() or None
         b = buckets.setdefault(key, {

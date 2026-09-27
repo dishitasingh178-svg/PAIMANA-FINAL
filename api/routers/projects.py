@@ -6,6 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import String, cast, func, or_
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -90,16 +91,17 @@ class ProjectCreateRequest(BaseModel):
     milestones_total: Optional[int] = None
 
 
+# Project IDs are stored trimmed (ingestion strips them), so these lookups
+# match the column directly: wrapping it in trim(cast(...)) prevented index
+# use and made every lookup a full scan of project_updates.
+
 def _latest_update(
     db: Session,
     project_id: str
 ) -> Optional[ProjectUpdate]:
     return (
         db.query(ProjectUpdate)
-        .filter(
-            func.trim(cast(ProjectUpdate.project_id, String))
-            == project_id.strip()
-        )
+        .filter(ProjectUpdate.project_id == project_id.strip())
         .order_by(ProjectUpdate.report_month.desc())
         .first()
     )
@@ -111,15 +113,47 @@ def _latest_prediction(
 ) -> Optional[Prediction]:
     return (
         db.query(Prediction)
-        .filter(
-            func.trim(cast(Prediction.project_id, String))
-            == project_id.strip()
-        )
+        .filter(Prediction.project_id == project_id.strip())
         .order_by(
             Prediction.generated_at.desc(),
             Prediction.prediction_id.desc()
         )
         .first()
+    )
+
+
+def _first_per_project(rows) -> dict:
+    latest = {}
+    for row in rows:
+        latest.setdefault(str(row.project_id).strip(), row)
+    return latest
+
+
+def _latest_updates_for(db: Session, project_ids: List[str]) -> dict:
+    """Latest update per project for a page of projects: one query."""
+    if not project_ids:
+        return {}
+    query = db.query(ProjectUpdate).filter(ProjectUpdate.project_id.in_(project_ids))
+    if db.get_bind().dialect.name == "postgresql":
+        query = query.ext(distinct_on(ProjectUpdate.project_id))
+    return _first_per_project(
+        query.order_by(ProjectUpdate.project_id, ProjectUpdate.report_month.desc()).all()
+    )
+
+
+def _latest_predictions_for(db: Session, project_ids: List[str]) -> dict:
+    """Latest prediction per project for a page of projects: one query."""
+    if not project_ids:
+        return {}
+    query = db.query(Prediction).filter(Prediction.project_id.in_(project_ids))
+    if db.get_bind().dialect.name == "postgresql":
+        query = query.ext(distinct_on(Prediction.project_id))
+    return _first_per_project(
+        query.order_by(
+            Prediction.project_id,
+            Prediction.generated_at.desc(),
+            Prediction.prediction_id.desc(),
+        ).all()
     )
 
 
@@ -248,13 +282,18 @@ def get_all_projects(
         .all()
     )
 
+    # Two batched queries for the page instead of two queries per project.
+    page_ids = [str(project.project_id).strip() for project in projects]
+    updates = _latest_updates_for(db, page_ids)
+    predictions = _latest_predictions_for(db, page_ids)
+
     result = []
 
     for project in projects:
         pid = str(project.project_id).strip()
 
-        update = _latest_update(db, pid)
-        prediction = _latest_prediction(db, pid)
+        update = updates.get(pid)
+        prediction = predictions.get(pid)
 
         score, tier = _risk_from_prediction(prediction)
 
