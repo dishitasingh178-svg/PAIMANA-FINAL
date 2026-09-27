@@ -48,7 +48,7 @@
       --s: 26px; width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
       border-radius: 50%; display: grid; place-items: center; font: 600 11px/1 var(--pm-font-sans); color: #fff;
       background: var(--pm-tier-fill); border: 2px solid var(--pm-bg-elev);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--pm-tier-fill) 22%, transparent), 0 4px 12px -2px rgba(0,0,0,.35);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--pm-tier-fill) 18%, transparent), 0 2px 6px -1px rgba(0,0,0,.3);
       transition: transform .18s var(--pm-ease), box-shadow .18s; cursor: pointer;
       animation: pin-drop .5s var(--pm-ease-out) both; animation-delay: var(--d, 0ms);
     }
@@ -113,11 +113,39 @@
     .state-card .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 10px; }
     .state-card .sc-v { font-size: 17px; font-weight: 600; color: var(--pm-text); font-variant-numeric: tabular-nums; line-height: 1.15; margin-top: 2px; }
     .state-card .sc-l { font-size: 10.5px; color: var(--pm-muted); letter-spacing: .02em; }
-    @media (max-width: 767px) { .state-card { left: 8px; right: 8px; bottom: 8px; width: auto; } }
-    .legend-scale { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--pm-muted); }
-    .legend-scale i { display: block; width: 44px; height: 8px; border-radius: 2px; border: 1px solid var(--pm-line-strong);
-      background: linear-gradient(90deg, color-mix(in srgb, var(--pm-accent) 6%, transparent), color-mix(in srgb, var(--pm-accent) 42%, transparent)); }
-    .leaflet-states-pane path { transition: fill-opacity .15s, stroke-width .15s; }
+    /* Phones: the map is short, so the card sits below it instead of covering it. */
+    @media (max-width: 767px) {
+      .state-card { position: static; width: auto; border: 0; border-top: 1px solid var(--pm-line); border-radius: 0; box-shadow: none; }
+      .state-card.is-hidden { display: none; }
+    }
+    /* Choropleth chrome */
+    .heat-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 12px; }
+    .heat-ctl { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--pm-muted); }
+    .heat-ctl .pm-select { height: 32px; font-size: 12.5px; padding: 0 30px 0 10px; }
+    .heat-sum { font-size: 12.5px; color: var(--pm-muted); min-height: 18px; }
+    .heat-sum b { color: var(--pm-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+    .choro-legend { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 12px; min-width: 260px; font-size: 11px; color: var(--pm-muted); }
+    .choro-legend .lg-title { grid-column: 1 / -1; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+    .choro-legend .lg-ramp { height: 8px; border-radius: 2px; border: 1px solid var(--pm-line-strong); background: linear-gradient(90deg, var(--pm-seq-lo), var(--pm-seq-hi)); }
+    .choro-legend .lg-ticks { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; color: var(--pm-text-2); }
+    .choro-legend .lg-na { display: inline-flex; align-items: center; gap: 6px; }
+    .choro-legend .lg-na i { width: 14px; height: 9px; border-radius: 2px; border: 1px dashed var(--pm-line-strong); background: color-mix(in srgb, var(--pm-unknown-fill) 18%, transparent); }
+    .map-status {
+      position: absolute; top: 12px; left: 52px; z-index: 470; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 330px);
+      padding: 7px 10px 7px 12px; font-size: 12px; color: var(--pm-text-2); background: var(--pm-bg-elev);
+      border: 1px solid var(--pm-line-strong); border-radius: 8px; box-shadow: var(--pm-shadow-pop);
+    }
+    .map-status[hidden] { display: none; }
+    .map-status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pm-faint); flex: none; animation: pm-blink 1.2s ease-in-out infinite; }
+    .map-status.is-error .dot { background: var(--pm-critical-fill); animation: none; }
+    @keyframes pm-blink { 50% { opacity: .35; } }
+    @media (max-width: 767px) { .map-status { left: 48px; right: 8px; max-width: none; } }
+    .state-card .sc-hero { margin-top: 8px; padding: 8px 10px; border-radius: 7px; background: var(--pm-surface-2); border: 1px solid var(--pm-line); }
+    .state-card .sc-hero .sc-v { font-size: 20px; }
+    .state-card .sc-foot { margin-top: 10px; font-size: 10.5px; color: var(--pm-faint); }
+    .leaflet-states-pane path:focus { outline: none; }
+    .leaflet-states-pane path:focus-visible { stroke: var(--pm-accent); stroke-width: 3px; }
+    .leaflet-states-pane path { transition: fill .35s var(--pm-ease), fill-opacity .25s, stroke-width .15s; }
     .hotspot { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; text-align: left; font-size: 12.5px; color: var(--pm-text-2); transition: background .14s; }
     .hotspot:hover, .hotspot:focus-visible, .hotspot.is-active { background: var(--pm-surface-hover); color: var(--pm-text); }
     .hotspot-count { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--pm-text); }
@@ -213,15 +241,22 @@
               <div>
                 <p class="pm-eyebrow">Geospatial risk</p>
                 <h2 id="map-title" class="pm-title mt-1">Where risk and ongoing work concentrate</h2>
-                <p class="pm-sub">Pins: the 100 highest-scoring projects (score ≥ 50), grouped by location. States: shaded by ongoing projects — hover, or pick one from the States list.</p>
+                <p class="pm-sub">States: shaded by the selected metric for ongoing projects. Pins: the 100 highest-scoring projects (score ≥ 50), grouped by location. Hover or focus a state, or pick one from the States list.</p>
               </div>
               <div id="map-legend" class="flex items-center gap-2 flex-wrap justify-end"></div>
+            </div>
+            <div class="heat-bar">
+              <label class="heat-ctl" for="heat-metric">Heatmap
+                <select id="heat-metric" class="pm-select" aria-describedby="choro-legend"></select>
+              </label>
+              <p id="heat-sum" class="heat-sum" aria-live="polite"></p>
             </div>
             <div class="map-shell" id="map-shell">
               <div class="map-frame">
                 <div id="map" role="region" aria-label="Map of high-risk projects and state boundaries"></div>
                 <div id="map-loading" class="map-loading"><div class="pm-state"><div class="pm-skel" style="width:140px;height:10px"></div><p class="pm-state-msg">Loading project locations…</p></div></div>
                 <div id="state-card" class="state-card is-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+                <div id="map-status" class="map-status" role="status" hidden></div>
               </div>
               <section id="map-panel" class="map-panel" aria-label="Map lists">
                 <div class="map-panel-head">
@@ -242,8 +277,8 @@
             </div>
             <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 mt-3">
               <p class="pm-sub" style="margin:0">Pin positions are state centroids from the PAIMANA API; multi-state and unmapped projects appear at the national centre point.</p>
-              <div class="flex items-center gap-4 shrink-0">
-                <span class="legend-scale" aria-hidden="true">Ongoing projects <i></i> more</span>
+              <div class="flex items-end gap-5 shrink-0 flex-wrap">
+                <div id="choro-legend" class="choro-legend" aria-live="polite"></div>
                 <label class="flex items-center gap-2 text-[12px]" style="color:var(--pm-muted)"><input type="checkbox" id="toggle-states" checked> State layer</label>
               </div>
             </div>
@@ -556,11 +591,7 @@
         render: (projects, el) => {
           groups = groupProjects(projects);
           renderPins(true);
-          if (groups.length) {
-            map.fitBounds(L.latLngBounds(groups.map(g => [g.lat, g.lng])).pad(0.12), {
-              paddingTopLeft: [24, 24], paddingBottomRight: [panelInset(), 24], maxZoom: 5.5, animate: false
-            });
-          }
+          fitIndia();
           const crit = projects.filter(p => tier(p.status, p.risk_score) === 'CRITICAL').length;
           $('map-legend').innerHTML = `
             <span class="pm-tier" data-tier="CRITICAL">${icon(TIERS.CRITICAL.icon)}Critical <span class="pm-tier-score">${crit}</span></span>
@@ -637,19 +668,42 @@
     });
 
     // ------------------------------------------------------------------
-    // 3b. State layer — real boundaries + /analytics/state-summary
-    //     Boundaries: DataMeet (MIT), Survey of India based, pre-2019 (J&K includes Ladakh).
-    //     Every figure comes from the API; source state strings are matched to boundary
-    //     names with a spelling map only (no values are stored here).
+    // 3b. State choropleth — real boundaries + /analytics/state-summary
+    //     Boundaries: /data/india-states.json (DataMeet, MIT; Survey of India based;
+    //     pre-2019, so Jammu & Kashmir's outline includes Ladakh).
+    //     Every value comes from the state-summary response; nothing here stores data.
     // ------------------------------------------------------------------
+
+    // State-name normalisation (the only place source strings meet boundary names).
+    // Map only genuine spelling variants / renamed entities; anything else stays unmapped.
     const norm = (v) => String(v || '').toUpperCase().replace(/&/g, ' AND ').replace(/[^A-Z ]/g, ' ').replace(/\s+/g, ' ').trim();
     const SPELLING = {
       'CHHATISGARH': 'CHHATTISGARH', 'A AND N ISLANDS': 'ANDAMAN AND NICOBAR ISLANDS', 'D AND N HAVELI': 'DADRA AND NAGAR HAVELI',
       'PONDICHERRY': 'PUDUCHERRY', 'NCT OF DELHI': 'DELHI', 'ORISSA': 'ODISHA', 'UTTARANCHAL': 'UTTARAKHAND',
-      'LADAKH': 'JAMMU AND KASHMIR'   // one pre-2019 boundary covers both UTs; figures are listed per UT
+      'LADAKH': 'JAMMU AND KASHMIR'   // one pre-2019 boundary covers both UTs; their figures stay listed per UT
     };
+    const NOT_A_STATE = { 'MULTI STATE': 'multi' };
     const titleCase = (v) => String(v || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\b(And|Of)\b/g, m => m.toLowerCase());
-    let statesLayer = null, stateAgg = new Map(), stateMeta = null, maxOngoing = 1, selectedState = null, hoverState = null;
+
+    // Heatmap metrics — each maps to a field aggregated straight from the API rows.
+    const crore = (v) => fmt.crore(v, 0);
+    const projects = (v) => `${fmt.int(v)} project${num(v) === 1 ? '' : 's'}`;
+    const METRICS = {
+      exposure: { label: 'Risk exposure', field: 'exposure', format: crore,
+        help: 'Ongoing projects: latest cost × composite risk score ÷ 100, summed.' },
+      ongoing: { label: 'Ongoing projects', field: 'ongoing', format: projects,
+        help: 'Projects whose latest commissioning date has not yet been reached (or is not reported).' },
+      cost: { label: 'Ongoing cost', field: 'ongoing_cost', format: crore,
+        help: 'Latest reported cost of ongoing projects (anticipated, else revised, else original).' },
+      high: { label: 'High-risk projects', field: 'ongoing_high', format: projects,
+        help: 'Ongoing projects with composite risk score ≥ 50 (Elevated or Critical).' }
+    };
+    const METRIC_KEY = 'pm.dashboard.heatmap';
+    let metric = (() => { try { const m = localStorage.getItem(METRIC_KEY); return METRICS[m] ? m : 'exposure'; } catch (_) { return 'exposure'; } })();
+
+    let statesLayer = null, geoData = null, summaryMeta = null, stateMeta = null, stateAgg = new Map();
+    let dataState = 'loading';   // loading | ready | error
+    let selectedState = null, hoverState = null;
 
     function aggregateStates(geo, summary) {
       const polygons = new Map(geo.features.map(f => [norm(f.properties.name), f.properties.name]));
@@ -657,52 +711,77 @@
       summary.data.forEach(row => {
         if (row.state === null || row.state === undefined || !String(row.state).trim()) { off.none = row; return; }
         const key0 = norm(row.state);
-        if (key0 === 'MULTI STATE') { off.multi = row; return; }
+        if (NOT_A_STATE[key0]) { off[NOT_A_STATE[key0]] = row; return; }
         const key = SPELLING[key0] || key0;
         if (!polygons.has(key)) { off.other.push(row); return; }
-        const a = agg.get(key) || { key, name: polygons.get(key), parts: [], projects: 0, ongoing: 0, ongoing_cost: 0, latest_cost: 0, high: 0, ongoing_high: 0, critical: 0 };
+        const a = agg.get(key) || { key, name: polygons.get(key), parts: [], projects: 0, ongoing: 0, ongoing_cost: 0, latest_cost: 0,
+          high: 0, ongoing_high: 0, critical: 0, exposure: 0, ongoing_unscored: 0 };
         a.parts.push(row);
         a.projects += row.projects; a.ongoing += row.ongoing; a.ongoing_cost += row.ongoing_latest_cost_crore; a.latest_cost += row.latest_cost_crore;
         a.high += row.high_risk; a.ongoing_high += row.ongoing_high_risk; a.critical += row.critical;
+        a.exposure += num(row.risk_exposure_crore) || 0; a.ongoing_unscored += num(row.ongoing_unscored) || 0;
         agg.set(key, a);
       });
       return { agg, off, polygons };
     }
+    const displayName = (a) => a.parts.length > 1 ? a.parts.map(r => titleCase(r.state)).join(' · ') : a.name;
+    const metricMax = () => Math.max(0, ...[...stateAgg.values()].map(a => num(a[METRICS[metric].field]) || 0));
 
-    function stateStyle(feature) {
-      const a = stateAgg.get(norm(feature.properties.name));
-      const k = norm(feature.properties.name);
-      const share = a ? Math.sqrt(a.ongoing / maxOngoing) : 0;
-      const active = k === selectedState, hot = k === hoverState;
-      return {
-        pane: 'states', color: active ? PM.cssVar('--pm-accent') : hot ? PM.cssVar('--pm-text') : PM.cssVar('--pm-line-strong'),
-        weight: active ? 2.2 : hot ? 1.6 : 0.8, opacity: active || hot ? 0.95 : 0.9,
-        fillColor: PM.cssVar('--pm-accent'), fillOpacity: (a ? 0.05 + 0.34 * share : 0.015) + (hot || active ? 0.1 : 0)
-      };
+    // Centralised choropleth style. Square-root scale so smaller states stay distinguishable.
+    const hexRgb = (h) => { const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(String(h).trim()); return m ? m.slice(1).map(x => parseInt(x, 16)) : [128, 128, 128]; };
+    function seqColor(t) {
+      const lo = hexRgb(PM.cssVar('--pm-seq-lo')), hi = hexRgb(PM.cssVar('--pm-seq-hi'));
+      return `rgb(${lo.map((c, i) => Math.round(c + (hi[i] - c) * t)).join(',')})`;
     }
-    function restyleStates() { if (statesLayer) statesLayer.setStyle(stateStyle); }
+    const scaleT = (v, max) => max > 0 ? Math.sqrt(Math.max(0, v) / max) : 0;
+    let styleCache = null;
+    function stateStyle(feature) {
+      const k = norm(feature.properties.name), a = stateAgg.get(k);
+      const active = k === selectedState, hot = k === hoverState;
+      const stroke = active ? PM.cssVar('--pm-accent') : hot ? PM.cssVar('--pm-text') : PM.cssVar('--pm-line-strong');
+      const base = { pane: 'states', color: stroke, weight: active ? 2.4 : hot ? 1.8 : 0.8, opacity: 1, dashArray: null };
+      if (dataState !== 'ready') return { ...base, fillColor: PM.cssVar('--pm-unknown-fill'), fillOpacity: 0.1 };
+      if (!a) return { ...base, fillColor: PM.cssVar('--pm-unknown-fill'), fillOpacity: 0.12, dashArray: active || hot ? null : '3 3' };
+      const t = scaleT(num(a[METRICS[metric].field]) || 0, styleCache.max);
+      return { ...base, fillColor: seqColor(t), fillOpacity: hot || active ? 0.9 : 0.78 };
+    }
+    function restyleStates() {
+      if (!statesLayer) return;
+      styleCache = { max: metricMax() };
+      statesLayer.setStyle(stateStyle);
+    }
 
-    function stateCardHTML(a, name) {
-      if (!a) return `<p class="pm-eyebrow">State / UT</p><p class="pm-title mt-1">${esc(name)}</p><p class="pm-sub mt-1">No projects recorded for this state in PAIMANA.</p>`;
-      const parts = a.parts.length > 1
-        ? `<p class="pm-updated mt-2" style="white-space:normal">${a.parts.map(r => `${esc(titleCase(r.state))}: ${fmt.int(r.ongoing)} ongoing of ${fmt.int(r.projects)}`).join(' · ')}</p>` : '';
-      return `<p class="pm-eyebrow">${a.parts.length > 1 ? 'States / UTs' : 'State / UT'}</p>
-        <p class="pm-title mt-1">${esc(a.parts.length > 1 ? a.parts.map(r => titleCase(r.state)).join(' · ') : a.name)}</p>
+    function stateLabel(a, name) {
+      if (dataState !== 'ready') return `${name}. State analytics ${dataState === 'error' ? 'unavailable' : 'loading'}.`;
+      if (!a) return `${name}. No PAIMANA projects recorded.`;
+      return `${displayName(a)}. ${METRICS[metric].label}: ${METRICS[metric].format(a[METRICS[metric].field])}. ${fmt.int(a.ongoing)} ongoing projects, ${fmt.int(a.ongoing_cost)} crore rupees ongoing cost, ${fmt.int(a.ongoing_high)} high-risk. Press Enter to select.`;
+    }
+
+    function stateCardHTML(k) {
+      const a = stateAgg.get(k), name = a ? displayName(a) : (stateMeta?.polygons.get(k) || geoName(k) || k);
+      const head = `<p class="pm-eyebrow">${a && a.parts.length > 1 ? 'States / UTs' : 'State / UT'}</p><p class="pm-title mt-1">${esc(name)}</p>`;
+      if (dataState === 'loading') return `${head}<p class="pm-sub mt-1">Loading state analytics…</p>`;
+      if (dataState === 'error') return `${head}<p class="pm-sub mt-1">State analytics unavailable. Project pins still work.</p>`;
+      if (!a) return `${head}<p class="pm-sub mt-1">No PAIMANA projects are recorded against this state.</p>`;
+      const M = METRICS[metric], rank = [...stateAgg.values()].sort((x, y) => (y[M.field] || 0) - (x[M.field] || 0)).findIndex(x => x.key === k) + 1;
+      const parts = a.parts.length > 1 ? `<p class="pm-updated mt-2" style="white-space:normal">${a.parts.map(r => `${esc(titleCase(r.state))}: ${fmt.int(r.ongoing)} ongoing · ${fmt.crore(r.risk_exposure_crore, 0)} exposure`).join(' · ')}</p>` : '';
+      const unscored = a.ongoing_unscored ? `<p class="pm-updated mt-1">${fmt.int(a.ongoing_unscored)} ongoing project${a.ongoing_unscored === 1 ? '' : 's'} without a prediction excluded from exposure.</p>` : '';
+      return `${head}
+        <div class="sc-hero"><p class="sc-l">${esc(M.label)} · heatmap</p><p class="sc-v">${M.format(a[M.field])}</p><p class="pm-updated">rank ${rank} of ${stateAgg.size} mapped states/UTs</p></div>
         <div class="sc-grid">
           <div><p class="sc-l">Ongoing projects</p><p class="sc-v">${fmt.int(a.ongoing)}</p><p class="pm-updated">of ${fmt.int(a.projects)} monitored</p></div>
-          <div><p class="sc-l">Latest cost · ongoing</p><p class="sc-v">${fmt.crore(a.ongoing_cost, 0)}</p><p class="pm-updated">all: ${fmt.crore(a.latest_cost, 0)}</p></div>
-          <div><p class="sc-l">High risk · ongoing</p><p class="sc-v">${fmt.int(a.ongoing_high)}</p><p class="pm-updated">score ≥ 50 · all: ${fmt.int(a.high)}</p></div>
-          <div><p class="sc-l">Critical</p><p class="sc-v">${fmt.int(a.critical)}</p><p class="pm-updated">score ≥ 75, all projects</p></div>
-        </div>${parts}`;
+          <div><p class="sc-l">Ongoing cost</p><p class="sc-v">${fmt.crore(a.ongoing_cost, 0)}</p><p class="pm-updated">latest reported</p></div>
+          <div><p class="sc-l">High-risk projects</p><p class="sc-v">${fmt.int(a.ongoing_high)}</p><p class="pm-updated">ongoing · score ≥ 50</p></div>
+          <div><p class="sc-l">Risk exposure</p><p class="sc-v">${fmt.crore(a.exposure, 0)}</p><p class="pm-updated">cost × risk ÷ 100</p></div>
+        </div>${parts}${unscored}
+        <p class="sc-foot">Data as of ${esc(fmt.date(summaryMeta?.as_of))} · latest generated prediction per project</p>`;
     }
+    const geoName = (k) => geoData?.features.find(f => norm(f.properties.name) === k)?.properties.name;
     function showStateCard(key) {
-      const card = $('state-card');
-      const k = key || selectedState;
-      if (!k) { card.classList.add('is-hidden'); card.classList.remove('is-pinned'); return; }
-      const a = stateAgg.get(k);
-      card.innerHTML = stateCardHTML(a, a ? a.name : (stateMeta?.polygons.get(k) || k));
+      const card = $('state-card'), k = key || selectedState;
+      if (!k) { card.classList.add('is-hidden'); return; }
+      card.innerHTML = stateCardHTML(k);
       card.classList.remove('is-hidden');
-      card.classList.toggle('is-pinned', !key && !!selectedState);
     }
     function hover(key) { hoverState = key; restyleStates(); showStateCard(key); }
     function selectState(key, { fly = false } = {}) {
@@ -718,54 +797,140 @@
       }
     }
 
+    // Keyboard layer: each state path is a focusable button (Enter/Space select, Escape clears).
+    function wirePathA11y() {
+      if (!statesLayer) return;
+      statesLayer.eachLayer(layer => {
+        const el = layer.getElement && layer.getElement();
+        if (!el) return;
+        const k = norm(layer.feature.properties.name);
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('role', 'button');
+        el.setAttribute('aria-label', stateLabel(stateAgg.get(k), layer.feature.properties.name));
+        if (el.dataset.pmWired) return;
+        el.dataset.pmWired = '1';
+        el.addEventListener('focus', () => hover(k));
+        el.addEventListener('blur', () => hover(null));
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectState(k); }
+        });
+      });
+    }
+
     let geoPromise = null;
     const loadGeo = () => (geoPromise ??= fetch('/data/india-states.json').then(r => { if (!r.ok) throw new Error('State boundaries could not be loaded.'); return r.json(); }).catch(e => { geoPromise = null; throw e; }));
 
-    function loadStates() {
-      return section($('state-list'), {
-        loader: () => Promise.all([loadGeo(), heavy(() => API.getStateSummary({ cache: 'no-store' }))]),
-        skeleton: skeleton.lines(8), errorTitle: 'State figures unavailable', inline: true,
-        isEmpty: ([, summary]) => !summary?.data?.length,
-        empty: { title: 'No state data' },
-        render: ([geo, summary], el) => {
-          stateMeta = aggregateStates(geo, summary);
-          stateAgg = stateMeta.agg;
-          maxOngoing = Math.max(1, ...[...stateAgg.values()].map(a => a.ongoing));
-          if (map && typeof L !== 'undefined') {
-            if (statesLayer) statesLayer.remove();
-            statesLayer = L.geoJSON(geo, {
-              pane: 'states', style: stateStyle,
-              onEachFeature: (f, layer) => {
-                const key = norm(f.properties.name);
-                layer.on({
-                  mouseover: () => hover(key), mouseout: () => hover(null),
-                  click: (e) => { L.DomEvent.stopPropagation(e); selectState(key); }
-                });
-              }
-            });
-            if ($('toggle-states').checked) statesLayer.addTo(map);
-          }
-          const rows = [...stateAgg.values()].sort((a, b) => b.ongoing - a.ongoing || b.projects - a.projects);
-          el.innerHTML = rows.map(a => `
-            <button type="button" class="state-row" data-key="${esc(a.key)}" aria-label="${esc(a.name)}: ${a.ongoing} ongoing projects, ${fmt.crore(a.ongoing_cost, 0)} latest cost of ongoing projects, ${a.ongoing_high} ongoing at high risk. Show on map.">
-              <span class="nm">${esc(a.parts.length > 1 ? a.parts.map(r => titleCase(r.state)).join(' · ') : a.name)}</span>
-              <span class="ct">${fmt.int(a.ongoing)}</span>
-              <span class="bar"><span style="width:${(a.ongoing / maxOngoing) * 100}%"></span></span>
-            </button>`).join('') +
-            `<p class="panel-note">Ongoing = ${esc(summary.ongoing_definition.charAt(0).toLowerCase() + summary.ongoing_definition.slice(1))} As of ${esc(fmt.date(summary.as_of))}.</p>`;
-          el.querySelectorAll('.state-row').forEach(b => {
-            b.addEventListener('click', () => selectState(b.dataset.key, { fly: true }));
-            b.addEventListener('mouseenter', () => hover(b.dataset.key));
-            b.addEventListener('mouseleave', () => hover(null));
-            b.addEventListener('focus', () => hover(b.dataset.key));
-            b.addEventListener('blur', () => hover(null));
+    // Frame the whole state outline beside the list panel (falls back to the pins' extent).
+    let framed = false;
+    function fitIndia() {
+      if (!map) return;
+      const bounds = statesLayer ? statesLayer.getBounds() : (groups.length ? L.latLngBounds(groups.map(g => [g.lat, g.lng])).pad(0.12) : null);
+      if (!bounds || !bounds.isValid()) return;
+      map.fitBounds(bounds, { paddingTopLeft: [16, 16], paddingBottomRight: [panelInset(), 16], maxZoom: 5.5, animate: false });
+    }
+    function ensureStatesLayer(geo) {
+      geoData = geo;
+      if (statesLayer || !map || typeof L === 'undefined') return;
+      statesLayer = L.geoJSON(geo, {
+        pane: 'states', style: stateStyle,
+        onEachFeature: (f, layer) => {
+          const key = norm(f.properties.name);
+          layer.on({
+            mouseover: () => hover(key), mouseout: () => hover(null),
+            click: (e) => { L.DomEvent.stopPropagation(e); selectState(key); }
           });
-          const off = stateMeta.off, bits = [];
-          if (off.multi) bits.push(`multi-state ${fmt.int(off.multi.projects)} projects (${fmt.int(off.multi.ongoing)} ongoing)`);
-          if (off.none) bits.push(`state not available ${fmt.int(off.none.projects)} (${fmt.int(off.none.ongoing)} ongoing)`);
-          if (off.other.length) bits.push(`${off.other.length} unrecognised state value${off.other.length > 1 ? 's' : ''} (${fmt.int(off.other.reduce((t, r) => t + r.projects, 0))} projects)`);
-          $('state-foot').textContent = `Not shaded on the map: ${bits.join(' · ') || 'none'}. State boundaries: DataMeet (MIT), Survey of India based, pre-2019 — Jammu & Kashmir's outline includes Ladakh; their figures are listed separately.`;
-          console.log(`[PAIMANA] state layer: ${stateAgg.size} states/UTs shaded from /analytics/state-summary (${summary.data.length} source values).`);
+        }
+      });
+      statesLayer.on('add', () => requestAnimationFrame(wirePathA11y));
+      if ($('toggle-states').checked) statesLayer.addTo(map);
+      if (!framed) { framed = true; fitIndia(); }
+    }
+
+    function setMapStatus(kind) {
+      const box = $('map-status');
+      if (kind === 'ready') { box.hidden = true; return; }
+      box.hidden = false;
+      box.classList.toggle('is-error', kind === 'error');
+      box.innerHTML = kind === 'loading'
+        ? `<span class="dot"></span><span>Loading state analytics…</span>`
+        : `<span class="dot"></span><span><b style="color:var(--pm-text)">State analytics unavailable.</b> Project-level map data is still available.</span><button type="button" class="pm-btn pm-btn-sm" data-retry-states>${icon('refresh-cw', 'w-3.5 h-3.5')}Retry</button>`;
+      const retry = box.querySelector('[data-retry-states]');
+      if (retry) retry.addEventListener('click', () => loadStates(), { once: true });
+    }
+
+    // Everything that depends on the active metric (no refetch).
+    function renderMetricViews() {
+      const M = METRICS[metric], max = metricMax();
+      const rows = [...stateAgg.values()].sort((a, b) => (b[M.field] || 0) - (a[M.field] || 0) || b.projects - a.projects);
+      restyleStates(); wirePathA11y();
+      $('choro-legend').innerHTML = `
+        <p class="lg-title">${esc(M.label)}${metric === 'ongoing' ? '' : ' · ongoing projects'}</p>
+        <span>Low</span><div><div class="lg-ramp" role="img" aria-label="${esc(M.label)} scale from ${M.format(0)} to ${M.format(max)}, square-root scaled"></div>
+          <div class="lg-ticks"><span>${M.format(0)}</span><span>${M.format(max * 0.25)}</span><span>${M.format(max)} · High</span></div></div>
+        <span></span><span class="lg-na"><i></i>No PAIMANA projects recorded · square-root scale</span>`;
+      const total = rows.reduce((t, a) => t + (a[M.field] || 0), 0), top = rows[0];
+      $('heat-sum').innerHTML = rows.length
+        ? `Mapped total <b>${M.format(total)}</b> across ${fmt.int(rows.filter(a => (a[M.field] || 0) > 0).length)} states/UTs${top && top[M.field] > 0 ? ` · highest reported: <b>${esc(displayName(top))}</b>, ${M.format(top[M.field])}` : ''}`
+        : '';
+      $('map').setAttribute('aria-label', `Map of India. States shaded by ${M.label.toLowerCase()} of ongoing projects; pins show the 100 highest-risk projects.`);
+      const el = $('state-list');
+      el.innerHTML = rows.map(a => `
+        <button type="button" class="state-row" data-key="${esc(a.key)}" aria-label="${esc(stateLabel(a))}">
+          <span class="nm">${esc(displayName(a))}</span>
+          <span class="ct">${M.format(a[M.field])}</span>
+          <span class="bar"><span style="width:${max ? ((a[M.field] || 0) / max) * 100 : 0}%"></span></span>
+        </button>`).join('') +
+        `<p class="panel-note">${esc(M.help)} Ongoing = ${esc(summaryMeta.ongoing_definition.charAt(0).toLowerCase() + summaryMeta.ongoing_definition.slice(1))} As of ${esc(fmt.date(summaryMeta.as_of))}.</p>`;
+      el.querySelectorAll('.state-row').forEach(b => {
+        b.classList.toggle('is-active', b.dataset.key === selectedState);
+        b.addEventListener('click', () => selectState(b.dataset.key, { fly: true }));
+        b.addEventListener('mouseenter', () => hover(b.dataset.key));
+        b.addEventListener('mouseleave', () => hover(null));
+        b.addEventListener('focus', () => hover(b.dataset.key));
+        b.addEventListener('blur', () => hover(null));
+      });
+      const off = stateMeta.off, v = (r) => r ? `${M.format(r[{ exposure: 'risk_exposure_crore', ongoing: 'ongoing', cost: 'ongoing_latest_cost_crore', high: 'ongoing_high_risk' }[metric]])}` : null, bits = [];
+      if (off.multi) bits.push(`multi-state ${v(off.multi)}`);
+      if (off.none) bits.push(`state not available ${v(off.none)}`);
+      if (off.other.length) bits.push(`${off.other.length} unrecognised state value${off.other.length > 1 ? 's' : ''} (${fmt.int(off.other.reduce((t, r) => t + r.projects, 0))} projects)`);
+      $('state-foot').textContent = `Not on the map (${M.label.toLowerCase()}): ${bits.join(' · ') || 'none'}. Risk scores use the latest generated prediction per project. State boundaries: DataMeet (MIT), Survey of India based, pre-2019 — Jammu & Kashmir's outline includes Ladakh; their figures are listed separately.`;
+      if (hoverState || selectedState) showStateCard(hoverState);
+    }
+
+    const metricSelect = $('heat-metric');
+    metricSelect.innerHTML = Object.entries(METRICS).map(([k, m]) => `<option value="${k}" ${k === metric ? 'selected' : ''}>${esc(m.label)}</option>`).join('');
+    metricSelect.addEventListener('change', () => {
+      metric = metricSelect.value;
+      try { localStorage.setItem(METRIC_KEY, metric); } catch (_) {}
+      if (dataState === 'ready') renderMetricViews();
+    });
+
+    function loadStates() {
+      dataState = 'loading'; setMapStatus('loading'); restyleStates();
+      // Geometry first (static, fast): neutral fills while analytics load.
+      loadGeo().then(ensureStatesLayer).catch(() => {});
+      return section($('state-list'), {
+        loader: async () => {
+          try {
+            const [geo, summary] = await Promise.all([loadGeo(), heavy(() => API.getStateSummary({ cache: 'no-store' }))]);
+            ensureStatesLayer(geo);
+            return summary;
+          } catch (err) {
+            dataState = 'error'; setMapStatus('error'); restyleStates(); wirePathA11y(); showStateCard(null);
+            $('heat-sum').textContent = ''; $('choro-legend').innerHTML = '';
+            throw err;
+          }
+        },
+        skeleton: skeleton.lines(8), errorTitle: 'State analytics unavailable', inline: true,
+        isEmpty: (summary) => !summary?.data?.length,
+        empty: { title: 'No state data' },
+        render: (summary) => {
+          summaryMeta = summary;
+          stateMeta = aggregateStates(geoData, summary);
+          stateAgg = stateMeta.agg;
+          dataState = 'ready'; setMapStatus('ready');
+          renderMetricViews();
+          console.log(`[PAIMANA] choropleth: ${stateAgg.size} states/UTs from /analytics/state-summary (${summary.data.length} source values), metric=${metric}.`);
         }
       });
     }
@@ -845,7 +1010,9 @@
     });
     // Escape closes an open map popup even when focus is outside the map (e.g. on the hotspot list).
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && map && map._popup && map.hasLayer(map._popup)) { map.closePopup(); e.stopPropagation(); }
+      if (e.key !== 'Escape') return;
+      if (map && map._popup && map.hasLayer(map._popup)) { map.closePopup(); e.stopPropagation(); }
+      else if (selectedState) { selectState(null); e.stopPropagation(); }
     });
     // Nothing inside the panel reaches the map (no accidental pan/zoom/click-through).
     if (typeof L !== 'undefined') { L.DomEvent.disableClickPropagation(panel); L.DomEvent.disableScrollPropagation(panel); }
