@@ -2,7 +2,8 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import func
+from sqlalchemy import func, select, text, true
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -47,15 +48,93 @@ STATE_COORDINATES = {
 }
 
 
-def _latest_updates(db: Session):
-    """
-    Return project updates ordered from newest to oldest for each project.
+# Only the columns the dashboard endpoints read. Rows keep the same attribute
+# names as the ORM objects, so the endpoint code below is unchanged; loading
+# full ORM objects for every project was most of the remaining cost.
+_PREDICTION_COLUMNS = (
+    Prediction.project_id,
+    Prediction.composite_risk_score,
+    Prediction.risk_tier,
+)
+_PROJECT_COLUMNS = (
+    Project.project_id,
+    Project.project_name,
+    Project.sector,
+    Project.state,
+    Project.original_cost_crore,
+    Project.original_commissioning_date,
+)
+_UPDATE_COLUMNS = (
+    ProjectUpdate.project_id,
+    ProjectUpdate.revised_cost_crore,
+    ProjectUpdate.cumulative_expenditure_crore,
+    ProjectUpdate.revised_commissioning_date,
+    ProjectUpdate.anticipated_commissioning_date,
+)
 
-    The first occurrence of each project is therefore its latest
-    available monthly snapshot.
+
+def _projects(db: Session, project_ids=None):
+    """Dashboard columns of all projects, or only of `project_ids`."""
+    query = db.query(*_PROJECT_COLUMNS)
+    if project_ids is not None:
+        if not project_ids:
+            return []
+        query = query.filter(Project.project_id.in_(project_ids))
+    return query.all()
+
+
+def _latest_updates(db: Session, project_ids=None):
     """
+    Return the latest monthly update of each project (one row per project).
+
+    (project_id, report_month) is unique, so "latest" is simply the highest
+    report_month. On PostgreSQL this is a DISTINCT ON read that walks the
+    existing (project_id, report_month) index backwards, instead of loading
+    every historical update and keeping the first one per project in Python.
+    Callers still take the first occurrence per project, so any database
+    returns the same result.
+    """
+    postgres = db.get_bind().dialect.name == "postgresql"
+
+    if project_ids is not None and postgres:
+        if not project_ids:
+            return []
+        # A subset of projects: one backward index probe per project
+        # (LIMIT 1), instead of gathering and sorting their whole history.
+        latest = (
+            select(*_UPDATE_COLUMNS)
+            .where(ProjectUpdate.project_id == Project.project_id)
+            .order_by(ProjectUpdate.report_month.desc())
+            .limit(1)
+            .lateral("latest_update")
+        )
+        return db.execute(
+            select(*latest.c)
+            .select_from(Project)
+            .join(latest, true())
+            .where(Project.project_id.in_(project_ids))
+        ).all()
+
+    query = db.query(*_UPDATE_COLUMNS)
+
+    if project_ids is not None:
+        if not project_ids:
+            return []
+        query = query.filter(ProjectUpdate.project_id.in_(project_ids))
+
+    if postgres:
+        return (
+            query
+            .ext(distinct_on(ProjectUpdate.project_id))
+            .order_by(
+                ProjectUpdate.project_id.desc(),
+                ProjectUpdate.report_month.desc(),
+            )
+            .all()
+        )
+
     return (
-        db.query(ProjectUpdate)
+        query
         .order_by(
             ProjectUpdate.project_id,
             ProjectUpdate.report_month.desc(),
@@ -67,10 +146,16 @@ def _latest_updates(db: Session):
 
 def _latest_predictions(db: Session):
     """
-    Return the latest stored prediction for every project.
+    Return the latest stored prediction for every project (most recently
+    generated, as before), keyed by project and ordered by project_id.
     """
+    query = db.query(*_PREDICTION_COLUMNS)
+
+    if db.get_bind().dialect.name == "postgresql":
+        query = query.ext(distinct_on(Prediction.project_id))
+
     rows = (
-        db.query(Prediction)
+        query
         .order_by(
             Prediction.project_id,
             Prediction.generated_at.desc(),
@@ -88,15 +173,8 @@ def _latest_predictions(db: Session):
     return result
 
 
-@router.get("/summary", response_model=DashboardSummaryResponse)
-def get_dashboard_summary(db: Session = Depends(get_db)):
-    # ---------------------------------------------------------
-    # 1. Total projects
-    # ---------------------------------------------------------
-    total_projects = int(
-        db.query(func.count(Project.project_id)).scalar() or 0
-    )
-
+def _summary_totals_python(db: Session):
+    """Portable aggregation (non-PostgreSQL databases, e.g. the SQLite tests)."""
     # ---------------------------------------------------------
     # 2. Latest prediction for each project
     # ---------------------------------------------------------
@@ -113,7 +191,7 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
     # ---------------------------------------------------------
     projects = {
         str(project.project_id).strip(): project
-        for project in db.query(Project).all()
+        for project in _projects(db)
     }
 
     latest_updates = {}
@@ -177,6 +255,72 @@ def get_dashboard_summary(db: Session = Depends(get_db)):
     #
     # 1 lakh crore = 100,000 crore
     # ---------------------------------------------------------
+    return high_risk, original_total, revised_total, expenditure_total, delayed
+
+
+# Same rules as _summary_totals_python, aggregated in PostgreSQL: one row back
+# instead of every project and its latest update.
+_SUMMARY_TOTALS_SQL = text("""
+WITH latest_prediction AS (
+    SELECT DISTINCT ON (project_id) composite_risk_score
+    FROM predictions
+    ORDER BY project_id, generated_at DESC, prediction_id DESC
+)
+SELECT
+    (SELECT count(*) FROM latest_prediction
+      WHERE coalesce(composite_risk_score, 0) >= 50)            AS high_risk,
+    coalesce(sum(p.original_cost_crore), 0)                     AS original_total,
+    coalesce(sum(u.revised_cost_crore), 0)                      AS revised_total,
+    coalesce(sum(u.cumulative_expenditure_crore), 0)            AS expenditure_total,
+    count(*) FILTER (
+        WHERE p.original_commissioning_date IS NOT NULL
+          AND coalesce(u.revised_commissioning_date, u.anticipated_commissioning_date)
+              > p.original_commissioning_date)                  AS delayed
+FROM projects p
+LEFT JOIN LATERAL (
+    SELECT revised_cost_crore, cumulative_expenditure_crore,
+           revised_commissioning_date, anticipated_commissioning_date
+    FROM project_updates x
+    WHERE x.project_id = p.project_id
+    ORDER BY x.report_month DESC
+    LIMIT 1
+) u ON true
+""")
+
+
+def _summary_totals(db: Session):
+    if db.get_bind().dialect.name != "postgresql":
+        return _summary_totals_python(db)
+    row = db.execute(_SUMMARY_TOTALS_SQL).one()
+    return (
+        int(row.high_risk),
+        float(row.original_total),
+        float(row.revised_total),
+        float(row.expenditure_total),
+        int(row.delayed),
+    )
+
+
+@router.get("/summary", response_model=DashboardSummaryResponse)
+def get_dashboard_summary(db: Session = Depends(get_db)):
+    # ---------------------------------------------------------
+    # 1. Total projects
+    # ---------------------------------------------------------
+    total_projects = int(
+        db.query(func.count(Project.project_id)).scalar() or 0
+    )
+
+    # ---------------------------------------------------------
+    # 2-4. Latest predictions, latest updates and financial totals
+    # ---------------------------------------------------------
+    (
+        high_risk,
+        original_total,
+        revised_total,
+        expenditure_total,
+        delayed,
+    ) = _summary_totals(db)
+
     original_lakh_cr = original_total / 100000.0
     revised_lakh_cr = revised_total / 100000.0
     expenditure_lakh_cr = expenditure_total / 100000.0
@@ -208,14 +352,22 @@ def get_ongoing_high_risk(db: Session = Depends(get_db)):
 
     predictions = _latest_predictions(db)
 
+    # Only projects whose latest score is >= 50 can appear on the map, so
+    # project and update rows are fetched for those candidates alone.
+    candidates = [
+        pid
+        for pid, prediction in predictions.items()
+        if float(prediction.composite_risk_score or 0) >= 50
+    ]
+
     projects = {
         str(project.project_id).strip(): project
-        for project in db.query(Project).all()
+        for project in _projects(db, candidates)
     }
 
     latest_updates = {}
 
-    for update in _latest_updates(db):
+    for update in _latest_updates(db, candidates):
         pid = str(update.project_id).strip()
         latest_updates.setdefault(pid, update)
 
@@ -381,7 +533,7 @@ def get_sector_breakdown(
 
     projects = {
         str(project.project_id).strip(): project
-        for project in db.query(Project).all()
+        for project in _projects(db)
     }
 
     buckets = {}

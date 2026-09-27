@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 from api.models.models import Alert, Project
+from api.services import read_cache
 from api.services.alert_priority import CLOSED, URGENCY, actionable_alerts, effective_status, transition_status
 
 
@@ -72,7 +73,8 @@ def aggregate_cases(items):
 
 
 def get_cases(db):
-    return aggregate_cases(actionable_alerts(db))
+    # Cached with the same invalidation as actionable_alerts (read_cache.py).
+    return read_cache.cached("cases", db, lambda: aggregate_cases(actionable_alerts(db)))
 
 
 def update_project_case(db, project_id, status, note):
