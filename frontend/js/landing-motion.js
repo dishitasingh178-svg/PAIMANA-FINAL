@@ -9,6 +9,9 @@
      after the libraries have loaded, inside gsap.matchMedia contexts so all of
      it reverts cleanly (reduced motion toggled, breakpoint changes).
    - One scroll system: Lenis drives window scroll, ScrollTrigger reads it.
+   - Entrance reveals ([data-animate]) are NOT done here: js/scroll-animations.js
+     owns them (dependency-free). This file only adds what that system doesn't:
+     smooth scrolling, the pinned pipeline, parallax, bar growth, the weights wipe.
    - prefers-reduced-motion: no Lenis (native scroll), no pins, no parallax,
      no scrub. Content is shown in its final state.
    ===================================================================== */
@@ -52,22 +55,7 @@
 
     const mm = gsap.matchMedia();
 
-    /* ---------------- Reveals (shared by every motion breakpoint) ---------------- */
-    function bindReveals(scope) {
-      const els = [...(scope || document).querySelectorAll('[data-reveal]')].filter(el => !el.dataset.rv && el.offsetParent !== null);
-      if (!els.length) return;
-      els.forEach(el => { el.dataset.rv = '1'; });
-      const plain = els.filter(el => el.dataset.reveal !== 'scale');
-      const scaled = els.filter(el => el.dataset.reveal === 'scale');
-      // opacity only (never visibility) so hidden-looking items stay focusable
-      if (plain.length) gsap.set(plain, { opacity: 0, y: 20 });
-      if (scaled.length) gsap.set(scaled, { opacity: 0, scale: 0.97, transformOrigin: '50% 0%' });
-      ScrollTrigger.batch(els, {
-        start: 'top 88%',
-        once: true,
-        onEnter: (batch) => gsap.to(batch, { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: EASE, stagger: 0.08, overwrite: true, clearProps: 'transform' })
-      });
-    }
+    /* Entrance reveals live in js/scroll-animations.js (no second engine here). */
 
     // Bars inside newly rendered content (state list): grow from the left once in view.
     function bindBars(scope) {
@@ -91,12 +79,6 @@
         clipPath: 'inset(0 0% 0 0)', duration: 1.1, ease: 'power2.inOut',
         scrollTrigger: { trigger: w, start: 'top 85%', once: true }
       });
-    }
-
-    // Anything a keyboard user focuses is shown immediately.
-    function onFocusIn(e) {
-      const r = e.target.closest && e.target.closest('[data-reveal]');
-      if (r && Number(gsap.getProperty(r, 'opacity')) < 1) gsap.to(r, { opacity: 1, y: 0, scale: 1, duration: 0.25, overwrite: true });
     }
 
     /* ---------------- Lenis: one scroll system ---------------- */
@@ -188,14 +170,12 @@
       lenis = startLenis();
       if (lenis) { try { history.scrollRestoration = 'manual'; } catch (e) {} }
 
-      bindReveals(document);
       bindBars(document);
       bindWeights();
 
       document.addEventListener('click', onClick);
       addEventListener('popstate', onPop);
       document.addEventListener('pm:menu', onMenu);
-      document.addEventListener('focusin', onFocusIn);
 
       // A hash on first load: re-land precisely once pins and spacing exist.
       if (location.hash && hashTarget(location.hash)) {
@@ -206,7 +186,6 @@
         document.removeEventListener('click', onClick);
         removeEventListener('popstate', onPop);
         document.removeEventListener('pm:menu', onMenu);
-        document.removeEventListener('focusin', onFocusIn);
         stopLenis(lenis); lenis = null;
         try { history.scrollRestoration = 'auto'; } catch (e) {}
         document.documentElement.classList.remove('js-motion');
@@ -287,7 +266,7 @@
     let refreshTimer = 0;
     document.addEventListener('pm:content', (e) => {
       const root = e.detail && e.detail.root;
-      if (motionCtx && root) motionCtx.add(() => { bindReveals(root); bindBars(root); });
+      if (motionCtx && root) motionCtx.add(() => bindBars(root));
       clearTimeout(refreshTimer);
       refreshTimer = setTimeout(() => ScrollTrigger.refresh(), 120);
     });

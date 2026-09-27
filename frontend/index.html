@@ -23,6 +23,13 @@
     }
   </script>
   <link rel="stylesheet" href="/css/paimana.css">
+  <link rel="stylesheet" href="/css/scroll-animations.css">
+  <script>
+    // Enable the entrance-animation start state before first paint (css/scroll-animations.css).
+    // Fail-safe: if js/scroll-animations.js never ran, show everything once the page has loaded.
+    document.documentElement.classList.add('pm-anim');
+    addEventListener('load', function () { if (!window.PMScrollAnimations) document.documentElement.classList.remove('pm-anim'); });
+  </script>
   <style>
     /* Native scrolling is the baseline. Lenis (loaded by js/landing-motion.js) takes over only
        when the motion libraries load and the visitor has not asked for reduced motion. */
@@ -200,6 +207,7 @@
 </head>
 
 <body class="pm-site antialiased">
+  <div class="pm-scroll-progress" data-scroll-progress aria-hidden="true"></div>
   <a href="#main" class="pm-skip">Skip to content</a>
 
   <!-- ================= Top bar ================= -->
@@ -247,7 +255,7 @@
     <!-- ================= Hero ================= -->
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="wrap grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-start">
-        <div class="lg:col-span-7 pm-enter lg:pt-4">
+        <div class="lg:col-span-7 lg:pt-4" data-animate data-animate-load>
           <p class="step-no"><b>PAIMANA</b> Predictive monitoring · Public infrastructure</p>
           <h1 id="hero-title" class="hero-title mt-5">Early warning for India's infrastructure portfolio<span class="soft">.</span></h1>
           <p class="hero-lede mt-6">
@@ -267,8 +275,8 @@
         </div>
 
         <!-- Live figures: /dashboard/summary + /dashboard/risk-distribution -->
-        <div class="lg:col-span-5 pm-enter" style="--pm-delay:80ms" id="live-panel">
-          <div class="pm-card" aria-labelledby="live-title">
+        <div class="lg:col-span-5" id="live-panel">
+          <div class="pm-card" aria-labelledby="live-title" data-animate data-animate-load style="--pm-anim-delay:80ms">
             <div class="px-5 pt-4 pb-3 flex items-center justify-between gap-3" style="border-bottom:1px solid var(--pm-line)">
               <p id="live-title" class="pm-eyebrow">Live portfolio</p>
               <p class="pm-updated" id="live-updated">Loading from the PAIMANA API…</p>
@@ -290,7 +298,7 @@
     <!-- ================= 01 Problem ================= -->
     <section id="problem" class="story" aria-labelledby="problem-title">
       <div class="wrap grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
-        <div class="lg:col-span-5" data-reveal>
+        <div class="lg:col-span-5" data-animate>
           <p class="step-no"><b>01</b> The monitoring problem</p>
           <h2 id="problem-title" class="story-title mt-4">A large portfolio, running late and over budget, and the signals arrive too late.</h2>
           <p class="story-body mt-5">
@@ -299,16 +307,16 @@
             already happened. Reviewers need to know which projects are drifting now.
           </p>
         </div>
-        <div class="lg:col-span-7 lg:pt-2" id="facts">
-          <div class="fact" data-reveal>
+        <div class="lg:col-span-7 lg:pt-2" id="facts" data-animate="stagger">
+          <div class="fact">
             <p class="fact-value" id="fact-delayed"><span class="pm-skel skel-inline" style="width:110px"></span></p>
             <p class="fact-text" id="fact-delayed-text">projects are behind their original commissioning schedule.</p>
           </div>
-          <div class="fact" data-reveal>
+          <div class="fact">
             <p class="fact-value" id="fact-high"><span class="pm-skel skel-inline" style="width:90px"></span></p>
             <p class="fact-text" id="fact-high-text">projects score 50 or more on the composite risk scale (Elevated or Critical).</p>
           </div>
-          <div class="fact" data-reveal>
+          <div class="fact">
             <p class="fact-value" id="fact-cost"><span class="pm-skel skel-inline" style="width:130px"></span></p>
             <p class="fact-text" id="fact-cost-text">sanctioned cost across all monitored projects, in lakh crore.</p>
           </div>
@@ -320,7 +328,7 @@
     <!-- ================= 02 Intelligence pipeline ================= -->
     <section id="platform" class="story" aria-labelledby="platform-title">
       <div class="wrap">
-        <div class="max-w-3xl" data-reveal>
+        <div class="max-w-3xl" data-animate>
           <p class="step-no"><b>02</b> The intelligence pipeline</p>
           <h2 id="platform-title" class="story-title mt-4">From the monthly flash report to a scored, searchable project database.</h2>
           <p class="story-body mt-5">
@@ -379,7 +387,7 @@
     <!-- ================= 03 Risk, cost and schedule intelligence ================= -->
     <section id="models" class="story" aria-labelledby="models-title">
       <div class="wrap">
-        <div class="max-w-3xl" data-reveal>
+        <div class="max-w-3xl" data-animate>
           <p class="step-no"><b>03</b> Risk, cost and schedule intelligence</p>
           <h2 id="models-title" class="story-title mt-4">Three models, one composite risk score.</h2>
           <p class="story-body mt-5">
@@ -387,24 +395,24 @@
             completion risk evolves over its lifecycle. The weighted result is a single 0–100 score that can be compared across the whole portfolio.
           </p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12" id="model-cards">
-          <article class="pm-card pm-card-pad" data-reveal>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12" id="model-cards" data-animate="stagger">
+          <article class="pm-card pm-card-pad">
             <p class="model-weight">40<span class="pm-kpi-unit">%</span></p>
             <h3 class="pm-title mt-5">Cost XGBoost</h3>
             <p class="pm-sub" style="font-size:13px">Probability that the project's cost overruns its sanctioned estimate.</p>
           </article>
-          <article class="pm-card pm-card-pad" data-reveal>
+          <article class="pm-card pm-card-pad">
             <p class="model-weight">40<span class="pm-kpi-unit">%</span></p>
             <h3 class="pm-title mt-5">Schedule XGBoost</h3>
             <p class="pm-sub" style="font-size:13px">Probability that commissioning slips past the originally scheduled date.</p>
           </article>
-          <article class="pm-card pm-card-pad" data-reveal>
+          <article class="pm-card pm-card-pad">
             <p class="model-weight">20<span class="pm-kpi-unit">%</span></p>
             <h3 class="pm-title mt-5">Cox survival model</h3>
             <p class="pm-sub" style="font-size:13px">Lifecycle hazard: how the risk of not completing on time changes as the project ages.</p>
           </article>
         </div>
-        <div class="mt-6 space-y-3" data-reveal>
+        <div class="mt-6 space-y-3" data-animate>
           <div class="weights" id="weights" role="img" aria-label="Composite weights: cost 40 percent, schedule 40 percent, survival 20 percent">
             <div class="w-cost">Cost <span>40%</span></div>
             <div class="w-sched">Schedule <span>40%</span></div>
@@ -419,7 +427,7 @@
     <!-- ================= 04 Early warning ================= -->
     <section id="warnings" class="story" aria-labelledby="warnings-title">
       <div class="wrap grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
-        <div class="lg:col-span-5" data-reveal>
+        <div class="lg:col-span-5" data-animate>
           <p class="step-no"><b>04</b> Early warning system</p>
           <h2 id="warnings-title" class="story-title mt-4">Signals, ranked by priority, with the reason attached.</h2>
           <p class="story-body mt-5">
@@ -429,7 +437,7 @@
           <a href="early-warnings.html" class="pm-btn mt-7">Open the warning center <span data-icon="arrow-right" class="w-4 h-4"></span></a>
         </div>
         <div class="lg:col-span-7">
-          <div class="pm-card pm-card-pad" data-reveal="scale">
+          <div class="pm-card pm-card-pad" data-animate>
             <p class="pm-eyebrow mb-4">What every warning carries</p>
             <dl class="anatomy" id="anatomy">
               <div><dt>Severity</dt><dd><span class="inline-flex flex-wrap gap-1.5" id="sev-badges"></span></dd></div>
@@ -454,7 +462,7 @@
     <!-- ================= 05 Portfolio intelligence ================= -->
     <section id="tiers" class="story" aria-labelledby="tiers-title">
       <div class="wrap">
-        <div class="max-w-3xl" data-reveal>
+        <div class="max-w-3xl" data-animate>
           <p class="step-no"><b>05</b> Portfolio-level intelligence</p>
           <h2 id="tiers-title" class="story-title mt-4">Four tiers that say how much attention a project needs.</h2>
           <p class="story-body mt-5">
@@ -462,9 +470,9 @@
             taken from each project's latest prediction, followed by where ongoing projects are concentrated.
           </p>
         </div>
-        <div id="tier-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12"></div>
+        <div id="tier-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12" data-animate="stagger"></div>
 
-        <div class="pm-card mt-6 overflow-hidden" data-reveal="scale" aria-labelledby="states-title">
+        <div class="pm-card mt-6 overflow-hidden" data-animate aria-labelledby="states-title">
           <div class="px-5 md:px-6 pt-5 pb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
             <div>
               <h3 id="states-title" class="pm-title">Top states by ongoing projects</h3>
@@ -484,50 +492,50 @@
     <!-- ================= 06 Call to action ================= -->
     <section id="explore" class="story" style="border-bottom:0" aria-labelledby="explore-title">
       <div class="wrap">
-        <div class="max-w-3xl" data-reveal>
+        <div class="max-w-3xl" data-animate>
           <p class="step-no"><b>06</b> Actionable dashboard</p>
           <h2 id="explore-title" class="story-title mt-4">Start from the portfolio, drill into a project.</h2>
           <p class="story-body mt-5">Every view reads the same live database, so a number on the dashboard leads to the projects and warnings behind it.</p>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-12" id="entries">
-          <a href="dashboard.html" class="pm-card entry is-primary" data-dashboard-link data-reveal>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-12" id="entries" data-animate="stagger">
+          <a href="dashboard.html" class="pm-card entry is-primary" data-dashboard-link>
             <span class="entry-icon"><span data-icon="layout-dashboard" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Portfolio dashboard</span>
             <span class="pm-sub" style="margin:0">Key figures, risk map, tier distribution and priority warnings.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
-          <a href="projects.html" class="pm-card entry" data-reveal>
+          <a href="projects.html" class="pm-card entry">
             <span class="entry-icon"><span data-icon="folder-kanban" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Projects</span>
             <span class="pm-sub" style="margin:0">Search by name, agency or sector and open any project's risk profile.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
-          <a href="early-warnings.html" class="pm-card entry" data-reveal>
+          <a href="early-warnings.html" class="pm-card entry">
             <span class="entry-icon"><span data-icon="bell" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Early warnings</span>
             <span class="pm-sub" style="margin:0">The prioritised signal queue with review status.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
-          <a href="risk-analytics.html" class="pm-card entry" data-reveal>
+          <a href="risk-analytics.html" class="pm-card entry">
             <span class="entry-icon"><span data-icon="chart-line" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Risk analytics</span>
             <span class="pm-sub" style="margin:0">Sector and state breakdowns and the portfolio risk trend.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
-          <a href="ai-assistant.html" class="pm-card entry" data-reveal>
+          <a href="ai-assistant.html" class="pm-card entry">
             <span class="entry-icon"><span data-icon="bot" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">AI assistant</span>
             <span class="pm-sub" style="margin:0">Ask questions in plain language; answers come from PAIMANA's database tools.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
           <!-- Upload is admin-only: admins go straight to add-project, everyone else to login -->
-          <a href="add-project.html" class="pm-card entry" style="display:none" data-role="admin" data-reveal>
+          <a href="add-project.html" class="pm-card entry" style="display:none" data-role="admin">
             <span class="entry-icon"><span data-icon="file-up" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Upload a flash report</span>
             <span class="pm-sub" style="margin:0">Add the latest monthly PDF and follow it through extraction, prediction and alerts.</span>
             <span class="entry-go mt-auto"><span data-icon="arrow-right" class="w-4 h-4"></span></span>
           </a>
-          <a href="login.html" class="pm-card entry" data-role="user" data-reveal>
+          <a href="login.html" class="pm-card entry" data-role="user">
             <span class="entry-icon"><span data-icon="file-up" class="w-[18px] h-[18px]"></span></span>
             <span class="pm-title">Upload a flash report</span>
             <span class="pm-sub" style="margin:0">Administrators sign in to add the latest monthly PDF.</span>
@@ -549,6 +557,7 @@
   <script src="js/ui.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/theme.js"></script>
+  <script src="js/scroll-animations.js"></script>
   <script>
   (() => {
     'use strict';
@@ -722,7 +731,7 @@
           </li>`).join('')}</ul>`;
 
       $('tier-cards').innerHTML = ORDER.map((t, i) => `
-        <article class="pm-card pm-card-pad tier-card" data-tier="${t}" data-reveal>
+        <article class="pm-card pm-card-pad tier-card" data-tier="${t}">
           <div class="flex items-center justify-between gap-2">${tierBadge(t, null, { showScore: false })}<span class="pm-updated">Score ${TIERS[t].range}</span></div>
           <p class="tier-count mt-4" data-count="${values[i]}">0</p>
           <p class="pm-updated">${pct(values[i]).toFixed(1)}% of scored projects</p>
