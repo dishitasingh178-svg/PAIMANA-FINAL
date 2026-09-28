@@ -19,23 +19,15 @@
     }
   </script>
   <link rel="stylesheet" href="/css/paimana.css">
-  <link rel="stylesheet" href="/css/scroll-animations.css">
-  <script>
-    // Enable the entrance-animation start state before first paint (css/scroll-animations.css).
-    // Fail-safe: if js/scroll-animations.js never ran, show everything once the page has loaded.
-    document.documentElement.classList.add('pm-anim');
-    addEventListener('load', function () { if (!window.PMScrollAnimations) document.documentElement.classList.remove('pm-anim'); });
-  </script>
   <style>
-    /* Native scrolling is the baseline. Lenis (loaded by js/landing-motion.js) takes over only
-       when the motion libraries load and the visitor has not asked for reduced motion. */
-    html { scroll-padding-top: 64px; } /* = top bar height; Lenis reads it too */
-    @media (prefers-reduced-motion: no-preference) { html:not(.lenis) { scroll-behavior: smooth; } }
-    /* lenis@1.3.26/dist/lenis.css, inlined (plus the scroll-behavior reset Lenis needs) */
-    html.lenis, html.lenis body { height: auto; }
-    html.lenis { scroll-behavior: auto !important; }
-    .lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
-    .lenis.lenis-smooth iframe { pointer-events: none; }
+    /* Native anchor navigation; the header and hero remain stationary. */
+    html { scroll-padding-top: 64px; }
+    @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+    #main > .story > .wrap { transform-origin: 50% 50%; }
+    #main > .story > .wrap:focus-within { transform: none !important; opacity: 1 !important; }
+    @media (prefers-reduced-motion: reduce) {
+      #main > .story > .wrap { transform: none !important; opacity: 1 !important; will-change: auto !important; }
+    }
 
     body.pm-site { min-height: 100vh; overflow-x: clip; }
     .wrap { max-width: 1200px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
@@ -205,7 +197,6 @@
 </head>
 
 <body class="pm-site antialiased">
-  <div class="pm-scroll-progress" data-scroll-progress aria-hidden="true"></div>
   <a href="#main" class="pm-skip">Skip to content</a>
 
   <!-- ================= Top bar ================= -->
@@ -555,7 +546,6 @@
   <script src="js/ui.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/theme.js"></script>
-  <script src="js/scroll-animations.js"></script>
   <script>
   (() => {
     'use strict';
@@ -616,7 +606,7 @@
     $('sev-badges').innerHTML = ['WATCH', 'ELEVATED', 'CRITICAL'].map(t => tierBadge(t, null, { showScore: false })).join('');
 
     // ---------------- Pipeline baseline: light once in view ----------------
-    // js/landing-motion.js adds .js-pipe and drives the stages from scroll instead.
+    // The section-level motion leaves this existing pipeline illustration intact.
     const pipe = $('pipe');
     const lightPipe = () => { if (!pipe.classList.contains('js-pipe')) pipe.classList.add('is-in'); };
     if (PM.reducedMotion() || !('IntersectionObserver' in window)) pipe.classList.add('is-in');
@@ -814,8 +804,7 @@
     } else startStates();
   })();
   </script>
-  <!-- Motion layer: loads GSAP + ScrollTrigger + Lenis without blocking parsing, paint or the data requests above.
-       If any of it fails to load, the page stays fully readable with native scrolling. -->
+  <!-- Public landing section motion; native scrolling with no external motion libraries. -->
   <script src="js/landing-motion.js" defer></script>
 </body>
 </html>

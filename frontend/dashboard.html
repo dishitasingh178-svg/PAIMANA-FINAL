@@ -179,6 +179,7 @@
     .sbar > span + span { box-shadow: -1px 0 0 var(--pm-surface); }
 
     .alert-row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; padding: 13px 4px; border-top: 1px solid var(--pm-line); text-decoration: none; color: inherit; border-radius: 8px; transition: background .14s; }
+    .alert-row .pm-updated { white-space: normal; overflow-wrap: anywhere; }
     .alert-row:first-child { border-top: 0; }
     @media (max-width: 639px) {
       .alert-row { grid-template-columns: 1fr auto; }
@@ -226,7 +227,7 @@
       <div class="max-w-[1320px] mx-auto space-y-6">
 
         <!-- ============ KPIs: /dashboard/summary ============ -->
-        <section aria-labelledby="kpi-heading" class="grid grid-cols-1 xl:grid-cols-12 gap-4 pm-enter">
+        <section aria-labelledby="kpi-heading" class="grid grid-cols-1 xl:grid-cols-12 gap-4">
           <h2 id="kpi-heading" class="pm-sr-only">Portfolio key figures</h2>
           <div class="pm-card xl:col-span-7">
             <div class="px-5 pt-4 flex items-center justify-between">
@@ -246,7 +247,7 @@
 
         <!-- ============ Map + distribution ============ -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <section class="pm-card pm-card-pad lg:col-span-8 pm-enter" style="--pm-delay:60ms" aria-labelledby="map-title">
+          <section class="pm-card pm-card-pad lg:col-span-8" aria-labelledby="map-title">
             <div class="pm-card-head">
               <div>
                 <p class="pm-eyebrow">Geospatial risk</p>
@@ -287,7 +288,7 @@
             </div>
             <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 mt-3">
               <p class="pm-sub" style="margin:0">Pin positions are state centroids from the PAIMANA API; multi-state and unmapped projects appear at the national centre point.</p>
-              <div class="flex items-end gap-5 shrink-0 flex-wrap">
+              <div class="flex items-end gap-5 flex-wrap" style="max-width:100%">
                 <div id="choro-legend" class="choro-legend" aria-live="polite"></div>
                 <label class="flex items-center gap-2 text-[12px]" style="color:var(--pm-muted)"><input type="checkbox" id="toggle-states" checked> State layer</label>
               </div>
@@ -295,7 +296,7 @@
             <p id="state-foot" class="pm-updated mt-2" style="white-space:normal"></p>
           </section>
 
-          <section class="pm-card pm-card-pad lg:col-span-4 flex flex-col pm-enter" style="--pm-delay:120ms" aria-labelledby="dist-title">
+          <section class="pm-card pm-card-pad flex flex-col lg:col-span-4" aria-labelledby="dist-title">
             <div class="pm-card-head">
               <div>
                 <p class="pm-eyebrow">Risk distribution</p>
@@ -312,7 +313,7 @@
 
         <!-- ============ Warnings + sectors ============ -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <section class="pm-card pm-card-pad lg:col-span-7 pm-reveal" aria-labelledby="alerts-title">
+          <section class="pm-card pm-card-pad lg:col-span-7" aria-labelledby="alerts-title">
             <div class="pm-card-head">
               <div>
                 <p class="pm-eyebrow">Attention required</p>
@@ -324,7 +325,7 @@
             <div id="alerts"></div>
           </section>
 
-          <section class="pm-card pm-card-pad lg:col-span-5 pm-reveal" style="--pm-delay:80ms" aria-labelledby="sector-title">
+          <section class="pm-card pm-card-pad lg:col-span-5" aria-labelledby="sector-title">
             <div class="pm-card-head">
               <div>
                 <p class="pm-eyebrow">Sector exposure</p>
