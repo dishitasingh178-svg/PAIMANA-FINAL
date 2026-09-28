@@ -3,6 +3,8 @@ import json
 import os
 from typing import Any, Dict, Optional
 
+import httpx
+
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -111,16 +113,26 @@ class LLMService:
     ):
         self.tool_registry = tool_registry or TOOL_REGISTRY
 
+        self.provider = os.getenv("LLM_PROVIDER", "gemini").lower()
+
         self.api_key = (
             api_key
-            or os.getenv("GEMINI_API_KEY")
+            or (
+                os.getenv("OPENROUTER_API_KEY")
+                if self.provider == "openrouter"
+                else os.getenv("GEMINI_API_KEY")
+            )
         )
 
         self.model = (
             model
             or os.getenv(
-                "GEMINI_MODEL",
-                "gemini-3.5-flash-lite",
+                "OPENROUTER_MODEL"
+                if self.provider == "openrouter"
+                else "GEMINI_MODEL",
+                "openrouter/free"
+                if self.provider == "openrouter"
+                else "gemini-3.5-flash-lite",
             )
         )
 
@@ -445,6 +457,164 @@ Now provide the final answer directly to the user.
     # GEMINI RESPONSE GENERATION
     # =========================================================
 
+    def _get_openrouter_tools(self):
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": schema["name"],
+                    "description": schema["description"],
+                    "parameters": schema.get("parameters") or {
+                        "type": "object",
+                        "properties": {},
+                    },
+                },
+            }
+            for schema in self._get_tool_schemas()
+        ]
+
+    def _openrouter_chat(self, messages, tools=None):
+        payload = {
+            "model": self.model,
+            "messages": messages,
+        }
+
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://paimana",
+            "X-Title": "PAIMANA",
+        }
+
+        with httpx.Client(timeout=60.0) as client:
+            response = client.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=payload,
+            )
+            response.raise_for_status()
+            return response.json()
+
+    def _generate_openrouter_response(
+        self,
+        user_query: str,
+        db,
+        conversation_history=None,
+        max_tool_rounds: int = 3,
+    ):
+        messages = [
+            {
+                "role": "system",
+                "content": self.build_system_prompt(),
+            }
+        ]
+
+        for item in conversation_history or []:
+            if not isinstance(item, dict):
+                continue
+
+            role = str(item.get("role", "")).strip().lower()
+            content = str(item.get("content", "")).strip()
+
+            if role in {"user", "assistant"} and content:
+                messages.append({
+                    "role": role,
+                    "content": content,
+                })
+
+        messages.append({
+            "role": "user",
+            "content": user_query,
+        })
+
+        tools = self._get_openrouter_tools()
+        tool_calls_log = []
+        rejected_tool_calls = []
+
+        for round_number in range(max_tool_rounds):
+            print(
+                f"[LLM] OpenRouter round "
+                f"{round_number + 1}/{max_tool_rounds}"
+            )
+
+            data = self._openrouter_chat(
+                messages,
+                tools=tools if round_number == 0 else None,
+            )
+
+            message = data["choices"][0]["message"]
+            tool_calls = message.get("tool_calls") or []
+
+            if not tool_calls:
+                return {
+                    "success": True,
+                    "answer": message.get("content") or "",
+                    "tool_calls": tool_calls_log,
+                    "rejected_tool_calls": rejected_tool_calls,
+                }
+
+            messages.append(message)
+
+            for call in tool_calls:
+                function = call.get("function", {})
+                tool_name = function.get("name", "")
+
+                try:
+                    arguments = json.loads(
+                        function.get("arguments") or "{}"
+                    )
+                except json.JSONDecodeError:
+                    arguments = {}
+
+                if tool_name not in self.tool_registry:
+                    rejected_tool_calls.append({
+                        "tool": tool_name,
+                        "arguments": arguments,
+                        "error": self._unknown_tool_error(tool_name),
+                    })
+                    continue
+
+                print(f"[LLM] Calling tool: {tool_name}")
+                print(f"[LLM] Arguments: {arguments}")
+
+                tool_result = self.execute_tool(
+                    tool_name=tool_name,
+                    db=db,
+                    arguments=arguments,
+                )
+
+                print(f"[LLM] Tool result: {tool_result}")
+
+                tool_calls_log.append({
+                    "tool": tool_name,
+                    "arguments": arguments,
+                    "result": tool_result,
+                })
+
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": call.get("id"),
+                    "content": json.dumps(
+                        tool_result,
+                        default=str,
+                        ensure_ascii=False,
+                    ),
+                })
+
+            if rejected_tool_calls:
+                break
+
+        return self._answer_from_collected_results(
+            user_query=user_query,
+            tool_calls_log=tool_calls_log,
+            rejected_tool_calls=rejected_tool_calls,
+            conversation_history=conversation_history,
+        )
+
     def generate_response(
         self,
         user_query: str,
@@ -452,6 +622,32 @@ Now provide the final answer directly to the user.
         conversation_history: Optional[list] = None,
         max_tool_rounds: int = 3,
     ):
+        if self.provider == "openrouter":
+            if not self.api_key:
+                return {
+                    "success": False,
+                    "answer": "OpenRouter assistant is not configured.",
+                    "error": "OPENROUTER_API_KEY is missing.",
+                    "tool_calls": [],
+                    "rejected_tool_calls": [],
+                }
+
+            try:
+                return self._generate_openrouter_response(
+                    user_query=user_query,
+                    db=db,
+                    conversation_history=conversation_history,
+                    max_tool_rounds=max_tool_rounds,
+                )
+            except Exception as exc:
+                return {
+                    "success": False,
+                    "answer": "I could not connect to the OpenRouter assistant right now.",
+                    "error": str(exc),
+                    "tool_calls": [],
+                    "rejected_tool_calls": [],
+                }
+
 
         if not self.is_configured():
 
