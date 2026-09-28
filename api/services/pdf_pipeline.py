@@ -19,7 +19,7 @@ import ml_package.predictor as predictor
 
 
 PDF_MAX_BYTES = 25 * 1024 * 1024
-PDF_MAX_PAGES = 400
+PDF_MAX_PAGES = 800
 PDF_PARSE_TIMEOUT_SECONDS = 60
 ACCEPTED_CONTENT_TYPES = {None, "application/pdf", "application/octet-stream"}
 
