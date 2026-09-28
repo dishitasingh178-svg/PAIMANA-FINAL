@@ -515,22 +515,35 @@ Now provide the final answer directly to the user.
                     f"{max_tool_rounds}"
                 )
 
-                response = (
-                    self.client.models.generate_content(
+                request_config = types.GenerateContentConfig(
+                    system_instruction=self.build_system_prompt(),
+                    tools=gemini_tools if round_number == 0 else None,
+                    temperature=0.2,
+                    thinking_config=types.ThinkingConfig(
+                        thinking_level=types.ThinkingLevel.MINIMAL,
+                    ),
+                )
+
+                try:
+                    response = self.client.models.generate_content(
                         model=self.model,
                         contents=contents,
-                        config=types.GenerateContentConfig(
-                            system_instruction=(
-                                self.build_system_prompt()
-                            ),
-                            tools=gemini_tools if round_number == 0 else None,
-                            temperature=0.2,
-                            thinking_config=types.ThinkingConfig(
-                                thinking_level=types.ThinkingLevel.MINIMAL,
-                            ),
-                        ),
+                        config=request_config,
                     )
-                )
+                except Exception as exc:
+                    if "503" not in str(exc) or "UNAVAILABLE" not in str(exc):
+                        raise
+
+                    print(
+                        f"[LLM] Gemini 503 on round {round_number + 1}, "
+                        f"retrying once with {self.model}"
+                    )
+
+                    response = self.client.models.generate_content(
+                        model=self.model,
+                        contents=contents,
+                        config=request_config,
+                    )
 
                 function_calls = response.function_calls
 
