@@ -1077,6 +1077,7 @@
       const r = result || {};
       const i = (v) => fmt.int(num(v) || 0);
       const errors = Array.isArray(r.errors) ? r.errors : [];
+      const warnings = Array.isArray(r.warnings) ? r.warnings : [];
       const bySev = r.alerts_by_severity || {};
       const sevKeys = Object.keys(bySev).sort((a, b) => (SEV_ORDER.indexOf(a.toUpperCase()) + 99) % 99 - (SEV_ORDER.indexOf(b.toUpperCase()) + 99) % 99);
       const duration = job.finished_at && job.created_at ? fmtDur(job.finished_at - job.created_at) : '';
@@ -1108,12 +1109,17 @@
         <div class="sum-grid">
           ${cells.map(([label, v, foot]) => `<div class="sum-cell"><p class="pm-kpi-label">${esc(label)}</p><p class="pm-kpi-value" data-count="${num(v) || 0}">0</p><p class="pm-kpi-foot">${esc(foot)}</p></div>`).join('')}
         </div>
-        <div class="pm-card-pad grid grid-cols-1 ${errors.length ? 'md:grid-cols-2' : ''} gap-6" style="border-top:1px solid var(--pm-line)">
+        <div class="pm-card-pad grid grid-cols-1 ${errors.length || warnings.length ? 'md:grid-cols-2' : ''} gap-6" style="border-top:1px solid var(--pm-line)">
           <div>
             <p class="pm-eyebrow mb-3">Early warnings by severity</p>
             ${sevKeys.length ? `<div class="flex flex-wrap gap-2.5">${sevKeys.map(k => `<span class="sev-chip">${PM.tierBadge(k, null, { showScore: false })}<span class="pm-num text-[13px] font-bold" style="color:var(--pm-text)">${i(bySev[k])}</span></span>`).join('')}</div>`
               : `<p class="text-[12.5px]" style="color:var(--pm-muted)">No new early-warning alerts were raised by this report.</p>`}
           </div>
+          ${warnings.length ? `<div>
+            <p class="pm-eyebrow mb-3">Metadata warnings · ${i(warnings.length)}</p>
+            <p class="pm-sub">Usable records were imported. Invalid fields were preserved or left blank.</p>
+            <ul class="err-list">${warnings.map(w => `<li><span>${esc(w.project_id)}</span><span>${esc(w.reason)}</span></li>`).join('')}</ul>
+          </div>` : ''}
           ${errors.length ? `<div>
             <p class="pm-eyebrow mb-3">Rows that could not be imported · ${i(errors.length)}</p>
             <ul class="err-list">${errors.map(e => `<li><span class="pm-mono pm-num" style="color:var(--pm-muted)">${e.page != null ? `p. ${esc(e.page)}` : '—'}</span><span>${esc(e.reason || e.message || JSON.stringify(e))}</span></li>`).join('')}</ul>
@@ -1405,6 +1411,7 @@
           }
 
           const created = await createResponse.json();
+          const metadataWarnings = Array.isArray(created.warnings) ? created.warnings : [];
 
           // ---------------------------------------------------
           // Prediction
@@ -1426,6 +1433,7 @@
 
           resultText.innerHTML = `
             <p><strong style="color:var(--pm-text)">${esc(newProject.project_name || newProject.project_id)}</strong> analyzed successfully.</p>
+            ${metadataWarnings.length ? `<p class="pm-sub">Metadata warnings: ${metadataWarnings.map(w => esc(w.reason)).join(' · ')}</p>` : ''}
             <div class="flex flex-wrap items-center gap-x-6 gap-y-3 mt-4">
               <div><p class="pm-kpi-label">AI risk score</p><p class="pm-kpi-value" style="font-size:26px">${score === null ? '—' : score.toFixed(1)}<span class="pm-kpi-unit">/100</span></p></div>
               <div><p class="pm-kpi-label mb-1.5">Status</p>${mlResult.risk_tier || score !== null ? PM.tierBadge(mlResult.risk_tier, score, { showScore: false }) : 'N/A'}</div>

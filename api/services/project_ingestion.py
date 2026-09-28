@@ -5,12 +5,14 @@ persistence so Project and ProjectUpdate are created/updated consistently.
 """
 
 import re
+import math
 from datetime import date, datetime
 from typing import Any, Callable, Dict, Iterable, Optional
 
 from sqlalchemy.orm import Session
 
 from api.models.models import Project, ProjectUpdate
+from api.services.state_names import canonical_state
 
 
 REPORT_MONTH_RE = re.compile(r"^(\d{4})-(\d{2})$")
@@ -28,7 +30,10 @@ def _to_float(value: Any) -> Optional[float]:
     if value is None or value == "":
         return None
     try:
-        return float(str(value).replace(",", "").replace("₹", "").strip())
+        number = float(str(value).replace(",", "").replace("₹", "").strip())
+        if not math.isfinite(number):
+            raise ValueError("Non-finite numeric value")
+        return number
     except (TypeError, ValueError):
         raise ValueError(f"Invalid numeric value: {value}")
 
@@ -86,13 +91,34 @@ def _normalize_report_month(value: Any) -> str:
     return text
 
 
+def _metadata(value, field, warnings):
+    if value is not None and not isinstance(value, str):
+        warnings.append({"field": field, "reason": f"{field}: expected text; invalid value ignored."})
+        return None
+    text = _clean_text(value)
+    if not text:
+        return None
+    text = ' '.join(text.split())
+    # Date/milestone cells and runs of numeric cells are table residue, not
+    # names. Respect actual DB limits for optional metadata, not truncation.
+    residue = re.search(r'\b\d{1,2}/\d{4}\b|\b\d+\s*/\s*\d+\s+[-\d]|(?:\d[\d,.]*\s+){3,}\d', text)
+    invalid = residue or (field in {'sector', 'implementing_agency'} and len(text) > 100)
+    if invalid:
+        warnings.append({"field": field, "reason": f"{field}: suspicious metadata ignored; existing value preserved when present."})
+        return None
+    return text
+
+
 def normalize_project_record(record: Dict[str, Any]) -> Dict[str, Any]:
     project_id = _clean_text(record.get("project_id"))
     if not project_id:
         raise ValueError("project_id is required")
 
-    project_name = _clean_text(record.get("project_name"))
-    if not project_name:
+    if len(project_id) > 50:
+        raise ValueError("project_id exceeds 50 characters")
+    warnings = []
+    project_name = _metadata(record.get("project_name"), "project_name", warnings)
+    if not _clean_text(record.get("project_name")):
         raise ValueError(f"Project '{project_id}' is missing project_name")
 
     report_month_value = record.get("report_month")
@@ -106,12 +132,17 @@ def normalize_project_record(record: Dict[str, Any]) -> Dict[str, Any]:
     if serial_no is None:
         serial_no = 1
 
+    state = canonical_state(record.get("state"))
+    if _clean_text(record.get("state")) and state is None:
+        warnings.append({"field": "state", "reason": "state: unrecognized value ignored; existing state preserved, or left blank for a new project."})
+
     return {
+        "warnings": warnings,
         "project_id": project_id,
         "project_name": project_name,
-        "sector": _clean_text(record.get("sector")),
-        "implementing_agency": _clean_text(record.get("implementing_agency")),
-        "state": _clean_text(record.get("state")),
+        "sector": _metadata(record.get("sector"), "sector", warnings),
+        "implementing_agency": _metadata(record.get("implementing_agency"), "implementing_agency", warnings),
+        "state": state,
         "date_of_approval": _to_date(record.get("date_of_approval")),
         "original_cost_crore": _to_float(record.get("original_cost_crore")),
         "original_commissioning_date": _to_date(record.get("original_commissioning_date")),
@@ -140,6 +171,8 @@ def ingest_project_record(db: Session, record: Dict[str, Any]) -> Dict[str, Any]
     project_created = project is None
 
     if project is None:
+        if not data["project_name"]:
+            raise ValueError(f"Project {project_id}: invalid project_name; new project rejected")
         project = Project(
             project_id=project_id,
             project_name=data["project_name"],
@@ -207,6 +240,7 @@ def ingest_project_record(db: Session, record: Dict[str, Any]) -> Dict[str, Any]
     return {
         "project_id": project_id,
         "report_month": report_month,
+        "warnings": data["warnings"],
         "project_created": project_created,
         "update_created": update_created,
         "source_file": data.get("source_file"),
@@ -227,6 +261,7 @@ def ingest_project_records(
         "updates_created": 0,
         "updates_updated": 0,
         "errors": [],
+        "warnings": [],
         "affected_pairs": [],
     }
 
@@ -238,6 +273,10 @@ def ingest_project_records(
             with db.begin_nested():
                 outcome = ingest_project_record(db, record)
 
+            result["warnings"].extend(
+                {**warning, "project_id": outcome["project_id"], "page": page}
+                for warning in outcome["warnings"]
+            )
             if outcome["project_created"]:
                 result["projects_created"] += 1
             else:

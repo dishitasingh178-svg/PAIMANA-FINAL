@@ -1,8 +1,6 @@
-"""PDF extraction adapter using the supplied CUF parser logic verbatim.
+"""CUF PDF extraction with metadata bounded before the numeric table cells.
 
-The parser's extraction rules are intentionally not rewritten here because the
-existing PAIMANA database was built from this parser and the supplied May 2014
-PDF must produce the same 735 records.
+Project-block detection and numeric extraction retain the existing report layouts.
 """
 
 import argparse
@@ -12,6 +10,8 @@ import zipfile
 from pathlib import Path
 
 import fitz  # PyMuPDF
+
+from api.services.state_names import canonical_state
 
 COLUMNS = [
     'report_month', 'sector', 'serial_no', 'project_id', 'project_name',
@@ -126,31 +126,19 @@ def parse_block(block, serial, sector, report_month_value, source_file, page_no)
     project_name = clean(prefix).strip(' -')
 
     after_id = joined[idm.end():]
-    parts = [clean(x) for x in after_id.split(' ') if clean(x)]
-    # Agency/state come from the first comma-separated text after the ID.
-    after_id_clean = clean(after_id).strip(' ,.-')
-    meta_parts = [clean(x) for x in after_id_clean.split(',') if clean(x)]
-    agency = meta_parts[0] if meta_parts else ''
-    state = meta_parts[1] if len(meta_parts) > 1 else ''
-
-    # Work with individual lines after the ID. The PDF text extraction puts
-    # table cells on separate lines, which makes this considerably more stable
-    # than relying on visual column spacing.
-    id_line_idx = next(i for i, x in enumerate(block) if ID_RE.search(str(x)))
-    tail = [clean(x) for x in block[id_line_idx + 1:] if clean(x)]
-    if not tail:
+    # The approval date begins the numeric table. Never split financial commas
+    # as metadata delimiters. This also handles wrapped and same-line cells.
+    approval_match = re.search(r'\b\d{1,2}/\d{4}\b', after_id)
+    if not approval_match:
         return None
-
-    # Find approval date first. Then tokenize the remaining table cells.
-    # Some older PDFs place two adjacent cells on one visual line, so parsing
-    # whole lines is not reliable. Tokenizing dates, money, delays and the
-    # milestone fraction handles both old and new layouts.
-    id_line_idx = next(i for i, x in enumerate(block) if ID_RE.search(str(x)))
-    tail_text = ' '.join(clean(x) for x in block[id_line_idx + 1:] if clean(x))
-    aidx = re.search(r'\b\d{1,2}/\d{4}\b', tail_text)
-    if not aidx:
-        return None
-    tail_text = tail_text[aidx.start():]
+    metadata = clean(after_id[:approval_match.start()])
+    if ',' in metadata:
+        agency, state = (clean(part).strip(' .-') for part in metadata.rsplit(',', 1))
+    elif canonical_state(metadata.strip(' .-')):
+        agency, state = '', metadata.strip(' .-')
+    else:
+        agency, state = metadata.strip(' .-'), ''
+    tail_text = after_id[approval_match.start():]
     token_re = re.compile(r'\d+\s*/\s*\d+|\d{1,2}/\d{4}|-?\d[\d,]*(?:\.\d+)?(?:\([OR]\))?|-')
     vals = token_re.findall(tail_text)
     if len(vals) < 8:

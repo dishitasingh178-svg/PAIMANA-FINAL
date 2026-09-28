@@ -212,6 +212,8 @@ def _ingest(reporter, records):
         db.close()
 
     reporter.detail("ingesting", "Transaction committed")
+    if result["warnings"]:
+        reporter.detail("ingesting", f"{len(result['warnings'])} metadata validation warnings; invalid fields were not written")
     reporter.stage_completed(
         "ingesting",
         f"{result['projects_created']} new projects, {result['projects_updated']} updated, "
@@ -305,6 +307,7 @@ def run_pdf_job(reporter, temp_path, filename, content_type, size_bytes):
             "alerts_created": summary["alerts_created"] if summary else 0,
             "alerts_by_severity": summary["alerts_by_severity"] if summary else {},
             "errors": errors,
+            "warnings": result["warnings"],
         })
     except PipelineError as exc:
         reporter.failed(str(exc))

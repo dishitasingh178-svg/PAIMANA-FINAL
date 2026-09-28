@@ -606,6 +606,7 @@ def create_project(
     return {
         "project_id": outcome["project_id"],
         "project_name": data.project_name,
+        "warnings": outcome["warnings"],
         "report_month": outcome["report_month"],
         "message": (
             "Project created successfully"

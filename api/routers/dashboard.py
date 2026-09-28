@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session
 
 from database import get_db
+from api.services.state_names import canonical_state
 from api.models.models import Project, ProjectUpdate, Prediction, Alert
 from api.schemas.dashboard import (
     DashboardSummaryResponse,
@@ -410,14 +411,12 @@ def get_ongoing_high_risk(db: Session = Depends(get_db)):
                 ),
             )
 
-        state_key = str(
-            project.state or "CENTRAL"
-        ).strip().upper()
-
-        lat, lng = STATE_COORDINATES.get(
-            state_key,
-            STATE_COORDINATES["CENTRAL"],
-        )
+        state_key = canonical_state(project.state)
+        coordinates = STATE_COORDINATES.get(state_key)
+        # Missing/unrecognized/multi-state locations have no defensible pin.
+        if coordinates is None:
+            continue
+        lat, lng = coordinates
 
         items.append(
             HighRiskProjectMapItem(

@@ -6,6 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import distinct_on
 
 from database import get_db
+from api.services.state_names import state_bucket
 from api.models.models import Project, Prediction, ProjectUpdate
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["Analytics"])
@@ -60,7 +61,7 @@ def get_state_analytics(db: Session = Depends(get_db)):
     for pid, pred in preds.items():
         p = projects.get(pid)
         if not p: continue
-        s = p.state or "Unknown"
+        s = state_bucket(p.state) or "Unknown"
         bucket = data.setdefault(s, {"projects": 0, "high_risk": 0})
         bucket["projects"] += 1
         if float(pred.composite_risk_score or 0) >= 50: bucket["high_risk"] += 1
@@ -119,7 +120,7 @@ def get_state_summary(db: Session = Depends(get_db)):
     buckets = {}
     for project in _project_rows(db):
         pid = str(project.project_id).strip()
-        key = (project.state or "").strip().upper() or None
+        key = state_bucket(project.state)
         b = buckets.setdefault(key, {
             "projects": 0, "ongoing": 0,
             "original_cost_crore": 0.0, "latest_cost_crore": 0.0, "ongoing_latest_cost_crore": 0.0,
