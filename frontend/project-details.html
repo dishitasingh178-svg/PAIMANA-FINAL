@@ -183,13 +183,6 @@
     .pw-note-k { font-size: 11px; font-weight: 700; color: var(--pm-text); }
     .pw-note-t { font-size: 11px; color: var(--pm-muted); margin-top: 4px; }
 
-    /* Stable layout anchors; only their surfaces move. Content never starts hidden. */
-    .project-scroll-section { min-width: 0; }
-    .project-scroll-surface { transform-origin: 50% 50%; }
-    .project-scroll-surface:focus-within { transform: none !important; opacity: 1 !important; }
-    @media (prefers-reduced-motion: reduce) {
-      .project-scroll-surface { transform: none !important; opacity: 1 !important; will-change: auto !important; }
-    }
   </style>
   <!-- Pre-built Tailwind (frontend/tailwind.config.js). Last in <head>: same cascade position the Play CDN used. -->
   <link rel="stylesheet" href="/css/tailwind.css">
@@ -240,8 +233,7 @@
 
         <div id="report" class="space-y-6">
           <!-- ============ Identity + composite risk: /projects/{id} ============ -->
-          <div class="project-scroll-section">
-          <section class="project-scroll-surface pm-card hero" aria-labelledby="p-name">
+          <section class="pm-card hero" aria-labelledby="p-name">
             <div class="hero-id flex flex-col justify-center" id="identity" aria-busy="true">
               <div class="pm-skel pm-skel-line" style="width:180px"></div>
               <div class="pm-skel" style="height:28px;width:78%;margin-top:14px"></div>
@@ -259,11 +251,9 @@
               <div class="pm-skel" style="height:8px;margin-top:22px"></div>
                           </div>
           </section>
-          </div>
 
           <!-- ============ Model breakdown ============ -->
-          <div class="project-scroll-section">
-          <section class="project-scroll-surface pm-card pm-card-pad" aria-labelledby="models-title">
+          <section class="pm-card pm-card-pad" aria-labelledby="models-title">
             <div class="pm-card-head">
               <div>
                 <p class="pm-eyebrow">Model breakdown</p>
@@ -273,11 +263,9 @@
             </div>
             <div id="models"></div>
           </section>
-          </div>
 
           <!-- ============ Cost + schedule ============ -->
-          <div class="project-scroll-section">
-          <div class="project-scroll-surface grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <section class="pm-card pm-card-pad lg:col-span-5" aria-labelledby="cost-title">
               <div class="pm-card-head">
                 <div>
@@ -299,11 +287,9 @@
               <div id="schedule"></div>
             </section>
           </div>
-          </div>
 
           <!-- ============ SHAP (on demand): /projects/{id}/explanation ============ -->
-          <div class="project-scroll-section">
-          <section class="project-scroll-surface pm-card pm-card-pad" aria-labelledby="shap-title">
+          <section class="pm-card pm-card-pad" aria-labelledby="shap-title">
             <div class="pm-card-head">
               <div>
                 <p class="pm-eyebrow">Model explanation</p>
@@ -323,11 +309,9 @@
               SHAP represents model attribution, not causation. Values are in the model's log-odds units; larger bars mean a stronger push on this prediction.
             </p>
           </section>
-          </div>
 
           <!-- ============ Early-warning case: /alerts/cases ============ -->
-          <div class="project-scroll-section">
-          <section class="project-scroll-surface pm-card pm-card-pad" aria-labelledby="warn-title">
+          <section class="pm-card pm-card-pad" aria-labelledby="warn-title">
             <div class="pm-card-head">
               <div>
                 <p class="pm-eyebrow">Early warning</p>
@@ -338,15 +322,13 @@
             </div>
             <div id="project-warnings"></div>
           </section>
-          </div>
 
           <p class="pm-sub px-1" id="snapshot-note">
             All figures are the latest reported snapshot for this project. PAIMANA does not currently expose a per-project history, so past values are not shown.
           </p>
 
           <!-- ============ Why flagged ============ -->
-          <div class="project-scroll-section">
-          <section class="project-scroll-surface pm-card pm-card-pad" aria-labelledby="why-title">
+          <section class="pm-card pm-card-pad" aria-labelledby="why-title">
             <div class="pm-card-head" style="margin-bottom:6px">
               <div>
                 <p class="pm-eyebrow">Assessment</p>
@@ -356,7 +338,6 @@
             </div>
             <ul id="why" class="why" style="margin-top:8px;border-top:0;padding-top:0"></ul>
           </section>
-          </div>
         </div>
       </div>
     </div>
@@ -755,98 +736,5 @@
   })();
   </script>
 
-  <script>
-  // Reversible section depth, driven by the existing #main scroll container.
-  (() => {
-    'use strict';
-    const scroller = document.getElementById('main');
-    const report = document.getElementById('report');
-    const sections = Array.from(report.querySelectorAll(':scope > .project-scroll-section'), anchor => ({
-      anchor, surface: anchor.firstElementChild, top: 0, height: 0
-    }));
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-    const narrow = matchMedia('(max-width: 767px)');
-    let frame = 0, dirty = true, mounted = false, viewport = 1;
-
-    function reset() {
-      sections.forEach(({ surface }) => {
-        surface.style.removeProperty('transform');
-        surface.style.removeProperty('opacity');
-        surface.style.removeProperty('will-change');
-      });
-    }
-    function schedule() {
-      if (mounted && !reduced.matches && !frame) frame = requestAnimationFrame(render);
-    }
-    function invalidate() { dirty = true; schedule(); }
-    function render() {
-      frame = 0;
-      if (!mounted || reduced.matches) return;
-      const scroll = scroller.scrollTop;
-      if (dirty) {
-        // Batched reads only on size/content changes, never on ordinary scroll.
-        const rootTop = scroller.getBoundingClientRect().top + scroller.clientTop;
-        viewport = Math.max(1, scroller.clientHeight);
-        sections.forEach(section => {
-          const rect = section.anchor.getBoundingClientRect();
-          section.top = rect.top - rootTop + scroll;
-          section.height = rect.height;
-        });
-        dirty = false;
-      }
-      const mobile = narrow.matches;
-      sections.forEach(({ top, height, surface }) => {
-        const center = top + height / 2 - scroll - viewport / 2;
-        // Tall sections stay settled while their central reading area is visible.
-        const plateau = Math.max(0, (height - viewport * 0.6) / 2);
-        const progress = Math.min(1, Math.max(0, Math.abs(center) - plateau) / (viewport * 0.65));
-        const depth = progress * progress * (3 - 2 * progress);
-        const direction = Math.sign(center);
-        const y = direction * depth * (mobile ? 12 : 28);
-        const z = -depth * (mobile ? 12 : 36);
-        const tilt = direction * depth * (mobile ? 1 : 2.5);
-        const scale = 1 - depth * (mobile ? 0.01 : 0.024);
-        surface.style.transform = `perspective(1200px) translate3d(0, ${y.toFixed(2)}px, ${z.toFixed(2)}px) rotateX(${tilt.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
-        surface.style.opacity = (1 - depth * (mobile ? 0.04 : 0.10)).toFixed(3);
-        surface.style.willChange = top < scroll + viewport + 120 && top + height > scroll - 120 ? 'transform, opacity' : 'auto';
-      });
-    }
-    function motionChanged() {
-      scroller.removeEventListener('scroll', schedule);
-      if (frame) cancelAnimationFrame(frame);
-      frame = 0;
-      reset();
-      if (!reduced.matches) {
-        scroller.addEventListener('scroll', schedule, { passive: true });
-        invalidate();
-      }
-    }
-    const resize = new ResizeObserver(invalidate);
-    function start() {
-      if (mounted) return;
-      mounted = true;
-      resize.observe(scroller);
-      resize.observe(report);
-      sections.forEach(({ anchor }) => resize.observe(anchor));
-      window.addEventListener('resize', invalidate, { passive: true });
-      reduced.addEventListener('change', motionChanged);
-      motionChanged();
-    }
-    function stop() {
-      mounted = false;
-      scroller.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', invalidate);
-      reduced.removeEventListener('change', motionChanged);
-      resize.disconnect();
-      if (frame) cancelAnimationFrame(frame);
-      frame = 0;
-      reset();
-    }
-    window.addEventListener('pagehide', stop);
-    window.addEventListener('pageshow', start);
-    document.fonts?.ready.then(invalidate);
-    start();
-  })();
-  </script>
 </body>
 </html>
