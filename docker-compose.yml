@@ -22,10 +22,14 @@ services:
     depends_on:
       - paimana-api
     ports:
-      - "8443:80"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./frontend:/usr/share/nginx/html:ro
+      - /var/www/certbot:/var/www/certbot:ro
+      - /etc/letsencrypt/live/65.1.139.1:/etc/nginx/ssl/live/65.1.139.1:ro
+      - /etc/letsencrypt/archive/65.1.139.1:/etc/nginx/ssl/archive/65.1.139.1:ro
     networks:
       - paimana
 
